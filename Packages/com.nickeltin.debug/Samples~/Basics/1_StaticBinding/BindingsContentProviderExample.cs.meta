@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 752105d9c2601f34685720b9ce223c00
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/1_StaticBinding/BindingsContentProviderExample.cs
+  uploadId: 838084

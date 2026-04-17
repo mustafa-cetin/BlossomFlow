@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: eeab4ad77f10e5b4e8df1d22f49eccc5
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 12385, guid: 0000000000000000e000000000000000, type: 0}
+  disableValidation: 0
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/2_CustomStyleSheets/DebugPanelNeonStyle.uss
+  uploadId: 838084

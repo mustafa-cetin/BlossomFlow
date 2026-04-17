@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="TabsContainer" />
+    <ui:VisualElement name="ContentContainer" style="flex-grow: 1;" />
+</ui:UXML>

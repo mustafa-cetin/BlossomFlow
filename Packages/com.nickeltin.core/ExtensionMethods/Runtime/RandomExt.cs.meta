@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e4b6401a13fc6c7488d928a4ef01ea77
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/ExtensionMethods/Runtime/RandomExt.cs
+  uploadId: 838084

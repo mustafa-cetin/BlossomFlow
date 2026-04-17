@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 3db4948c664f443bb9f0a1d9621f36cf
+timeCreated: 1635507107
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/ExtensionMethods/Runtime/ConfigurableJointExt.cs
+  uploadId: 838084

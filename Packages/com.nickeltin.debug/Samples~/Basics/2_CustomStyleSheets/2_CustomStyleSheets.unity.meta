@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2c3895328d2367144b8bc4acac8799b0
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/2_CustomStyleSheets/2_CustomStyleSheets.unity
+  uploadId: 838084

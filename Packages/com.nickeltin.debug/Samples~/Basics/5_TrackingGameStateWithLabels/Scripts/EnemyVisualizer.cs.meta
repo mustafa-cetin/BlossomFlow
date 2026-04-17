@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5ff761316a88b9c4085cce901f343446
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/5_TrackingGameStateWithLabels/Scripts/EnemyVisualizer.cs
+  uploadId: 838084

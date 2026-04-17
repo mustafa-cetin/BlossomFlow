@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e29677facfc289b468c907532ee27499
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/1_StaticBinding/1_StaticBinding.unity
+  uploadId: 838084

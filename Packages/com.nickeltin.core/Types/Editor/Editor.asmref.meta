@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cafd39ae1fa352e41a0ed9e277cae5f3
+AssemblyDefinitionReferenceImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/Types/Editor/Editor.asmref
+  uploadId: 838084

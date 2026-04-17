@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7bb4b1ee97e78b74898c5f32b227d575
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/ExtensionMethods/Runtime/LayoutGroupExt.cs
+  uploadId: 838084

@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 71f3e7659ff1467e965101552bc3c6bb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _currentStyleSheet: {fileID: 7433441132597879392, guid: c7c10f9e48917a24c98fda9c1f53bae2,
+      type: 3}
+  - _treeAsset: {fileID: 9197481963319205126, guid: ddda5fda21f23924cb8a77c1174476bd,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/0_SimpleContentProvider/ContentProviderExample.cs
+  uploadId: 838084

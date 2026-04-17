@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 0cc024070c2046a1bfe77b61f9299784
+timeCreated: 1666333680
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/Editor/SearchWindows/Base/ISearchWindowEntry.cs
+  uploadId: 838084

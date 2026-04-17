@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: ab989d8851374c889a5f91595638880c
+timeCreated: 1741088737
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/Editor/Other/LazyLoadReferenceFixedDrawer.cs
+  uploadId: 838084

@@ -1,0 +1,20 @@
+{
+    "name": "nickeltin.DebugPanel.Editor",
+    "rootNamespace": "",
+    "references": [
+        "nickeltin.Core.Runtime",
+        "nickeltin.Core.Editor",
+        "nickeltin.DebugPanel.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

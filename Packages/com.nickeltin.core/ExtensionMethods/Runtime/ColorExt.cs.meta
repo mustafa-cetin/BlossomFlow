@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 642ac62d7a0aac64bae68957f56a0b23
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/ExtensionMethods/Runtime/ColorExt.cs
+  uploadId: 838084

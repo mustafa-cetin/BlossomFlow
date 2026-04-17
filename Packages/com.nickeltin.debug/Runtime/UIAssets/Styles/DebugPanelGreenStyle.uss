@@ -1,0 +1,59 @@
+/* Green/Matrix Theme - Hacker/Terminal Style Colors */
+:root {
+    /* Button Colors */
+    --button-bg: rgba(5, 20, 10, 0.9);
+    --button-bg-hover: rgba(10, 35, 20, 0.9);
+    --button-border-top-left: rgba(60, 220, 100, 0.9);
+    --button-border-bottom-right: rgba(30, 140, 60, 0.9);
+    --button-border-hover: rgb(80, 255, 120);
+    --button-border-focus: rgb(150, 255, 180);
+    --button-text: rgb(100, 255, 140);
+    
+    /* Repeat Button Colors */
+    --repeat-button-bg: rgba(5, 20, 10, 0.9);
+    --repeat-button-bg-hover: rgba(10, 35, 20, 0.9);
+    --repeat-button-border-top-left: rgba(60, 220, 100, 0.9);
+    --repeat-button-border-bottom-right: rgba(30, 140, 60, 0.9);
+    --repeat-button-text: rgb(100, 255, 140);
+    
+    /* Group Colors */
+    --group-bg: rgba(5, 15, 10, 0.81);
+    --group-border-top-left: rgba(60, 220, 100, 0.9);
+    --group-border-bottom-right: rgba(30, 140, 60, 0.9);
+    --group-text: rgb(180, 255, 200);
+    --group-checkmark-color: rgb(100, 255, 140);
+    
+    /* Toggle Colors */
+    --toggle-bg: rgba(20, 80, 40, 0.82);
+    --toggle-bg-hover: rgba(30, 110, 60, 0.92);
+    --toggle-border-top-left: rgba(80, 220, 120, 0.9);
+    --toggle-border-bottom-right: rgba(40, 140, 70, 0.9);
+    --toggle-text: rgb(220, 255, 230);
+    --toggle-checkmark-bg: rgb(10, 30, 15);
+    --toggle-checkmark-tint: rgb(150, 255, 180);
+    
+    /* Dropdown Colors */
+    --dropdown-arrow-tint: rgb(100, 255, 140);
+    --dropdown-bg: rgba(5, 20, 12, 0.95);
+    --dropdown-border: rgba(60, 220, 100, 0.9);
+    --dropdown-text: rgb(180, 255, 200);
+    
+    /* Tab Colors */
+    --tab-bg: rgba(5, 15, 10, 0.8);
+    --tab-bg-hover: rgba(20, 80, 40, 0.9);
+    --tab-bg-selected: rgb(40, 120, 70);
+    --tab-border-top-left: rgba(60, 220, 100, 0.9);
+    --tab-border-bottom-right: rgba(30, 140, 60, 0.9);
+    --tab-border-selected-top-left: rgba(80, 240, 120, 0.95);
+    --tab-border-selected-bottom-right: rgba(40, 160, 80, 0.9);
+    --tab-text: rgb(160, 220, 180);
+    --tab-text-selected: rgb(200, 255, 220);
+    
+    /* Console Colors */
+    --console-bg: rgba(0, 10, 5, 0.95);
+    --console-border: rgba(60, 220, 100, 0.9);
+    --console-clear-bg: rgba(5, 20, 10, 0.9);
+    --console-clear-bg-hover: rgba(40, 120, 70, 0.8);
+    --console-clear-text: rgb(100, 255, 140);
+}
+

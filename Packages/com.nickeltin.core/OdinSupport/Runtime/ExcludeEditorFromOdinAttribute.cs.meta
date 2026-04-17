@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 85b078a36a354c5f9a8274e94fabd6fa
+timeCreated: 1667986710
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/OdinSupport/Runtime/ExcludeEditorFromOdinAttribute.cs
+  uploadId: 838084

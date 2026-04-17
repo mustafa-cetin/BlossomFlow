@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cefeeb9901786434da652deebd03f125
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/0_SimpleContentProvider/0_SimpleContentProvider.unity
+  uploadId: 838084

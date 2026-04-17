@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: bf55dcad6503412eb4b76dc040a13507
+timeCreated: 1688734327
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/Runtime/PlayerLoop/StaticPlayerLoop.cs
+  uploadId: 838084

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 6d8e2bdd08a84ed98d8783b72670b4cb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {fileID: 2800000, guid: 8b6f509de0e452a429ba5d6295192529, type: 3}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Runtime/Components/DebugPanelLogger.cs
+  uploadId: 838084

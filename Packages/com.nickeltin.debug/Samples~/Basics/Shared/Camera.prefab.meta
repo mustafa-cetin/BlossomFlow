@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a9091e0aada896e479a5df63898e955f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/Shared/Camera.prefab
+  uploadId: 838084

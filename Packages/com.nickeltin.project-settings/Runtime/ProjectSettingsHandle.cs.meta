@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4cd0b3d7db4dc9244973553cae65ebf4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.project-settings/Runtime/ProjectSettingsHandle.cs
+  uploadId: 838084

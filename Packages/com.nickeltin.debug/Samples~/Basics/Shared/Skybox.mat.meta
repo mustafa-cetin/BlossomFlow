@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a266a437be122134ea47bf4aa4aefc1f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/Shared/Skybox.mat
+  uploadId: 838084

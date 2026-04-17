@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: a1df53b4de1c4427bbe9da595140e327
+timeCreated: 1717589019
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/InternalBridge/Editor/GUI/_InspectorWindow.cs
+  uploadId: 838084

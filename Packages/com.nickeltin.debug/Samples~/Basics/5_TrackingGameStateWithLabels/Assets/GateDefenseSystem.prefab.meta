@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f10010f024e87ac4bb572bd6689eee21
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/5_TrackingGameStateWithLabels/Assets/GateDefenseSystem.prefab
+  uploadId: 838084

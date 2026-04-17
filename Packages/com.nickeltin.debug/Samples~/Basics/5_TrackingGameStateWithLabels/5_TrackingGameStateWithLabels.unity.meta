@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 77af9783335af0f42b67d633cd5c3ff6
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/5_TrackingGameStateWithLabels/5_TrackingGameStateWithLabels.unity
+  uploadId: 838084

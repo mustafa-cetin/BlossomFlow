@@ -1,0 +1,30 @@
+﻿{
+  "name": "com.nickeltin.debug",
+  "version": "1.0.3",
+  "displayName": "Nickeltin Debug Panel",
+  "description": "UI Toolkit based code defined debug panel for mobile",
+  "unity": "2021.1",
+  "documentationUrl": "https://nickeltin.notion.site/debug-panel-samples-public-2c8cd34c79c280dd8df9e061bb3aa2bb",
+  "dependencies": {
+    "com.nickeltin.core" : "1.2.10",
+    "com.nickeltin.project-settings": "1.0.0"
+  },
+  "keywords": [
+    "nickeltin",
+    "debug",
+    "panel",
+    "uitoolkit"
+  ],
+  "author": {
+    "name": "nickeltin",
+    "email": "valentyn001@gmail.com"
+  },
+  "samples": [
+    {
+      "displayName": "Basics",
+      "description": "Contains scene with debug panel examples, with some scripts to demonstrate content provider and static binding",
+      "path": "Samples~/Basics"
+    }
+  ],
+  "hideInEditor": false
+}

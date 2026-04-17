@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f17844e2b97f0b240bb98137fd4ed4be
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Samples~/Basics/3_ActivationOverride/3_ActivationOverride.unity
+  uploadId: 838084

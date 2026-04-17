@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: fc9d2b620f1d4ec78b5adf1ce06fe9b9
+timeCreated: 1740303666
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.core/InternalBridge/Editor/_SpriteDrawUtility.cs
+  uploadId: 838084

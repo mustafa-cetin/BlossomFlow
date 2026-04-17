@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 46ac55abb3737a14ba59c1f24e0f7029
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 339088
+  packageName: Debug Panel - Mobile Cheats and Debug
+  packageVersion: 1.0.3
+  assetPath: Packages/com.nickeltin.debug/Runtime/VisualElements/ScrollViewElement.cs
+  uploadId: 838084
