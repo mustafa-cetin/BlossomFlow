@@ -4,12 +4,16 @@ using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
 using Reflex.Attributes;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace BlossomFlow.Gameplay.Presentation
 {
     public sealed class PrototypeLevelRunner : MonoBehaviour
     {
         [Header("Level")]
+        [SerializeField] private LevelDefinitionAsset levelAsset;
         [SerializeField] private LevelDefinition levelDefinition;
         [SerializeField] private bool useBuiltInTestLevel = true;
 
@@ -35,9 +39,14 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private float waitingSlotVisualSize = 0.42f;
         [SerializeField] private float potSpacing = 0.75f;
         [SerializeField] private float queuedPotVerticalSpacing = 0.46f;
+        [SerializeField] private float minimumVisualGap = 0.06f;
         [SerializeField] private float conveyorStepSeconds = 0.45f;
         [SerializeField] private bool autoFitCamera = true;
         [SerializeField] private float cameraPadding = 0.6f;
+
+        [Header("Editor Preview")]
+        [SerializeField] private bool showLayoutGizmos = true;
+        [SerializeField] private bool showVisualFootprintGizmos = true;
 
         private readonly Dictionary<FlowerCell, GameObject> _flowerViews = new();
         private readonly Dictionary<PotModel, GameObject> _potViews = new();
@@ -55,6 +64,9 @@ namespace BlossomFlow.Gameplay.Presentation
         private float _runtimePotSpacing;
         private float _runtimeQueuedPotVerticalSpacing;
 
+        private const float MinimumWorldSize = 0.01f;
+        private const float BackQueuedPotScale = 0.82f;
+
         [Inject]
         private void Construct(ILevelSessionFactory sessionFactory)
         {
@@ -70,9 +82,11 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            var definition = useBuiltInTestLevel || levelDefinition == null
+            var definition = useBuiltInTestLevel
                 ? CreateBuiltInTestLevel()
-                : levelDefinition;
+                : levelAsset != null
+                    ? levelAsset.Definition
+                    : levelDefinition ?? CreateBuiltInTestLevel();
 
             _session = _sessionFactory.Create(definition);
             EnsureRoots();
@@ -109,6 +123,42 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _stepTimer = 0f;
             TickActivePots();
+        }
+
+        private void OnValidate()
+        {
+            cellSize = Mathf.Max(MinimumWorldSize, cellSize);
+            maxBoardWorldSize = Mathf.Max(MinimumWorldSize, maxBoardWorldSize);
+            flowerScaleMultiplier = Mathf.Max(MinimumWorldSize, flowerScaleMultiplier);
+            potVisualSize = Mathf.Max(MinimumWorldSize, potVisualSize);
+            waitingSlotVisualSize = Mathf.Max(MinimumWorldSize, waitingSlotVisualSize);
+            minimumVisualGap = Mathf.Max(0f, minimumVisualGap);
+            potSpacing = Mathf.Max(Mathf.Max(MinimumWorldSize, potSpacing), GetMinimumPotSpacing());
+            queuedPotVerticalSpacing = Mathf.Max(Mathf.Max(MinimumWorldSize, queuedPotVerticalSpacing), GetMinimumQueuedPotSpacing());
+            conveyorStepSeconds = Mathf.Max(MinimumWorldSize, conveyorStepSeconds);
+            cameraPadding = Mathf.Max(0f, cameraPadding);
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!showLayoutGizmos)
+            {
+                return;
+            }
+
+            var definition = GetPreviewLevelDefinition();
+            var width = GetPreviewGridWidth(definition);
+            var height = GetPreviewGridHeight(definition);
+            var launchColumnCount = GetPreviewLaunchColumnCount(definition);
+            var maxQueueCount = GetPreviewMaxQueueCount(definition);
+            var waitingSlotCount = GetPreviewWaitingSlotCount(definition);
+            CalculateLayoutValues(width, height, out var previewCellSize, out var previewFlowerScale, out var previewPotSpacing, out var previewQueuedPotSpacing);
+
+            DrawBoardGizmos(width, height, previewCellSize, previewFlowerScale);
+            DrawConveyorGizmos(width, height, previewCellSize);
+            DrawLaunchColumnGizmos(launchColumnCount, maxQueueCount, previewPotSpacing, previewQueuedPotSpacing);
+            DrawWaitingSlotGizmos(waitingSlotCount, previewPotSpacing);
+            DrawLayoutLabels(previewCellSize, previewFlowerScale, previewPotSpacing, previewQueuedPotSpacing);
         }
 
         private void HandlePointerInput()
@@ -278,7 +328,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 var pot = pots[queueIndex];
                 var view = CreateView(potPrefab, launchColumnRoot, $"LaunchPot_{columnIndex}_{queueIndex}");
                 view.transform.position = LaunchPosition(columnIndex, queueIndex);
-                ApplyVisualSize(view, queueIndex == 0 ? potVisualSize : potVisualSize * 0.82f);
+                ApplyVisualSize(view, queueIndex == 0 ? potVisualSize : potVisualSize * BackQueuedPotScale);
                 SetColor(view, ToUnityColor(pot.Color));
                 SetSortingOrder(view, 20 - queueIndex);
 
@@ -410,11 +460,40 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void CalculateRuntimeLayout()
         {
-            var largestGridAxis = Mathf.Max(_session.FlowerGrid.Width, _session.FlowerGrid.Height);
-            _runtimeCellSize = Mathf.Min(cellSize, maxBoardWorldSize / largestGridAxis);
-            _runtimeFlowerScale = _runtimeCellSize * flowerScaleMultiplier;
-            _runtimePotSpacing = Mathf.Max(potSpacing, potVisualSize * 1.6f);
-            _runtimeQueuedPotVerticalSpacing = Mathf.Max(queuedPotVerticalSpacing, potVisualSize * 1.35f);
+            CalculateLayoutValues(
+                _session.FlowerGrid.Width,
+                _session.FlowerGrid.Height,
+                out _runtimeCellSize,
+                out _runtimeFlowerScale,
+                out _runtimePotSpacing,
+                out _runtimeQueuedPotVerticalSpacing);
+        }
+
+        private void CalculateLayoutValues(
+            int gridWidth,
+            int gridHeight,
+            out float layoutCellSize,
+            out float layoutFlowerScale,
+            out float layoutPotSpacing,
+            out float layoutQueuedPotVerticalSpacing)
+        {
+            var largestGridAxis = Mathf.Max(1, Mathf.Max(gridWidth, gridHeight));
+            layoutCellSize = Mathf.Min(cellSize, maxBoardWorldSize / largestGridAxis);
+            layoutFlowerScale = layoutCellSize * flowerScaleMultiplier;
+            layoutPotSpacing = Mathf.Max(potSpacing, GetMinimumPotSpacing());
+            layoutQueuedPotVerticalSpacing = Mathf.Max(queuedPotVerticalSpacing, GetMinimumQueuedPotSpacing());
+        }
+
+        private float GetMinimumPotSpacing()
+        {
+            return Mathf.Max(potVisualSize, waitingSlotVisualSize) + minimumVisualGap;
+        }
+
+        private float GetMinimumQueuedPotSpacing()
+        {
+            var frontPotRadius = potVisualSize * 0.5f;
+            var backPotRadius = potVisualSize * BackQueuedPotScale * 0.5f;
+            return frontPotRadius + backPotRadius + minimumVisualGap;
         }
 
         private void FitCameraToPrototype()
@@ -610,6 +689,170 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConveyorEdge.Bottom => new Vector3(flowerOrigin.x + scan.Lane * _runtimeCellSize, yMin, 0f),
                 _ => transform.position
             };
+        }
+
+        private LevelDefinition GetPreviewLevelDefinition()
+        {
+            if (useBuiltInTestLevel)
+            {
+                return CreateBuiltInTestLevel();
+            }
+
+            if (levelAsset != null && levelAsset.Definition != null)
+            {
+                return levelAsset.Definition;
+            }
+
+            return levelDefinition ?? new LevelDefinition();
+        }
+
+        private static int GetPreviewGridWidth(LevelDefinition definition)
+        {
+            return Mathf.Max(1, definition?.Width ?? 1);
+        }
+
+        private static int GetPreviewGridHeight(LevelDefinition definition)
+        {
+            return Mathf.Max(1, definition?.Height ?? 1);
+        }
+
+        private static int GetPreviewLaunchColumnCount(LevelDefinition definition)
+        {
+            return Mathf.Max(1, definition?.LaunchColumns?.Length ?? LevelDefinition.DefaultLaunchColumnCount);
+        }
+
+        private static int GetPreviewWaitingSlotCount(LevelDefinition definition)
+        {
+            return Mathf.Max(1, definition?.WaitingSlotCount ?? 5);
+        }
+
+        private static int GetPreviewMaxQueueCount(LevelDefinition definition)
+        {
+            var columns = definition?.LaunchColumns;
+            if (columns == null || columns.Length == 0)
+            {
+                return 1;
+            }
+
+            var maxQueueCount = 1;
+            for (var i = 0; i < columns.Length; i++)
+            {
+                maxQueueCount = Mathf.Max(maxQueueCount, columns[i]?.Count ?? 0);
+            }
+
+            return maxQueueCount;
+        }
+
+        private void DrawBoardGizmos(int width, int height, float previewCellSize, float previewFlowerScale)
+        {
+            var boardCenter = new Vector3(
+                flowerOrigin.x + (width - 1) * previewCellSize * 0.5f,
+                flowerOrigin.y + (height - 1) * previewCellSize * 0.5f,
+                0f);
+
+            Gizmos.color = new Color(0.35f, 0.8f, 0.55f, 0.75f);
+            Gizmos.DrawWireCube(boardCenter, new Vector3(width * previewCellSize, height * previewCellSize, 0.02f));
+
+            Gizmos.color = new Color(0.35f, 0.8f, 0.55f, 0.22f);
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    var position = new Vector3(flowerOrigin.x + x * previewCellSize, flowerOrigin.y + y * previewCellSize, 0f);
+                    Gizmos.DrawWireCube(position, new Vector3(previewCellSize, previewCellSize, 0.01f));
+
+                    if (showVisualFootprintGizmos)
+                    {
+                        Gizmos.DrawWireCube(position, new Vector3(previewFlowerScale, previewFlowerScale, 0.01f));
+                    }
+                }
+            }
+        }
+
+        private void DrawConveyorGizmos(int width, int height, float previewCellSize)
+        {
+            var xMin = flowerOrigin.x - previewCellSize;
+            var xMax = flowerOrigin.x + width * previewCellSize;
+            var yMin = flowerOrigin.y - previewCellSize;
+            var yMax = flowerOrigin.y + height * previewCellSize;
+
+            var bottomLeft = new Vector3(xMin, yMin, 0f);
+            var topLeft = new Vector3(xMin, yMax, 0f);
+            var topRight = new Vector3(xMax, yMax, 0f);
+            var bottomRight = new Vector3(xMax, yMin, 0f);
+
+            Gizmos.color = new Color(0.25f, 0.55f, 1f, 0.85f);
+            Gizmos.DrawLine(bottomLeft, topLeft);
+            Gizmos.DrawLine(topLeft, topRight);
+            Gizmos.DrawLine(topRight, bottomRight);
+            Gizmos.DrawLine(bottomRight, bottomLeft);
+        }
+
+        private void DrawLaunchColumnGizmos(int columnCount, int maxQueueCount, float previewPotSpacing, float previewQueuedPotSpacing)
+        {
+            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.85f);
+            for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            {
+                for (var queueIndex = 0; queueIndex < maxQueueCount; queueIndex++)
+                {
+                    var size = queueIndex == 0 ? potVisualSize : potVisualSize * BackQueuedPotScale;
+                    var position = new Vector3(
+                        launchOrigin.x + columnIndex * previewPotSpacing,
+                        launchOrigin.y - queueIndex * previewQueuedPotSpacing,
+                        0f);
+
+                    Gizmos.DrawWireCube(position, new Vector3(size, size, 0.01f));
+                }
+            }
+
+            if (columnCount > 1)
+            {
+                Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.35f);
+                var first = new Vector3(launchOrigin.x, launchOrigin.y, 0f);
+                var last = new Vector3(launchOrigin.x + (columnCount - 1) * previewPotSpacing, launchOrigin.y, 0f);
+                Gizmos.DrawLine(first, last);
+            }
+        }
+
+        private void DrawWaitingSlotGizmos(int slotCount, float previewPotSpacing)
+        {
+            Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.75f);
+            for (var slotIndex = 0; slotIndex < slotCount; slotIndex++)
+            {
+                var position = new Vector3(waitingOrigin.x + slotIndex * previewPotSpacing, waitingOrigin.y, 0f);
+                Gizmos.DrawWireCube(position, new Vector3(waitingSlotVisualSize, waitingSlotVisualSize, 0.01f));
+
+                if (showVisualFootprintGizmos)
+                {
+                    Gizmos.color = new Color(1f, 1f, 1f, 0.35f);
+                    Gizmos.DrawWireCube(position, new Vector3(potVisualSize, potVisualSize, 0.01f));
+                    Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.75f);
+                }
+            }
+
+            if (slotCount > 1)
+            {
+                Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.35f);
+                var first = new Vector3(waitingOrigin.x, waitingOrigin.y, 0f);
+                var last = new Vector3(waitingOrigin.x + (slotCount - 1) * previewPotSpacing, waitingOrigin.y, 0f);
+                Gizmos.DrawLine(first, last);
+            }
+        }
+
+        private void DrawLayoutLabels(float previewCellSize, float previewFlowerScale, float previewPotSpacing, float previewQueuedPotSpacing)
+        {
+#if UNITY_EDITOR
+            Handles.color = Color.white;
+            Handles.Label(
+                new Vector3(flowerOrigin.x, flowerOrigin.y + previewCellSize, 0f),
+                $"Cell {previewCellSize:0.##} / Flower {previewFlowerScale:0.##}");
+            Handles.Label(
+                new Vector3(launchOrigin.x, launchOrigin.y + potVisualSize, 0f),
+                $"Pot {potVisualSize:0.##} / H spacing {previewPotSpacing:0.##} / V spacing {previewQueuedPotSpacing:0.##}");
+            Handles.Label(
+                new Vector3(waitingOrigin.x, waitingOrigin.y + waitingSlotVisualSize, 0f),
+                $"Slot {waitingSlotVisualSize:0.##} / Pot footprint {potVisualSize:0.##}");
+#endif
         }
 
         private static Color ToUnityColor(FlowerColor color)
