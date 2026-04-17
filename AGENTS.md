@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for agents and contributors working in this Unity project. The codebase uses the Reflex dependency inversion framework in `Assets/Reflex`, and gameplay/application code should follow Reflex conventions instead of creating service dependencies directly. Never compile.
+Guidance for agents and contributors working in this Unity project. The codebase uses the Reflex dependency inversion framework in `Assets/Reflex`, and gameplay/application code should follow Reflex conventions instead of creating service dependencies directly. Never compile. Don't create .meta files.
 
 ## Dependency Inversion Rules
 
@@ -10,6 +10,21 @@ Guidance for agents and contributors working in this Unity project. The codebase
 - Do not use service locators, global mutable singletons, or ad hoc `new` calls for dependencies that should be controlled by the container.
 - Keep Unity object lookup APIs (`FindObjectOfType`, `GameObject.Find`, scene-wide tag searches) out of business/gameplay logic unless the object is truly scene-local presentation state.
 - Keep constructors and injected methods lightweight. Avoid doing heavy Unity work during injection itself.
+
+## EventBus System
+
+- The shared event infrastructure lives under `Assets/Scripts/Application/Events`.
+- `EventBus` is the Reflex-owned implementation and is registered from `Assets/Scripts/Installers/RootInstaller.cs`.
+- Depend on the smallest event interface needed:
+  - Use `IEventPublisher` for classes that only publish events.
+  - Use `IEventSubscriber` for classes that only subscribe to events.
+  - Use `IEventBus` only when a class genuinely needs both publishing and subscribing.
+- Define events as small typed message structs or classes near the feature that owns their meaning.
+- Prefer feature-owned typed events when crossing feature boundaries. Keep the message types close to the feature that owns their meaning, such as level resolution events under gameplay presentation.
+- Do not call `new EventBus()`, store it in a static field, or resolve it manually from gameplay code. Request it through constructor injection or `[Inject]` method injection.
+- Subscriptions must be disposed or unsubscribed when the consumer stops listening. For `MonoBehaviour` consumers, subscribe in `OnEnable` or after injection and unsubscribe in `OnDisable` or `OnDestroy` as appropriate.
+- Keep EventBus handlers lightweight. Publish intent/state-change events, then let subscribers coordinate their own cohesive work.
+- Do not use the EventBus for direct request/response queries, persistent state storage, or replacing clear domain method calls inside the same cohesive feature.
 
 ## SOLID, Loose Coupling, and High Cohesion
 

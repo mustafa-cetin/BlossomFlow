@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using BlossomFlow.Application.Events;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
 using Reflex.Attributes;
@@ -22,16 +24,26 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private LevelPointerInput pointerInput;
 
         private ILevelSessionFactory _sessionFactory;
+        private IEventPublisher _eventPublisher;
+        private IEventSubscriber _eventSubscriber;
+        private IDisposable _restartRequestedSubscription;
         private LevelSession _session;
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
 
         private const float MinimumStepSeconds = 0.01f;
 
+        public LevelSession CurrentSession => _session;
+
         [Inject]
-        protected void Construct(ILevelSessionFactory sessionFactory)
+        protected void Construct(
+            ILevelSessionFactory sessionFactory,
+            IEventPublisher eventPublisher,
+            IEventSubscriber eventSubscriber)
         {
             _sessionFactory = sessionFactory;
+            _eventPublisher = eventPublisher;
+            _eventSubscriber = eventSubscriber;
         }
 
         private void Awake()
@@ -41,22 +53,32 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void Start()
         {
-            if (_sessionFactory == null)
+            if (_sessionFactory == null || _eventPublisher == null || _eventSubscriber == null)
             {
                 Debug.LogError("LevelRunner needs Reflex injection. Add a SceneScope with GameInstaller to this scene.");
                 enabled = false;
                 return;
             }
 
-            _session = _sessionFactory.Create(GetLevelDefinition());
             presentationView.LaunchColumnRequested += TryLaunchColumn;
             presentationView.WaitingPotRecallRequested += TryRecallWaitingPot;
-            _session.LevelWon += OnLevelWon;
-            _session.LevelFailed += OnLevelFailed;
+            _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
 
-            presentationView.BindSession(_session);
-            _session.Start();
-            presentationView.BuildInitialViews();
+            StartLevelSession();
+        }
+
+        private void OnDestroy()
+        {
+            if (presentationView != null)
+            {
+                presentationView.LaunchColumnRequested -= TryLaunchColumn;
+                presentationView.WaitingPotRecallRequested -= TryRecallWaitingPot;
+                presentationView.UnbindSession();
+            }
+
+            UnsubscribeSessionEvents();
+            _restartRequestedSubscription?.Dispose();
+            _restartRequestedSubscription = null;
         }
 
         private void Update()
@@ -123,6 +145,24 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             return levelDefinition ?? BuiltInPrototypeLevelDefinition.Create();
+        }
+
+        private void StartLevelSession()
+        {
+            UnsubscribeSessionEvents();
+            presentationView.UnbindSession();
+            presentationView.ClearViews();
+
+            _stepTimer = 0f;
+            _conveyorEntryDelayTimer = 0f;
+
+            _session = _sessionFactory.Create(GetLevelDefinition());
+            _session.LevelWon += OnLevelWon;
+            _session.LevelFailed += OnLevelFailed;
+
+            presentationView.BindSession(_session);
+            _session.Start();
+            presentationView.BuildInitialViews();
         }
 
         private void TickActivePots()
@@ -194,12 +234,38 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnLevelWon(LevelSession session)
         {
+            presentationView.ShowWinResolution();
+            _eventPublisher.Publish(new LevelVictoryScreenRequested());
             Debug.Log("Level won.");
         }
 
         private void OnLevelFailed(LevelSession session, LevelFailureReason reason, PotModel failedPot)
         {
+            presentationView.ShowFailResolution(failedPot);
+            _eventPublisher.Publish(new LevelFailureScreenRequested());
             Debug.Log($"Level failed: {reason}.");
+        }
+
+        public void RestartLevel()
+        {
+            if (_sessionFactory == null)
+            {
+                return;
+            }
+
+            _eventPublisher.Publish(new LevelRestarted());
+            StartLevelSession();
+        }
+
+        private void UnsubscribeSessionEvents()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            _session.LevelWon -= OnLevelWon;
+            _session.LevelFailed -= OnLevelFailed;
         }
     }
 }

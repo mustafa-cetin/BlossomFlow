@@ -101,6 +101,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
+            UnbindSession();
             _session = session;
             EnsureRoots();
             CalculateRuntimeLayout();
@@ -110,6 +111,66 @@ namespace BlossomFlow.Gameplay.Presentation
             _session.WaitingPotPlaced += OnWaitingPotPlaced;
             _session.WaitingPotRecalled += OnWaitingPotRecalled;
             _session.Conveyor.PotRemoved += OnConveyorPotRemoved;
+        }
+
+        public void UnbindSession()
+        {
+            if (_session != null)
+            {
+                _session.FlowerGrid.FlowerRemoved -= OnFlowerRemoved;
+                _session.WaitingPotPlaced -= OnWaitingPotPlaced;
+                _session.WaitingPotRecalled -= OnWaitingPotRecalled;
+                _session.Conveyor.PotRemoved -= OnConveyorPotRemoved;
+            }
+
+            foreach (var pot in _trackedPotCounters)
+            {
+                pot.StateChanged -= OnPotStateChanged;
+            }
+
+            _trackedPotCounters.Clear();
+            _session = null;
+        }
+
+        public void ClearViews()
+        {
+            ClearRoot(flowerRoot);
+            ClearRoot(conveyorRoot);
+            ClearRoot(launchColumnRoot);
+            ClearRoot(waitingSlotRoot);
+
+            _flowerViews.Clear();
+            _potViews.Clear();
+            _waitingPotViews.Clear();
+            _launchColumnViews.Clear();
+            _pendingFlowerTargets.Clear();
+            _collectedFlowerCounts.Clear();
+            _waitingSlotViews.Clear();
+        }
+
+        public void ShowWinResolution()
+        {
+            foreach (var view in _potViews.Values)
+            {
+                if (view != null)
+                {
+                    view.transform.DOPunchScale(Vector3.one * potVisualSize * 0.18f, 0.28f, 6, 0.45f)
+                        .SetLink(view, LinkBehaviour.KillOnDestroy);
+                }
+            }
+        }
+
+        public void ShowFailResolution(PotModel failedPot)
+        {
+            if (failedPot == null || !_potViews.TryGetValue(failedPot, out var view) || view == null)
+            {
+                return;
+            }
+
+            SetColor(view, Color.black);
+            view.transform.DOKill();
+            view.transform.DOPunchRotation(new Vector3(0f, 0f, 18f), 0.35f, 8, 0.55f)
+                .SetLink(view, LinkBehaviour.KillOnDestroy);
         }
 
         public void BuildInitialViews()
@@ -126,20 +187,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnDestroy()
         {
-            if (_session != null)
-            {
-                _session.FlowerGrid.FlowerRemoved -= OnFlowerRemoved;
-                _session.WaitingPotPlaced -= OnWaitingPotPlaced;
-                _session.WaitingPotRecalled -= OnWaitingPotRecalled;
-                _session.Conveyor.PotRemoved -= OnConveyorPotRemoved;
-            }
-
-            foreach (var pot in _trackedPotCounters)
-            {
-                pot.StateChanged -= OnPotStateChanged;
-            }
-
-            _trackedPotCounters.Clear();
+            UnbindSession();
         }
 
         private void OnValidate()
@@ -479,6 +527,10 @@ namespace BlossomFlow.Gameplay.Presentation
             if (pot != null && _potViews.TryGetValue(pot, out var view))
             {
                 UpdatePotCounter(view, pot);
+                if (nextState == PotState.Broken)
+                {
+                    ShowFailResolution(pot);
+                }
             }
         }
 
@@ -609,6 +661,22 @@ namespace BlossomFlow.Gameplay.Presentation
             var rootObject = new GameObject(rootName);
             rootObject.transform.SetParent(transform, false);
             return rootObject.transform;
+        }
+
+        private static void ClearRoot(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            for (var i = root.childCount - 1; i >= 0; i--)
+            {
+                var child = root.GetChild(i);
+                child.DOKill();
+                child.gameObject.SetActive(false);
+                Destroy(child.gameObject);
+            }
         }
 
         private void CalculateRuntimeLayout()
