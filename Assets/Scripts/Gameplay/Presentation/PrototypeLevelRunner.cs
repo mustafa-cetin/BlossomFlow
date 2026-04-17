@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
+using DG.Tweening;
 using Reflex.Attributes;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -44,6 +45,18 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private bool autoFitCamera = true;
         [SerializeField] private float cameraPadding = 0.6f;
 
+        [Header("Animation")]
+        [SerializeField] private float conveyorMoveSeconds = 0.45f;
+        [SerializeField] private float launchMoveSeconds = 0.38f;
+        [SerializeField] private float waitingMoveSeconds = 0.35f;
+        [SerializeField] private float flowerFlySeconds = 0.22f;
+        [SerializeField] private float potDisappearSeconds = 0.24f;
+        [SerializeField] private float flowerFlyArcHeight = 0.35f;
+        [SerializeField] private Ease launchMoveEase = Ease.OutCubic;
+        [SerializeField] private Ease waitingMoveEase = Ease.OutCubic;
+        [SerializeField] private Ease flowerFlyEase = Ease.InCubic;
+        [SerializeField] private Ease potDisappearEase = Ease.InBack;
+
         [Header("Editor Preview")]
         [SerializeField] private bool showLayoutGizmos = true;
         [SerializeField] private bool showVisualFootprintGizmos = true;
@@ -52,6 +65,8 @@ namespace BlossomFlow.Gameplay.Presentation
         private readonly Dictionary<PotModel, GameObject> _potViews = new();
         private readonly Dictionary<int, GameObject> _waitingPotViews = new();
         private readonly Dictionary<int, List<GameObject>> _launchColumnViews = new();
+        private readonly Dictionary<FlowerCell, PotModel> _pendingFlowerTargets = new();
+        private readonly Dictionary<PotModel, int> _collectedFlowerCounts = new();
         private readonly List<GameObject> _waitingSlotViews = new();
 
         private ILevelSessionFactory _sessionFactory;
@@ -137,6 +152,12 @@ namespace BlossomFlow.Gameplay.Presentation
             queuedPotVerticalSpacing = Mathf.Max(Mathf.Max(MinimumWorldSize, queuedPotVerticalSpacing), GetMinimumQueuedPotSpacing());
             conveyorStepSeconds = Mathf.Max(MinimumWorldSize, conveyorStepSeconds);
             cameraPadding = Mathf.Max(0f, cameraPadding);
+            conveyorMoveSeconds = Mathf.Max(conveyorStepSeconds, conveyorMoveSeconds);
+            launchMoveSeconds = Mathf.Max(0f, launchMoveSeconds);
+            waitingMoveSeconds = Mathf.Max(0f, waitingMoveSeconds);
+            flowerFlySeconds = Mathf.Max(0f, flowerFlySeconds);
+            potDisappearSeconds = Mathf.Max(0f, potDisappearSeconds);
+            flowerFlyArcHeight = Mathf.Max(0f, flowerFlyArcHeight);
         }
 
         private void OnDrawGizmos()
@@ -215,6 +236,7 @@ namespace BlossomFlow.Gameplay.Presentation
             var activePots = new List<PotModel>(_session.ActivePots);
             for (var i = 0; i < activePots.Count && _session.State == LevelPlayState.Playing; i++)
             {
+                TrackPotentialFlowerTarget(activePots[i]);
                 _session.TryCollectAtCurrentConveyorPosition(activePots[i], out _);
             }
 
@@ -279,11 +301,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
             var pot = _session.LaunchFromColumn(columnIndex);
             var view = CreateView(potPrefab, conveyorRoot, $"ActivePot_{columnIndex}");
+            view.transform.position = LaunchPosition(columnIndex, 0);
             ApplyVisualSize(view, potVisualSize);
             SetColor(view, ToUnityColor(pot.Color));
             _potViews[pot] = view;
             RefreshLaunchColumnView(columnIndex);
-            UpdateConveyorPotViews();
+            UpdateConveyorPotViews(pot, launchMoveSeconds, launchMoveEase);
         }
 
         private void RecallWaitingPot(int slotIndex)
@@ -308,7 +331,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             view.transform.SetParent(conveyorRoot, true);
-            UpdateConveyorPotViews();
+            UpdateConveyorPotViews(pot, launchMoveSeconds, launchMoveEase);
         }
 
         private void RefreshLaunchColumnView(int columnIndex)
@@ -350,6 +373,11 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void UpdateConveyorPotViews()
         {
+            UpdateConveyorPotViews(null, GetConveyorMoveSeconds(), Ease.Linear);
+        }
+
+        private void UpdateConveyorPotViews(PotModel animatedPot, float animatedDuration, Ease animatedEase)
+        {
             foreach (var conveyorPot in _session.Conveyor.Pots)
             {
                 if (!_potViews.TryGetValue(conveyorPot.Pot, out var view))
@@ -357,7 +385,9 @@ namespace BlossomFlow.Gameplay.Presentation
                     continue;
                 }
 
-                view.transform.position = ConveyorPosition(conveyorPot);
+                var duration = ReferenceEquals(conveyorPot.Pot, animatedPot) ? animatedDuration : GetConveyorMoveSeconds();
+                var ease = ReferenceEquals(conveyorPot.Pot, animatedPot) ? animatedEase : Ease.Linear;
+                AnimatePotMove(view, ConveyorPosition(conveyorPot), duration, ease);
             }
         }
 
@@ -365,9 +395,19 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (_flowerViews.TryGetValue(cell, out var view))
             {
-                Destroy(view);
                 _flowerViews.Remove(cell);
+
+                if (_pendingFlowerTargets.TryGetValue(cell, out var pot) && _potViews.TryGetValue(pot, out var potView))
+                {
+                    AnimateFlowerIntoPot(view, potView, pot);
+                }
+                else
+                {
+                    AnimateDisappear(view, flowerFlySeconds, flowerFlyEase);
+                }
             }
+
+            _pendingFlowerTargets.Remove(cell);
         }
 
         private void OnWaitingPotPlaced(LevelSession session, PotModel pot, int slotIndex)
@@ -381,10 +421,10 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             potView.transform.SetParent(waitingSlotRoot, true);
-            potView.transform.position = WaitingPotPosition(slotIndex);
             SetSortingOrder(potView, 30);
             BindClick(potView, () => RecallWaitingPot(slotIndex));
             _waitingPotViews[slotIndex] = potView;
+            AnimatePotMove(potView, WaitingPotPosition(slotIndex), waitingMoveSeconds, waitingMoveEase);
         }
 
         private void OnWaitingPotRecalled(LevelSession session, PotModel pot, int slotIndex)
@@ -405,8 +445,9 @@ namespace BlossomFlow.Gameplay.Presentation
 
             if (_potViews.TryGetValue(conveyorPot.Pot, out var view))
             {
-                Destroy(view);
                 _potViews.Remove(conveyorPot.Pot);
+                _collectedFlowerCounts.Remove(conveyorPot.Pot);
+                AnimateDisappear(view, potDisappearSeconds, potDisappearEase);
             }
         }
 
@@ -436,6 +477,19 @@ namespace BlossomFlow.Gameplay.Presentation
 
             view.name = objectName;
             return view;
+        }
+
+        private void TrackPotentialFlowerTarget(PotModel pot)
+        {
+            if (pot == null ||
+                !_session.Conveyor.TryGetPot(pot, out var conveyorPot) ||
+                !conveyorPot.TryGetCurrentScan(out var scan) ||
+                !_session.FlowerGrid.TryFindFirstAccessible(scan, pot.Color, out var flower))
+            {
+                return;
+            }
+
+            _pendingFlowerTargets[flower] = pot;
         }
 
         private void EnsureRoots()
@@ -494,6 +548,11 @@ namespace BlossomFlow.Gameplay.Presentation
             var frontPotRadius = potVisualSize * 0.5f;
             var backPotRadius = potVisualSize * BackQueuedPotScale * 0.5f;
             return frontPotRadius + backPotRadius + minimumVisualGap;
+        }
+
+        private float GetConveyorMoveSeconds()
+        {
+            return Mathf.Max(conveyorStepSeconds, conveyorMoveSeconds);
         }
 
         private void FitCameraToPrototype()
@@ -644,6 +703,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             for (var i = 0; i < views.Count; i++)
             {
+                views[i].transform.DOKill();
                 Destroy(views[i]);
             }
 
@@ -689,6 +749,163 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConveyorEdge.Bottom => new Vector3(flowerOrigin.x + scan.Lane * _runtimeCellSize, yMin, 0f),
                 _ => transform.position
             };
+        }
+
+        private void AnimatePotMove(GameObject view, Vector3 targetPosition, float duration, Ease ease)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            view.transform.DOKill();
+            if (duration <= 0f)
+            {
+                view.transform.position = targetPosition;
+                return;
+            }
+
+            view.transform.DOMove(targetPosition, duration)
+                .SetEase(ease)
+                .SetLink(view, LinkBehaviour.KillOnDestroy);
+        }
+
+        private void AnimateFlowerIntoPot(GameObject flowerView, GameObject potView, PotModel pot)
+        {
+            if (flowerView == null || potView == null || pot == null)
+            {
+                return;
+            }
+
+            flowerView.transform.DOKill();
+            var startPosition = flowerView.transform.position;
+            var count = _collectedFlowerCounts.TryGetValue(pot, out var currentCount) ? currentCount : 0;
+            var potPosition = potView.transform.position + FlowerInPotWorldOffset(count);
+            var middlePosition = Vector3.Lerp(startPosition, potPosition, 0.5f) + Vector3.up * flowerFlyArcHeight;
+            var path = new[] { middlePosition, potPosition };
+            var targetScale = flowerView.transform.localScale * 0.25f;
+
+            var sequence = DOTween.Sequence()
+                .SetLink(flowerView, LinkBehaviour.KillOnDestroy);
+
+            sequence.Join(flowerView.transform.DOPath(path, flowerFlySeconds, PathType.CatmullRom)
+                .SetEase(flowerFlyEase));
+            sequence.Join(flowerView.transform.DOScale(targetScale, flowerFlySeconds)
+                .SetEase(Ease.InSine));
+            sequence.OnComplete(() => PlaceFlowerInsidePot(flowerView, potView, pot));
+        }
+
+        private void PlaceFlowerInsidePot(GameObject flowerView, GameObject potView, PotModel pot)
+        {
+            if (flowerView == null || potView == null || pot == null)
+            {
+                return;
+            }
+
+            var count = _collectedFlowerCounts.TryGetValue(pot, out var currentCount) ? currentCount : 0;
+            _collectedFlowerCounts[pot] = count + 1;
+
+            flowerView.transform.SetParent(potView.transform, false);
+            flowerView.transform.localPosition = ToParentLocalOffset(potView.transform, FlowerInPotWorldOffset(count));
+            ApplyVisualSizeInsideParent(flowerView, potVisualSize * 0.22f);
+            SetSortingOrder(flowerView, 60 + count);
+
+            var spriteRenderer = GetSpriteRenderer(flowerView);
+            if (spriteRenderer != null)
+            {
+                var color = spriteRenderer.color;
+                color.a = 1f;
+                spriteRenderer.color = color;
+            }
+        }
+
+        private static Vector3 FlowerInPotWorldOffset(int collectedIndex)
+        {
+            return (collectedIndex % 6) switch
+            {
+                0 => new Vector3(0f, 0.06f, -0.02f),
+                1 => new Vector3(-0.055f, 0.02f, -0.02f),
+                2 => new Vector3(0.055f, 0.02f, -0.02f),
+                3 => new Vector3(-0.028f, 0.08f, -0.02f),
+                4 => new Vector3(0.028f, 0.08f, -0.02f),
+                _ => new Vector3(0f, 0.02f, -0.02f)
+            };
+        }
+
+        private static Vector3 ToParentLocalOffset(Transform parent, Vector3 worldOffset)
+        {
+            if (parent == null)
+            {
+                return worldOffset;
+            }
+
+            var scale = parent.lossyScale;
+            return new Vector3(
+                SafeDivide(worldOffset.x, scale.x),
+                SafeDivide(worldOffset.y, scale.y),
+                worldOffset.z);
+        }
+
+        private void ApplyVisualSizeInsideParent(GameObject view, float targetWorldSize)
+        {
+            var spriteRenderer = GetSpriteRenderer(view);
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+            {
+                var spriteSize = spriteRenderer.sprite.bounds.size;
+                var largestAxis = Mathf.Max(spriteSize.x, spriteSize.y);
+                var parentScale = GetLargestParentScale(view.transform);
+                if (largestAxis > 0f && parentScale > 0f)
+                {
+                    var scale = targetWorldSize / (largestAxis * parentScale);
+                    view.transform.localScale = Vector3.one * scale;
+                    return;
+                }
+            }
+
+            view.transform.localScale = Vector3.one * targetWorldSize;
+        }
+
+        private static float GetLargestParentScale(Transform child)
+        {
+            if (child == null || child.parent == null)
+            {
+                return 1f;
+            }
+
+            var scale = child.parent.lossyScale;
+            return Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), MinimumWorldSize);
+        }
+
+        private static float SafeDivide(float value, float divisor)
+        {
+            return Mathf.Abs(divisor) <= MinimumWorldSize ? value : value / divisor;
+        }
+
+        private void AnimateDisappear(GameObject view, float duration, Ease ease)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            view.transform.DOKill();
+            if (duration <= 0f)
+            {
+                Destroy(view);
+                return;
+            }
+
+            var spriteRenderer = GetSpriteRenderer(view);
+            var sequence = DOTween.Sequence()
+                .SetLink(view, LinkBehaviour.KillOnDestroy);
+
+            sequence.Join(view.transform.DOScale(Vector3.zero, duration).SetEase(ease));
+            if (spriteRenderer != null)
+            {
+                sequence.Join(spriteRenderer.DOFade(0f, duration));
+            }
+
+            sequence.OnComplete(() => Destroy(view));
         }
 
         private LevelDefinition GetPreviewLevelDefinition()

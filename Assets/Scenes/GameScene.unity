@@ -426,6 +426,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7a37560103a58b47833df977526568c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Gameplay.Presentation.PrototypeLevelRunner
+  levelAsset: {fileID: 11400000, guid: dc668151586a8f248b4ba4a55676c33d, type: 2}
   levelDefinition:
     Width: 1
     Height: 1
@@ -441,7 +442,7 @@ MonoBehaviour:
       ReferenceId: greenhouse
       Scans: []
     Blockers: []
-  useBuiltInTestLevel: 1
+  useBuiltInTestLevel: 0
   flowerRoot: {fileID: 0}
   conveyorRoot: {fileID: 0}
   launchColumnRoot: {fileID: 0}
@@ -449,12 +450,32 @@ MonoBehaviour:
   flowerPrefab: {fileID: 5368418634375939031, guid: 29a86fa82df68bf4bac343d345f2c3e2, type: 3}
   potPrefab: {fileID: 4642651209154013768, guid: b87949f183ded304f9e22a483f3bd7f4, type: 3}
   waitingSlotPrefab: {fileID: 5285070803088800921, guid: 27c0a2545eff339458b82f931ce06c6e, type: 3}
-  flowerOrigin: {x: -1, y: 0}
-  launchOrigin: {x: -1, y: -3.5}
-  waitingOrigin: {x: -1, y: -2.35}
-  cellSize: 0.8
-  potSpacing: 0.75
-  conveyorStepSeconds: 0.45
+  flowerOrigin: {x: -1.54, y: 0}
+  launchOrigin: {x: -0.87, y: -2.53}
+  waitingOrigin: {x: -1.96, y: -1.04}
+  cellSize: 0.4
+  maxBoardWorldSize: 4
+  flowerScaleMultiplier: 0.92
+  potVisualSize: 0.64
+  waitingSlotVisualSize: 0.92
+  potSpacing: 0.98
+  queuedPotVerticalSpacing: 0.8972
+  minimumVisualGap: 0.06
+  conveyorStepSeconds: 0.21
+  autoFitCamera: 0
+  cameraPadding: 0.6
+  conveyorMoveSeconds: 0.21
+  launchMoveSeconds: 0.38
+  waitingMoveSeconds: 0.35
+  flowerFlySeconds: 0.22
+  potDisappearSeconds: 0.24
+  flowerFlyArcHeight: 0.35
+  launchMoveEase: 9
+  waitingMoveEase: 9
+  flowerFlyEase: 8
+  potDisappearEase: 26
+  showLayoutGizmos: 1
+  showVisualFootprintGizmos: 1
 --- !u!4 &2060034846
 Transform:
   m_ObjectHideFlags: 0
