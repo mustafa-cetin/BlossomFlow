@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for agents and contributors working in this Unity project. The codebase uses the Reflex dependency inversion framework in `Assets/Reflex`, and gameplay/application code should follow Reflex conventions instead of creating service dependencies directly.
+Guidance for agents and contributors working in this Unity project. The codebase uses the Reflex dependency inversion framework in `Assets/Reflex`, and gameplay/application code should follow Reflex conventions instead of creating service dependencies directly. Never compile.
 
 ## Dependency Inversion Rules
 
@@ -10,6 +10,18 @@ Guidance for agents and contributors working in this Unity project. The codebase
 - Do not use service locators, global mutable singletons, or ad hoc `new` calls for dependencies that should be controlled by the container.
 - Keep Unity object lookup APIs (`FindObjectOfType`, `GameObject.Find`, scene-wide tag searches) out of business/gameplay logic unless the object is truly scene-local presentation state.
 - Keep constructors and injected methods lightweight. Avoid doing heavy Unity work during injection itself.
+
+## SOLID, Loose Coupling, and High Cohesion
+
+- Follow SOLID across all gameplay and application code.
+- Single Responsibility Principle (SRP): keep each class focused on one reason to change. Split input, domain logic, persistence, and presentation into separate types.
+- Open/Closed Principle (OCP): extend behavior with new implementations, strategies, or handlers instead of modifying stable core flow classes.
+- Liskov Substitution Principle (LSP): derived types and interface implementations must preserve expected behavior and not weaken invariants.
+- Interface Segregation Principle (ISP): prefer small, focused interfaces over broad "god" interfaces.
+- Dependency Inversion Principle (DIP): high-level policies depend on abstractions, while low-level details are bound in installers.
+- Keep code loosely coupled: pass dependencies through constructor or `[Inject]` method injection, avoid hidden runtime lookups, and avoid direct cross-feature concrete type references.
+- Keep code highly cohesive: organize classes by feature responsibility, keep methods narrow in purpose, and colocate related behavior/state while extracting unrelated concerns.
+- Before adding a new class, verify whether it belongs to an existing feature boundary; if not, define a clear interface and register it in the appropriate installer.
 
 ## Reflex Scopes
 
@@ -125,7 +137,6 @@ public partial class EnemyView : MonoBehaviour
 - Runtime-created prefabs have a manual injection path.
 - Lifetimes match ownership and disposal expectations.
 - Scenes that require injection have exactly one `ContainerScope`.
-- New code compiles without requiring changes inside `Assets/Reflex`.
 
 ## Blossom Flow Project Notes
 

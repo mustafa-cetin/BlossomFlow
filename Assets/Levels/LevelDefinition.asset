@@ -264,7 +264,7 @@ MonoBehaviour:
       - Color: 3
         Capacity: 7
       - Color: 0
-        Capacity: 22
+        Capacity: 18
     - Pots:
       - Color: 1
         Capacity: 14
@@ -272,6 +272,14 @@ MonoBehaviour:
         Capacity: 9
       - Color: 2
         Capacity: 12
+      - Color: 0
+        Capacity: 1
+      - Color: 0
+        Capacity: 1
+      - Color: 0
+        Capacity: 1
+      - Color: 0
+        Capacity: 1
     - Pots:
       - Color: 2
         Capacity: 15

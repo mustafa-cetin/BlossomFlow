@@ -44,19 +44,24 @@ namespace BlossomFlow.Gameplay.Domain
 
             var scans = new List<ConveyorScan>();
 
-            for (var y = 0; y < gridHeight; y++)
+            for (var x = 0; x < gridWidth; x++)
             {
-                scans.Add(new ConveyorScan(ConveyorEdge.Left, y));
+                scans.Add(new ConveyorScan(ConveyorEdge.Bottom, x));
             }
 
-            for (var x = 0; x < gridWidth; x++)
+            for (var y = 1; y < gridHeight; y++)
+            {
+                scans.Add(new ConveyorScan(ConveyorEdge.Right, y));
+            }
+
+            for (var x = gridWidth - 2; x >= 0; x--)
             {
                 scans.Add(new ConveyorScan(ConveyorEdge.Top, x));
             }
 
-            for (var y = gridHeight - 1; y >= 0; y--)
+            for (var y = gridHeight - 2; y >= 0; y--)
             {
-                scans.Add(new ConveyorScan(ConveyorEdge.Right, y));
+                scans.Add(new ConveyorScan(ConveyorEdge.Left, y));
             }
 
             return new ConveyorPath(scans);
