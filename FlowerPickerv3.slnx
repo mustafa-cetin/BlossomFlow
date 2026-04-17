@@ -1,6 +1,7 @@
 ﻿<Solution>
   <Project Path="Reflex.csproj" />
   <Project Path="UnityEngine.UI.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="nickeltin.Core.Editor.csproj" />
   <Project Path="Reflex.Editor.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
@@ -9,5 +10,4 @@
   <Project Path="nickeltin.Core.Runtime.csproj" />
   <Project Path="nickeltin.ProjectSettings.Runtime.csproj" />
   <Project Path="nickeltin.ProjectSettings.Editor.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
 </Solution>
