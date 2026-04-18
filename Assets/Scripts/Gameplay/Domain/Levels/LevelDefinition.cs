@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BlossomFlow.Gameplay.Domain;
 
 namespace BlossomFlow.Gameplay.Domain.Levels
 {
@@ -8,6 +9,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
     public sealed class LevelDefinition
     {
         public const int DefaultLaunchColumnCount = 3;
+        public const int DefaultWaitingSlotCount = 5;
+        public const int DefaultConveyorMaxPots = ConveyorBelt.DefaultMaxPots;
 
         public LevelDefinition()
         {
@@ -17,7 +20,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             LaunchColumns = Enumerable.Range(0, DefaultLaunchColumnCount)
                 .Select(_ => new PotQueueColumnDefinition())
                 .ToArray();
-            WaitingSlotCount = 5;
+            WaitingSlotCount = DefaultWaitingSlotCount;
+            ConveyorMaxPots = DefaultConveyorMaxPots;
             ConveyorPath = new ConveyorPathDefinition();
             Blockers = Array.Empty<FlowerBlockerDefinition>();
         }
@@ -27,9 +31,10 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             int height,
             IEnumerable<FlowerCellDefinition> flowers,
             IEnumerable<IEnumerable<PotDefinition>> launchColumns,
-            int waitingSlotCount = 5,
+            int waitingSlotCount = DefaultWaitingSlotCount,
             ConveyorPathDefinition conveyorPath = null,
-            IEnumerable<FlowerBlockerDefinition> blockers = null)
+            IEnumerable<FlowerBlockerDefinition> blockers = null,
+            int conveyorMaxPots = DefaultConveyorMaxPots)
             : this(
                 width,
                 height,
@@ -38,7 +43,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                     .Select(column => new PotQueueColumnDefinition(column)),
                 waitingSlotCount,
                 conveyorPath,
-                blockers)
+                blockers,
+                conveyorMaxPots)
         {
         }
 
@@ -47,9 +53,10 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             int height,
             IEnumerable<FlowerCellDefinition> flowers,
             IEnumerable<PotQueueColumnDefinition> launchColumns,
-            int waitingSlotCount = 5,
+            int waitingSlotCount = DefaultWaitingSlotCount,
             ConveyorPathDefinition conveyorPath = null,
-            IEnumerable<FlowerBlockerDefinition> blockers = null)
+            IEnumerable<FlowerBlockerDefinition> blockers = null,
+            int conveyorMaxPots = DefaultConveyorMaxPots)
         {
             if (width <= 0)
             {
@@ -66,6 +73,11 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 throw new ArgumentOutOfRangeException(nameof(waitingSlotCount), "Waiting slot count must be greater than zero.");
             }
 
+            if (conveyorMaxPots <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(conveyorMaxPots), "Conveyor max pots must be greater than zero.");
+            }
+
             Width = width;
             Height = height;
             Flowers = (flowers ?? throw new ArgumentNullException(nameof(flowers))).ToArray();
@@ -73,6 +85,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 .Select(column => column ?? throw new ArgumentException("Launch columns cannot contain null entries.", nameof(launchColumns)))
                 .ToArray();
             WaitingSlotCount = waitingSlotCount;
+            ConveyorMaxPots = conveyorMaxPots;
             ConveyorPath = conveyorPath ?? new ConveyorPathDefinition("greenhouse");
             Blockers = (blockers ?? Enumerable.Empty<FlowerBlockerDefinition>()).ToArray();
             Validate();
@@ -83,6 +96,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
         public FlowerCellDefinition[] Flowers;
         public PotQueueColumnDefinition[] LaunchColumns;
         public int WaitingSlotCount;
+        public int ConveyorMaxPots;
         public ConveyorPathDefinition ConveyorPath;
         public FlowerBlockerDefinition[] Blockers;
 
@@ -106,6 +120,11 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             if (WaitingSlotCount <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(WaitingSlotCount), "Waiting slot count must be greater than zero.");
+            }
+
+            if (ConveyorMaxPots <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ConveyorMaxPots), "Conveyor max pots must be greater than zero.");
             }
 
             ValidateFlowers();

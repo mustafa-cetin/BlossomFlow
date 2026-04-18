@@ -163,10 +163,13 @@ namespace BlossomFlow.Gameplay.Presentation
             _session = _sessionFactory.Create(GetLevelDefinition());
             _session.LevelWon += OnLevelWon;
             _session.LevelFailed += OnLevelFailed;
+            _session.Conveyor.PotEntered += OnConveyorPotCountChanged;
+            _session.Conveyor.PotRemoved += OnConveyorPotCountChanged;
 
             presentationView.BindSession(_session);
             _session.Start();
             presentationView.BuildInitialViews();
+            PublishConveyorPotCount();
         }
 
         private void TickActivePots()
@@ -191,6 +194,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (!CanEnterConveyor())
             {
+                PublishConveyorEntryBlockedIfFull();
                 return;
             }
 
@@ -203,6 +207,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (!CanEnterConveyor())
             {
+                PublishConveyorEntryBlockedIfFull();
                 return;
             }
 
@@ -251,6 +256,44 @@ namespace BlossomFlow.Gameplay.Presentation
             Debug.Log($"Level failed: {reason}.");
         }
 
+        private void OnConveyorPotCountChanged(ConveyorBelt conveyor, ConveyorPot pot)
+        {
+            PublishConveyorPotCount(conveyor);
+        }
+
+        private void PublishConveyorPotCount()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            PublishConveyorPotCount(_session.Conveyor);
+        }
+
+        private void PublishConveyorPotCount(ConveyorBelt conveyor)
+        {
+            if (_eventPublisher == null || conveyor == null)
+            {
+                return;
+            }
+
+            _eventPublisher.Publish(new ConveyorPotCountChanged(conveyor.Pots.Count, conveyor.MaxPots));
+        }
+
+        private void PublishConveyorEntryBlockedIfFull()
+        {
+            if (_eventPublisher == null ||
+                _session == null ||
+                _session.State != LevelPlayState.Playing ||
+                _session.Conveyor.Pots.Count < _session.Conveyor.MaxPots)
+            {
+                return;
+            }
+
+            _eventPublisher.Publish(new ConveyorPotEntryBlocked(_session.Conveyor.Pots.Count, _session.Conveyor.MaxPots));
+        }
+
         public void RestartLevel()
         {
             if (_sessionFactory == null)
@@ -271,6 +314,8 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _session.LevelWon -= OnLevelWon;
             _session.LevelFailed -= OnLevelFailed;
+            _session.Conveyor.PotEntered -= OnConveyorPotCountChanged;
+            _session.Conveyor.PotRemoved -= OnConveyorPotCountChanged;
         }
     }
 }

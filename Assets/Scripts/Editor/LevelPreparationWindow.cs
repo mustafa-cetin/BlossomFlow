@@ -28,7 +28,8 @@ namespace BlossomFlow.Editor
         private LevelDefinitionAsset _asset;
         private int _width = 10;
         private int _height = 10;
-        private int _waitingSlotCount = 5;
+        private int _waitingSlotCount = LevelDefinition.DefaultWaitingSlotCount;
+        private int _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
         private CellBrush _brush = CellBrush.Red;
         private FlowerColor?[,] _flowers;
         private readonly List<PotDefinition>[] _launchColumns =
@@ -151,6 +152,7 @@ namespace BlossomFlow.Editor
                 var newWidth = EditorGUILayout.IntSlider("Grid Width", _width, MinGridSize, MaxGridSize);
                 var newHeight = EditorGUILayout.IntSlider("Grid Height", _height, MinGridSize, MaxGridSize);
                 _waitingSlotCount = Mathf.Max(1, EditorGUILayout.IntField("Waiting Slots", _waitingSlotCount));
+                _conveyorMaxPots = Mathf.Max(1, EditorGUILayout.IntField("Conveyor Max Pots", _conveyorMaxPots));
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -347,6 +349,9 @@ namespace BlossomFlow.Editor
             _width = Mathf.Clamp(definition.Width, MinGridSize, MaxGridSize);
             _height = Mathf.Clamp(definition.Height, MinGridSize, MaxGridSize);
             _waitingSlotCount = Mathf.Max(1, definition.WaitingSlotCount);
+            _conveyorMaxPots = definition.ConveyorMaxPots <= 0
+                ? LevelDefinition.DefaultConveyorMaxPots
+                : definition.ConveyorMaxPots;
             _flowers = new FlowerColor?[_width, _height];
 
             foreach (var flower in definition.Flowers ?? Array.Empty<FlowerCellDefinition>())
@@ -372,7 +377,8 @@ namespace BlossomFlow.Editor
             _asset = null;
             _width = 10;
             _height = 10;
-            _waitingSlotCount = 5;
+            _waitingSlotCount = LevelDefinition.DefaultWaitingSlotCount;
+            _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
             _flowers = new FlowerColor?[_width, _height];
 
             foreach (var column in _launchColumns)
@@ -425,6 +431,7 @@ namespace BlossomFlow.Editor
                 Width = _width,
                 Height = _height,
                 WaitingSlotCount = _waitingSlotCount,
+                ConveyorMaxPots = _conveyorMaxPots,
                 Flowers = BuildFlowers(),
                 LaunchColumns = _launchColumns
                     .Select(column => new PotQueueColumnDefinition(column))

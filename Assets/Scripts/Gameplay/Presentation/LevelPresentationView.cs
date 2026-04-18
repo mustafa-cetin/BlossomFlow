@@ -59,8 +59,11 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private float flowerFlySeconds = 0.22f;
         [SerializeField] private float potDisappearSeconds = 0.24f;
         [SerializeField] private float flowerFlyArcHeight = 0.35f;
+        [SerializeField] private float waitingPotPulseScale = 1.08f;
+        [SerializeField] private float waitingPotPulseSeconds = 0.55f;
         [SerializeField] private Ease launchMoveEase = Ease.OutCubic;
         [SerializeField] private Ease waitingMoveEase = Ease.OutCubic;
+        [SerializeField] private Ease waitingPotPulseEase = Ease.InOutSine;
         [SerializeField] private Ease flowerFlyEase = Ease.InCubic;
         [SerializeField] private Ease potDisappearEase = Ease.InBack;
 
@@ -71,6 +74,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private readonly Dictionary<FlowerCell, GameObject> _flowerViews = new();
         private readonly Dictionary<PotModel, GameObject> _potViews = new();
         private readonly Dictionary<int, GameObject> _waitingPotViews = new();
+        private readonly Dictionary<GameObject, Tween> _waitingPotPulseTweens = new();
         private readonly Dictionary<int, List<GameObject>> _launchColumnViews = new();
         private readonly Dictionary<FlowerCell, PotModel> _pendingFlowerTargets = new();
         private readonly Dictionary<PotModel, int> _collectedFlowerCounts = new();
@@ -142,6 +146,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _flowerViews.Clear();
             _potViews.Clear();
             _waitingPotViews.Clear();
+            _waitingPotPulseTweens.Clear();
             _launchColumnViews.Clear();
             _pendingFlowerTargets.Clear();
             _collectedFlowerCounts.Clear();
@@ -167,6 +172,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
+            StopWaitingPotPulse(view);
             SetColor(view, Color.black);
             view.transform.DOKill();
             view.transform.DOPunchRotation(new Vector3(0f, 0f, 18f), 0.35f, 8, 0.55f)
@@ -209,6 +215,8 @@ namespace BlossomFlow.Gameplay.Presentation
             flowerFlySeconds = Mathf.Max(0f, flowerFlySeconds);
             potDisappearSeconds = Mathf.Max(0f, potDisappearSeconds);
             flowerFlyArcHeight = Mathf.Max(0f, flowerFlyArcHeight);
+            waitingPotPulseScale = Mathf.Max(1f, waitingPotPulseScale);
+            waitingPotPulseSeconds = Mathf.Max(MinimumWorldSize, waitingPotPulseSeconds);
         }
 
         private void OnDrawGizmos()
@@ -467,6 +475,7 @@ namespace BlossomFlow.Gameplay.Presentation
             BindClick(potView, () => WaitingPotRecallRequested?.Invoke(slotIndex));
             _waitingPotViews[slotIndex] = potView;
             AnimatePotMove(potView, WaitingPotPosition(slotIndex), waitingMoveSeconds, waitingMoveEase);
+            StartWaitingPotPulse(potView);
         }
 
         private void OnWaitingPotRecalled(LevelSession session, PotModel pot, int slotIndex)
@@ -474,6 +483,7 @@ namespace BlossomFlow.Gameplay.Presentation
             if (_waitingPotViews.TryGetValue(slotIndex, out var waitingPotView))
             {
                 _waitingPotViews.Remove(slotIndex);
+                StopWaitingPotPulse(waitingPotView);
                 waitingPotView.transform.SetParent(conveyorRoot, true);
             }
         }
@@ -490,6 +500,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 _potViews.Remove(conveyorPot.Pot);
                 _collectedFlowerCounts.Remove(conveyorPot.Pot);
                 UntrackPotCounter(conveyorPot.Pot);
+                StopWaitingPotPulse(view);
                 AnimateDisappear(view, potDisappearSeconds, potDisappearEase);
             }
         }
@@ -766,11 +777,11 @@ namespace BlossomFlow.Gameplay.Presentation
             var maxX = Mathf.Max(
                 flowerOrigin.x + (_session.FlowerGrid.Width - 1) * _runtimeCellSize + conveyorGap,
                 launchOrigin.x + (_session.LaunchColumns.Count - 1) * _runtimePotSpacing + potVisualSize,
-                waitingOrigin.x + (_session.WaitingSlots.Capacity - 1) * _runtimePotSpacing + waitingSlotVisualSize);
+                waitingOrigin.x + waitingSlotVisualSize);
             var minY = Mathf.Min(
                 flowerOrigin.y - conveyorGap,
                 launchOrigin.y - Mathf.Max(0, maxQueueCount - 1) * _runtimeQueuedPotVerticalSpacing - potVisualSize,
-                waitingOrigin.y - waitingSlotVisualSize);
+                waitingOrigin.y - Mathf.Max(0, _session.WaitingSlots.Capacity - 1) * _runtimePotSpacing - waitingSlotVisualSize);
             var maxY = flowerOrigin.y + (_session.FlowerGrid.Height - 1) * _runtimeCellSize + conveyorGap;
 
             var center = new Vector3((minX + maxX) * 0.5f, (minY + maxY) * 0.5f, _camera.transform.position.z);
@@ -937,7 +948,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private Vector3 WaitingSlotPosition(int slotIndex)
         {
-            return new Vector3(waitingOrigin.x + slotIndex * _runtimePotSpacing, waitingOrigin.y, 0f);
+            return new Vector3(waitingOrigin.x, waitingOrigin.y - slotIndex * _runtimePotSpacing, 0f);
         }
 
         private Vector3 WaitingPotPosition(int slotIndex)
@@ -950,7 +961,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (!conveyorPot.TryGetCurrentScan(out var scan))
             {
-                return new Vector3(waitingOrigin.x + _session.WaitingSlots.Capacity * _runtimePotSpacing, waitingOrigin.y, 0f);
+                return new Vector3(waitingOrigin.x, waitingOrigin.y - _session.WaitingSlots.Capacity * _runtimePotSpacing, 0f);
             }
 
             return ConveyorScanPosition(scan, _session.FlowerGrid.Width, _session.FlowerGrid.Height, _runtimeCellSize);
@@ -987,6 +998,43 @@ namespace BlossomFlow.Gameplay.Presentation
         private void AnimateConveyorPotMove(GameObject view, ConveyorPot conveyorPot, float duration, Ease ease)
         {
             AnimatePotMove(view, ConveyorPosition(conveyorPot), duration, ease);
+        }
+
+        private void StartWaitingPotPulse(GameObject view)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            StopWaitingPotPulse(view);
+
+            var baseScale = GetVisualScale(view, potVisualSize);
+            view.transform.localScale = baseScale;
+            var pulseTween = view.transform
+                .DOScale(baseScale * waitingPotPulseScale, waitingPotPulseSeconds)
+                .SetDelay(waitingMoveSeconds)
+                .SetEase(waitingPotPulseEase)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetLink(view, LinkBehaviour.KillOnDestroy);
+
+            _waitingPotPulseTweens[view] = pulseTween;
+        }
+
+        private void StopWaitingPotPulse(GameObject view)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            if (_waitingPotPulseTweens.TryGetValue(view, out var pulseTween))
+            {
+                pulseTween.Kill();
+                _waitingPotPulseTweens.Remove(view);
+            }
+
+            view.transform.localScale = GetVisualScale(view, potVisualSize);
         }
 
         private void AnimatePotMove(GameObject view, Vector3 targetPosition, float duration, Ease ease)
@@ -1297,7 +1345,7 @@ namespace BlossomFlow.Gameplay.Presentation
             Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.75f);
             for (var slotIndex = 0; slotIndex < slotCount; slotIndex++)
             {
-                var position = new Vector3(waitingOrigin.x + slotIndex * previewPotSpacing, waitingOrigin.y, 0f);
+                var position = new Vector3(waitingOrigin.x, waitingOrigin.y - slotIndex * previewPotSpacing, 0f);
                 Gizmos.DrawWireCube(position, new Vector3(waitingSlotVisualSize, waitingSlotVisualSize, 0.01f));
 
                 if (showVisualFootprintGizmos)
@@ -1312,7 +1360,7 @@ namespace BlossomFlow.Gameplay.Presentation
             {
                 Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.35f);
                 var first = new Vector3(waitingOrigin.x, waitingOrigin.y, 0f);
-                var last = new Vector3(waitingOrigin.x + (slotCount - 1) * previewPotSpacing, waitingOrigin.y, 0f);
+                var last = new Vector3(waitingOrigin.x, waitingOrigin.y - (slotCount - 1) * previewPotSpacing, 0f);
                 Gizmos.DrawLine(first, last);
             }
         }

@@ -6,6 +6,8 @@ namespace BlossomFlow.Gameplay.Domain
 {
     public sealed class ConveyorBelt
     {
+        public const int DefaultMaxPots = 5;
+
         private readonly List<ConveyorPot> _pots = new();
 
         public event Action<ConveyorBelt, ConveyorPot> PotEntered;
@@ -15,7 +17,7 @@ namespace BlossomFlow.Gameplay.Domain
         public event Action<ConveyorBelt, ConveyorPot> PotReachedEnd;
         public event Action<ConveyorBelt, ConveyorPot> PotRemoved;
 
-        public ConveyorBelt(ConveyorPath path, int maxPots = 5)
+        public ConveyorBelt(ConveyorPath path, int maxPots = DefaultMaxPots)
         {
             if (maxPots <= 0)
             {

@@ -59,6 +59,9 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             definition.Width = Mathf.Max(1, definition.Width);
             definition.Height = Mathf.Max(1, definition.Height);
             definition.WaitingSlotCount = Mathf.Max(1, definition.WaitingSlotCount);
+            definition.ConveyorMaxPots = definition.ConveyorMaxPots <= 0
+                ? LevelDefinition.DefaultConveyorMaxPots
+                : definition.ConveyorMaxPots;
         }
     }
 }
