@@ -14,9 +14,12 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField] private TMP_Text goldText;
         [SerializeField] private TMP_Text countdownText;
 
+        private const float CountdownRefreshSeconds = 1f;
+
         private IMainMenuPlayerProgressService _progressService;
         private IEventSubscriber _eventSubscriber;
         private IDisposable _progressChangedSubscription;
+        private float _countdownRefreshTimer;
 
         [Inject]
         private void Construct(
@@ -35,7 +38,25 @@ namespace BlossomFlow.MainMenu.Presentation
 
         private void OnEnable()
         {
+            _countdownRefreshTimer = 0f;
             Subscribe();
+            Refresh();
+        }
+
+        private void Update()
+        {
+            if (_progressService == null)
+            {
+                return;
+            }
+
+            _countdownRefreshTimer += Time.unscaledDeltaTime;
+            if (_countdownRefreshTimer < CountdownRefreshSeconds)
+            {
+                return;
+            }
+
+            _countdownRefreshTimer = 0f;
             Refresh();
         }
 

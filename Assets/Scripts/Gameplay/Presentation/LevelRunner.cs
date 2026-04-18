@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
+using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using UnityEngine;
 
@@ -26,6 +27,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private ILevelSessionFactory _sessionFactory;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
+        private IMainMenuPlayerProgressService _progressService;
         private IDisposable _restartRequestedSubscription;
         private LevelSession _session;
         private float _stepTimer;
@@ -39,11 +41,13 @@ namespace BlossomFlow.Gameplay.Presentation
         protected void Construct(
             ILevelSessionFactory sessionFactory,
             IEventPublisher eventPublisher,
-            IEventSubscriber eventSubscriber)
+            IEventSubscriber eventSubscriber,
+            IMainMenuPlayerProgressService progressService)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
+            _progressService = progressService;
         }
 
         private void Awake()
@@ -241,6 +245,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnLevelFailed(LevelSession session, LevelFailureReason reason, PotModel failedPot)
         {
+            _progressService?.TryConsumeLife();
             presentationView.ShowFailResolution(failedPot);
             _eventPublisher.Publish(new LevelFailureScreenRequested());
             Debug.Log($"Level failed: {reason}.");

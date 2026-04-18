@@ -83,7 +83,14 @@ namespace BlossomFlow.MainMenu.Presentation
                 return;
             }
 
-            _eventPublisher.Publish(new MainMenuPlayRequested(_progressService.Current.LevelNumber));
+            var progress = _progressService.Current;
+            if (progress.CurrentLives <= 0)
+            {
+                RefreshLabel();
+                return;
+            }
+
+            _eventPublisher.Publish(new MainMenuPlayRequested(progress.LevelNumber));
         }
 
         private void Subscribe()
@@ -98,12 +105,21 @@ namespace BlossomFlow.MainMenu.Presentation
 
         private void RefreshLabel()
         {
-            if (labelText == null || _progressService == null)
+            if (_progressService == null)
             {
                 return;
             }
 
-            labelText.text = string.Format(labelFormat, _progressService.Current.LevelNumber);
+            var progress = _progressService.Current;
+            if (labelText != null)
+            {
+                labelText.text = string.Format(labelFormat, progress.LevelNumber);
+            }
+
+            if (_button != null)
+            {
+                _button.interactable = progress.CurrentLives > 0;
+            }
         }
 
         private void StartBreathing()
