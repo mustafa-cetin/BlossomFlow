@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
+  serializedVersion: 3
   tags: []
   layers:
   - Default
@@ -38,6 +38,20 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: conveyor
+    uniqueID: 2124406361
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: waitingslot
+    uniqueID: 1808201781
+    locked: 0
+  - name: pot
+    uniqueID: 1220166289
+    locked: 0
+  - name: flower
+    uniqueID: 1941532539
+    locked: 0
+  m_RenderingLayers:
+  - Default

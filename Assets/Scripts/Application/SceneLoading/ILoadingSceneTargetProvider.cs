@@ -2,7 +2,7 @@ namespace BlossomFlow.Application.SceneLoading
 {
     public interface ILoadingSceneTargetProvider
     {
-        bool TryGetPendingTargetScene(out string targetSceneName);
+        bool TryGetTarget(out LoadingSceneTarget target);
         void ClearPendingTargetScene();
     }
 }

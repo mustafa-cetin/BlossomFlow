@@ -1,5 +1,8 @@
 using System;
+using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.SceneLoading;
+using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
 using Reflex.Attributes;
 using TMPro;
@@ -16,6 +19,7 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("Content")]
         [SerializeField] private GameObject panelRoot;
         [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text rewardAmountText;
         [SerializeField] private Image rewardImage;
         [FormerlySerializedAs("restartButton")]
         [SerializeField] private Button claimButton;
@@ -23,6 +27,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         [Header("Copy")]
         [SerializeField] private string title = "Victory";
+        [SerializeField] private string rewardAmountFormat = "+{0}";
 
         [Header("Animation")]
         [SerializeField] private float panelFadeSeconds = 0.24f;
@@ -36,6 +41,8 @@ namespace BlossomFlow.Gameplay.Presentation
 
         [Header("State")]
         [SerializeField] private bool hideOnAwake = true;
+        [SerializeField] private int victoryGoldReward = 50;
+        [SerializeField] private string mainMenuSceneName = "MainMenuScene";
 
         private CanvasGroup _canvasGroup;
         private RectTransform _titleRectTransform;
@@ -44,16 +51,26 @@ namespace BlossomFlow.Gameplay.Presentation
         private Vector3 _claimButtonVisibleScale;
         private Vector3 _doubleRewardButtonVisibleScale;
         private Sequence _showSequence;
-        private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
+        private IMainMenuPlayerProgressService _progressService;
+        private IRewardedAdService _rewardedAdService;
+        private ISceneTransitionService _sceneTransitionService;
         private IDisposable _victoryScreenRequestedSubscription;
         private IDisposable _levelRestartedSubscription;
+        private bool _rewardClaimed;
+        private bool _rewardedAdInProgress;
 
         [Inject]
-        private void Construct(IEventPublisher eventPublisher, IEventSubscriber eventSubscriber)
+        private void Construct(
+            IEventSubscriber eventSubscriber,
+            IMainMenuPlayerProgressService progressService,
+            IRewardedAdService rewardedAdService,
+            ISceneTransitionService sceneTransitionService)
         {
-            _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
+            _progressService = progressService;
+            _rewardedAdService = rewardedAdService;
+            _sceneTransitionService = sceneTransitionService;
 
             if (isActiveAndEnabled)
             {
@@ -69,7 +86,9 @@ namespace BlossomFlow.Gameplay.Presentation
             _rewardVisibleScale = rewardImage != null ? rewardImage.transform.localScale : Vector3.one;
             _claimButtonVisibleScale = claimButton != null ? claimButton.transform.localScale : Vector3.one;
             _doubleRewardButtonVisibleScale = doubleRewardButton != null ? doubleRewardButton.transform.localScale : Vector3.one;
+            EnsureRewardAmountText();
             ApplyCopy(title);
+            RefreshRewardAmount(victoryGoldReward);
 
             if (hideOnAwake)
             {
@@ -81,12 +100,12 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (claimButton != null)
             {
-                claimButton.onClick.AddListener(RequestRestart);
+                claimButton.onClick.AddListener(ClaimReward);
             }
 
             if (doubleRewardButton != null)
             {
-                doubleRewardButton.onClick.AddListener(RequestRestart);
+                doubleRewardButton.onClick.AddListener(ClaimDoubleReward);
             }
 
             SubscribeToResolutionEvents();
@@ -96,12 +115,12 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (claimButton != null)
             {
-                claimButton.onClick.RemoveListener(RequestRestart);
+                claimButton.onClick.RemoveListener(ClaimReward);
             }
 
             if (doubleRewardButton != null)
             {
-                doubleRewardButton.onClick.RemoveListener(RequestRestart);
+                doubleRewardButton.onClick.RemoveListener(ClaimDoubleReward);
             }
 
             KillShowSequence();
@@ -110,7 +129,11 @@ namespace BlossomFlow.Gameplay.Presentation
 
         public void Show()
         {
+            _rewardClaimed = false;
+            _rewardedAdInProgress = false;
             ApplyCopy(title);
+            RefreshRewardAmount(victoryGoldReward);
+            SetButtonsInteractable(true);
             PlayShowAnimation();
         }
 
@@ -125,9 +148,52 @@ namespace BlossomFlow.Gameplay.Presentation
             SetVisible(false, true);
         }
 
-        public void RequestRestart()
+        private void ClaimReward()
         {
-            _eventPublisher?.Publish(new LevelRestartRequested());
+            GrantRewardAndReturnToMainMenu(victoryGoldReward);
+        }
+
+        private void ClaimDoubleReward()
+        {
+            if (_rewardClaimed || _rewardedAdInProgress)
+            {
+                return;
+            }
+
+            if (_rewardedAdService == null)
+            {
+                Debug.LogWarning("Rewarded ad service is not available.");
+                return;
+            }
+
+            _rewardedAdInProgress = true;
+            SetButtonsInteractable(false);
+            _rewardedAdService.ShowRewardedAd(
+                () => GrantRewardAndReturnToMainMenu(victoryGoldReward * 2),
+                () =>
+                {
+                    _rewardedAdInProgress = false;
+                    SetButtonsInteractable(true);
+                });
+        }
+
+        private void GrantRewardAndReturnToMainMenu(int goldAmount)
+        {
+            if (_rewardClaimed)
+            {
+                return;
+            }
+
+            _rewardClaimed = true;
+            _rewardedAdInProgress = false;
+            SetButtonsInteractable(false);
+            _progressService?.AddGoldAndAdvanceLevel(goldAmount);
+            ReturnToMainMenu();
+        }
+
+        private void OnValidate()
+        {
+            victoryGoldReward = Mathf.Max(0, victoryGoldReward);
         }
 
         private void ApplyCopy(string nextTitle)
@@ -135,6 +201,71 @@ namespace BlossomFlow.Gameplay.Presentation
             if (titleText != null)
             {
                 titleText.text = nextTitle;
+            }
+        }
+
+        private void ReturnToMainMenu()
+        {
+            if (_sceneTransitionService == null)
+            {
+                Debug.LogWarning("Scene transition service is not available.");
+                return;
+            }
+
+            _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
+        }
+
+        private void RefreshRewardAmount(int goldAmount)
+        {
+            if (rewardAmountText != null)
+            {
+                rewardAmountText.text = string.Format(rewardAmountFormat, goldAmount);
+            }
+        }
+
+        private void EnsureRewardAmountText()
+        {
+            if (rewardAmountText != null || rewardImage == null)
+            {
+                return;
+            }
+
+            var rewardAmountObject = new GameObject(
+                "RewardAmountText",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI));
+            rewardAmountObject.transform.SetParent(rewardImage.transform, false);
+
+            var rectTransform = rewardAmountObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = new Vector2(0f, -64f);
+            rectTransform.sizeDelta = new Vector2(240f, 96f);
+
+            rewardAmountText = rewardAmountObject.GetComponent<TextMeshProUGUI>();
+            rewardAmountText.alignment = TextAlignmentOptions.Center;
+            rewardAmountText.color = Color.white;
+            rewardAmountText.fontSize = 64f;
+            rewardAmountText.raycastTarget = false;
+
+            if (titleText != null)
+            {
+                rewardAmountText.font = titleText.font;
+            }
+        }
+
+        private void SetButtonsInteractable(bool interactable)
+        {
+            if (claimButton != null)
+            {
+                claimButton.interactable = interactable;
+            }
+
+            if (doubleRewardButton != null)
+            {
+                doubleRewardButton.interactable = interactable;
             }
         }
 
