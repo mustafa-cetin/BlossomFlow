@@ -8,8 +8,9 @@
   <Project Path="nickeltin.DebugPanel.Editor.csproj" />
   <Project Path="nickeltin.DebugPanel.Runtime.csproj" />
   <Project Path="nickeltin.Core.Runtime.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="CrazyGamesDefineManager.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="nickeltin.ProjectSettings.Runtime.csproj" />
   <Project Path="nickeltin.ProjectSettings.Editor.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

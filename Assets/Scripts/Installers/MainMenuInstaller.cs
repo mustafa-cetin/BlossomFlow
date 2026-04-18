@@ -1,16 +1,39 @@
+using BlossomFlow.Application.SceneLoading;
+using BlossomFlow.MainMenu.Domain;
+using BlossomFlow.MainMenu.Presentation;
+using Reflex.Core;
+using Reflex.Enums;
 using UnityEngine;
+using Resolution = Reflex.Enums.Resolution;
 
-public class MainMenuInstaller : MonoBehaviour
+public class MainMenuInstaller : MonoBehaviour, IInstaller
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [SerializeField] private string levelSceneName = "GameScene";
 
-    // Update is called once per frame
-    void Update()
+    public void InstallBindings(ContainerBuilder builder)
     {
-        
+        builder.RegisterType(
+            typeof(MainMenuNavigator),
+            new[] { typeof(IMainMenuNavigator) },
+            Lifetime.Scoped,
+            Resolution.Eager);
+
+        builder.RegisterType(
+            typeof(MainMenuPlayerProgressService),
+            new[] { typeof(IMainMenuPlayerProgressService) },
+            Lifetime.Scoped,
+            Resolution.Eager);
+
+        builder.RegisterFactory(
+            container => new UnityLevelSceneLoader(levelSceneName, container.Resolve<ISceneTransitionService>()),
+            new[] { typeof(ILevelSceneLoader) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(MainMenuPlayController),
+            new[] { typeof(MainMenuPlayController) },
+            Lifetime.Scoped,
+            Resolution.Eager);
     }
 }
