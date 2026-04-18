@@ -139,6 +139,25 @@ namespace BlossomFlow.Gameplay.Domain
             return conveyorPot;
         }
 
+        public bool TryReenterReachedEndPot(PotModel pot)
+        {
+            var conveyorPot = GetPot(pot);
+            if (!conveyorPot.HasReachedEnd)
+            {
+                throw new InvalidOperationException("Pot has not reached the conveyor end.");
+            }
+
+            if (IsPathIndexOccupied(0))
+            {
+                return false;
+            }
+
+            _pots.Remove(conveyorPot);
+            PotRemoved?.Invoke(this, conveyorPot);
+            AddPot(pot);
+            return true;
+        }
+
         public bool TryGetPot(PotModel pot, out ConveyorPot conveyorPot)
         {
             conveyorPot = _pots.FirstOrDefault(candidate => ReferenceEquals(candidate.Pot, pot));

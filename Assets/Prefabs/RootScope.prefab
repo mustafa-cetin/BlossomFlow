@@ -57,3 +57,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a01324e4f16dff448fe4c9781014f2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RootInstaller
+  loadingSceneName: LoadingScene
+  startupTargetSceneName: MainMenuScene
+  levelCatalog: {fileID: 11400000, guid: 19684b35e3e532842868724670d47654, type: 2}

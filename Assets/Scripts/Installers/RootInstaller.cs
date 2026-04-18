@@ -1,4 +1,5 @@
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.Levels;
 using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.Application.Ads;
 using BlossomFlow.MainMenu.Domain;
@@ -11,6 +12,7 @@ public class RootInstaller : MonoBehaviour, IInstaller
 {
     [SerializeField] private string loadingSceneName = "LoadingScene";
     [SerializeField] private string startupTargetSceneName = "MainMenuScene";
+    [SerializeField] private LevelCatalogAsset levelCatalog;
 
     public void InstallBindings(ContainerBuilder builder)
     {
@@ -31,6 +33,22 @@ public class RootInstaller : MonoBehaviour, IInstaller
             {
                 typeof(ISceneTransitionService),
                 typeof(ILoadingSceneTargetProvider)
+            },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            _ => new LevelCatalog(levelCatalog),
+            new[] { typeof(ILevelCatalog) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(LevelSelectionService),
+            new[]
+            {
+                typeof(ILevelSelectionWriter),
+                typeof(ICurrentLevelDefinitionProvider)
             },
             Lifetime.Singleton,
             Resolution.Lazy);

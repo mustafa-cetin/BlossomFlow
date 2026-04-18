@@ -425,6 +425,11 @@ namespace BlossomFlow.Gameplay.Presentation
             UpdateConveyorPotViews(null, GetConveyorMoveSeconds(), Ease.Linear);
         }
 
+        public void UpdateConveyorPotViews(float durationMultiplier)
+        {
+            UpdateConveyorPotViews(null, GetConveyorMoveSeconds() * Mathf.Max(0f, durationMultiplier), Ease.Linear);
+        }
+
         private void UpdateConveyorPotViews(PotModel animatedPot, float animatedDuration, Ease animatedEase)
         {
             foreach (var conveyorPot in _session.Conveyor.Pots)

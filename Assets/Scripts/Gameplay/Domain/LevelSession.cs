@@ -74,17 +74,54 @@ namespace BlossomFlow.Gameplay.Domain
             return pot;
         }
 
-        public IReadOnlyList<ConveyorPot> AdvanceConveyor()
+        public IReadOnlyList<ConveyorPot> AdvanceConveyor(bool reenterUnfinishedPotsAtEnd = false)
         {
             EnsurePlaying();
             var reachedEnd = Conveyor.Advance();
 
-            for (var i = 0; i < reachedEnd.Count && State == LevelPlayState.Playing; i++)
+            if (reenterUnfinishedPotsAtEnd)
             {
-                ResolvePotAtBeltEnd(reachedEnd[i].Pot, out _);
+                ReenterUnfinishedPotsAtBeltEnd();
+                return reachedEnd;
             }
 
+            ResolvePotsAtBeltEnd();
+
             return reachedEnd;
+        }
+
+        private void ResolvePotsAtBeltEnd()
+        {
+            var conveyorPots = new List<ConveyorPot>(Conveyor.Pots);
+            for (var i = 0; i < conveyorPots.Count && State == LevelPlayState.Playing; i++)
+            {
+                var conveyorPot = conveyorPots[i];
+                if (conveyorPot.HasReachedEnd && Conveyor.TryGetPot(conveyorPot.Pot, out _))
+                {
+                    ResolvePotAtBeltEnd(conveyorPot.Pot, out _);
+                }
+            }
+        }
+
+        private void ReenterUnfinishedPotsAtBeltEnd()
+        {
+            var conveyorPots = new List<ConveyorPot>(Conveyor.Pots);
+            for (var i = 0; i < conveyorPots.Count && State == LevelPlayState.Playing; i++)
+            {
+                var conveyorPot = conveyorPots[i];
+                if (!conveyorPot.HasReachedEnd || !Conveyor.TryGetPot(conveyorPot.Pot, out _))
+                {
+                    continue;
+                }
+
+                if (conveyorPot.Pot.IsFull)
+                {
+                    ResolvePotAtBeltEnd(conveyorPot.Pot, out _);
+                    continue;
+                }
+
+                Conveyor.TryReenterReachedEndPot(conveyorPot.Pot);
+            }
         }
 
         public bool TryCollectAtCurrentConveyorPosition(PotModel pot, out FlowerCell collected)

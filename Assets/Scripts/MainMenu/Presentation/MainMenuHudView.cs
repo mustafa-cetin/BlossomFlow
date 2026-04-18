@@ -15,6 +15,7 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField] private TMP_Text countdownText;
 
         private const float CountdownRefreshSeconds = 1f;
+        private const string MaxLivesCountdownText = "MAX";
 
         private IMainMenuPlayerProgressService _progressService;
         private IEventSubscriber _eventSubscriber;
@@ -86,7 +87,7 @@ namespace BlossomFlow.MainMenu.Presentation
             var progress = _progressService.Current;
             if (livesText != null)
             {
-                livesText.text = $"{progress.CurrentLives}/{progress.MaxLives}";
+                livesText.text = $"{progress.CurrentLives}";
             }
 
             if (goldText != null)
@@ -96,8 +97,9 @@ namespace BlossomFlow.MainMenu.Presentation
 
             if (countdownText != null)
             {
-                countdownText.text = progress.NextLifeCountdown;
-                countdownText.gameObject.SetActive(progress.HasLifeCountdown);
+                var hasMaxLives = progress.CurrentLives >= progress.MaxLives;
+                countdownText.text = hasMaxLives ? MaxLivesCountdownText : progress.NextLifeCountdown;
+                countdownText.gameObject.SetActive(hasMaxLives || progress.HasLifeCountdown);
             }
         }
     }

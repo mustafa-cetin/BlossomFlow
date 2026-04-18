@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.Levels;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
 using BlossomFlow.MainMenu.Domain;
@@ -16,11 +17,13 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("Level")]
         [SerializeField] private LevelDefinitionAsset levelAsset;
         [SerializeField] private LevelDefinition levelDefinition;
-        [SerializeField] private bool useBuiltInTestLevel = true;
+        [SerializeField] private bool useBuiltInTestLevel;
 
         [Header("Flow")]
         [SerializeField] private float conveyorStepSeconds = 0.45f;
         [SerializeField] private float conveyorEntryDelaySeconds = 0.45f;
+        [SerializeField] private bool fastForwardConveyorWhenQueuesEmpty = true;
+        [SerializeField] private float queueEmptyConveyorSpeedMultiplier = 3f;
         [SerializeField] private LevelPresentationView presentationView;
         [SerializeField] private LevelPointerInput pointerInput;
 
@@ -28,10 +31,12 @@ namespace BlossomFlow.Gameplay.Presentation
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
+        private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IDisposable _restartRequestedSubscription;
         private LevelSession _session;
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
+        private bool _isFastForwardingConveyor;
 
         private const float MinimumStepSeconds = 0.01f;
 
@@ -42,12 +47,14 @@ namespace BlossomFlow.Gameplay.Presentation
             ILevelSessionFactory sessionFactory,
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
-            IMainMenuPlayerProgressService progressService)
+            IMainMenuPlayerProgressService progressService,
+            ICurrentLevelDefinitionProvider currentLevelProvider)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
+            _currentLevelProvider = currentLevelProvider;
         }
 
         private void Awake()
@@ -99,6 +106,8 @@ namespace BlossomFlow.Gameplay.Presentation
                 _conveyorEntryDelayTimer = Mathf.Max(0f, _conveyorEntryDelayTimer - Time.deltaTime);
             }
 
+            RefreshConveyorFastForwardState();
+
             _stepTimer += Time.deltaTime;
             if (_stepTimer < GetCurrentConveyorStepSeconds())
             {
@@ -113,6 +122,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             conveyorStepSeconds = Mathf.Max(MinimumStepSeconds, conveyorStepSeconds);
             conveyorEntryDelaySeconds = Mathf.Max(0f, conveyorEntryDelaySeconds);
+            queueEmptyConveyorSpeedMultiplier = Mathf.Max(1f, queueEmptyConveyorSpeedMultiplier);
         }
 
         private void EnsureComponents()
@@ -138,6 +148,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private LevelDefinition GetLevelDefinition()
         {
+            if (_currentLevelProvider != null &&
+                _currentLevelProvider.TryGetCurrentLevelDefinition(out var selectedDefinition))
+            {
+                return selectedDefinition;
+            }
+
             if (useBuiltInTestLevel)
             {
                 return BuiltInPrototypeLevelDefinition.Create();
@@ -159,6 +175,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _stepTimer = 0f;
             _conveyorEntryDelayTimer = 0f;
+            _isFastForwardingConveyor = false;
 
             _session = _sessionFactory.Create(GetLevelDefinition());
             _session.LevelWon += OnLevelWon;
@@ -186,8 +203,8 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            _session.AdvanceConveyor();
-            presentationView.UpdateConveyorPotViews();
+            _session.AdvanceConveyor(IsConveyorFastForwardActive());
+            presentationView.UpdateConveyorPotViews(GetConveyorAnimationDurationMultiplier());
         }
 
         private void TryLaunchColumn(int columnIndex)
@@ -216,9 +233,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            var pot = _session.RecallWaitingPot(slotIndex);
-            StartConveyorEntryDelay();
-            presentationView.ShowRecalledPot(pot, slotIndex);
+            RecallWaitingPot(slotIndex, true);
         }
 
         private bool CanEnterConveyor()
@@ -231,9 +246,13 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private float GetCurrentConveyorStepSeconds()
         {
-            return presentationView != null
+            var stepSeconds = presentationView != null
                 ? Mathf.Max(MinimumStepSeconds, presentationView.GetGridScaledDuration(conveyorStepSeconds))
                 : conveyorStepSeconds;
+
+            return IsConveyorFastForwardActive()
+                ? Mathf.Max(MinimumStepSeconds, stepSeconds / GetQueueEmptyConveyorSpeedMultiplier())
+                : stepSeconds;
         }
 
         private void StartConveyorEntryDelay()
@@ -241,8 +260,78 @@ namespace BlossomFlow.Gameplay.Presentation
             _conveyorEntryDelayTimer = conveyorEntryDelaySeconds;
         }
 
+        private void RecallWaitingPot(int slotIndex, bool useEntryDelay)
+        {
+            if (!_session.WaitingSlots.TryGetPot(slotIndex, out _))
+            {
+                return;
+            }
+
+            var pot = _session.RecallWaitingPot(slotIndex);
+
+            if (useEntryDelay)
+            {
+                StartConveyorEntryDelay();
+            }
+
+            presentationView.ShowRecalledPot(pot, slotIndex);
+        }
+
+        private void RefreshConveyorFastForwardState()
+        {
+            _isFastForwardingConveyor = ShouldFastForwardConveyor();
+        }
+
+        private bool ShouldFastForwardConveyor()
+        {
+            return fastForwardConveyorWhenQueuesEmpty &&
+                _session != null &&
+                _session.State == LevelPlayState.Playing &&
+                AreLaunchColumnsEmpty() &&
+                _session.Conveyor.Pots.Count > 0 &&
+                _session.Conveyor.MaxPots > _session.WaitingSlots.OccupiedCount;
+        }
+
+        private bool IsConveyorFastForwardActive()
+        {
+            return _isFastForwardingConveyor &&
+                _session != null &&
+                _session.State == LevelPlayState.Playing;
+        }
+
+        private float GetConveyorAnimationDurationMultiplier()
+        {
+            return IsConveyorFastForwardActive()
+                ? 1f / GetQueueEmptyConveyorSpeedMultiplier()
+                : 1f;
+        }
+
+        private float GetQueueEmptyConveyorSpeedMultiplier()
+        {
+            return Mathf.Max(1f, queueEmptyConveyorSpeedMultiplier);
+        }
+
+        private bool AreLaunchColumnsEmpty()
+        {
+            if (_session == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _session.LaunchColumns.Count; i++)
+            {
+                if (_session.LaunchColumns[i].CanLaunch)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void OnLevelWon(LevelSession session)
         {
+            _isFastForwardingConveyor = false;
             presentationView.ShowWinResolution();
             _eventPublisher.Publish(new LevelVictoryScreenRequested());
             Debug.Log("Level won.");
@@ -250,6 +339,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnLevelFailed(LevelSession session, LevelFailureReason reason, PotModel failedPot)
         {
+            _isFastForwardingConveyor = false;
             _progressService?.TryConsumeLife();
             presentationView.ShowFailResolution(failedPot);
             _eventPublisher.Publish(new LevelFailureScreenRequested());

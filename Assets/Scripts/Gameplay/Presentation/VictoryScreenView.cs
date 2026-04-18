@@ -299,7 +299,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             AppendAppear(_showSequence, rewardImage != null ? rewardImage.gameObject : null, _rewardVisibleScale, rewardAppearSeconds, 0f);
             AppendAppear(_showSequence, claimButton != null ? claimButton.gameObject : null, _claimButtonVisibleScale, buttonAppearSeconds, 0f);
-            AppendAppear(_showSequence, doubleRewardButton != null ? doubleRewardButton.gameObject : null, _doubleRewardButtonVisibleScale, buttonAppearSeconds, buttonStaggerSeconds);
+            //AppendAppear(_showSequence, doubleRewardButton != null ? doubleRewardButton.gameObject : null, _doubleRewardButtonVisibleScale, buttonAppearSeconds, buttonStaggerSeconds);
 
             _showSequence.OnComplete(() =>
             {

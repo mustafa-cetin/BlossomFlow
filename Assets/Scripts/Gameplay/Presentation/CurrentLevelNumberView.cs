@@ -1,5 +1,6 @@
 using System;
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.Levels;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using TMPro;
@@ -16,16 +17,19 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private string levelFormat = DefaultLevelFormat;
 
         private IMainMenuPlayerProgressService _progressService;
+        private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IEventSubscriber _eventSubscriber;
         private IDisposable _progressChangedSubscription;
 
         [Inject]
         private void Construct(
             IMainMenuPlayerProgressService progressService,
-            IEventSubscriber eventSubscriber)
+            IEventSubscriber eventSubscriber,
+            ICurrentLevelDefinitionProvider currentLevelProvider)
         {
             _progressService = progressService;
             _eventSubscriber = eventSubscriber;
+            _currentLevelProvider = currentLevelProvider;
 
             if (isActiveAndEnabled)
             {
@@ -82,7 +86,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void Refresh()
         {
-            if (_progressService == null)
+            if (_progressService == null && _currentLevelProvider == null)
             {
                 return;
             }
@@ -93,7 +97,17 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            levelText.text = string.Format(GetLevelFormat(), _progressService.Current.LevelNumber);
+            levelText.text = string.Format(GetLevelFormat(), GetCurrentLevelNumber());
+        }
+
+        private int GetCurrentLevelNumber()
+        {
+            if (_currentLevelProvider != null)
+            {
+                return _currentLevelProvider.CurrentLevelNumber;
+            }
+
+            return _progressService != null ? _progressService.Current.LevelNumber : 1;
         }
 
         private void EnsureText()
