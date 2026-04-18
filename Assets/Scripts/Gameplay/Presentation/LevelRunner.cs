@@ -4,7 +4,6 @@ using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
-using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using UnityEngine;
 
@@ -30,9 +29,9 @@ namespace BlossomFlow.Gameplay.Presentation
         private ILevelSessionFactory _sessionFactory;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
-        private IMainMenuPlayerProgressService _progressService;
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IDisposable _restartRequestedSubscription;
+        private IDisposable _keepPlayingRequestedSubscription;
         private LevelSession _session;
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
@@ -47,13 +46,11 @@ namespace BlossomFlow.Gameplay.Presentation
             ILevelSessionFactory sessionFactory,
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
-            IMainMenuPlayerProgressService progressService,
             ICurrentLevelDefinitionProvider currentLevelProvider)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
-            _progressService = progressService;
             _currentLevelProvider = currentLevelProvider;
         }
 
@@ -74,6 +71,7 @@ namespace BlossomFlow.Gameplay.Presentation
             presentationView.LaunchColumnRequested += TryLaunchColumn;
             presentationView.WaitingPotRecallRequested += TryRecallWaitingPot;
             _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
+            _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
 
             StartLevelSession();
         }
@@ -90,6 +88,8 @@ namespace BlossomFlow.Gameplay.Presentation
             UnsubscribeSessionEvents();
             _restartRequestedSubscription?.Dispose();
             _restartRequestedSubscription = null;
+            _keepPlayingRequestedSubscription?.Dispose();
+            _keepPlayingRequestedSubscription = null;
         }
 
         private void Update()
@@ -340,7 +340,6 @@ namespace BlossomFlow.Gameplay.Presentation
         private void OnLevelFailed(LevelSession session, LevelFailureReason reason, PotModel failedPot)
         {
             _isFastForwardingConveyor = false;
-            _progressService?.TryConsumeLife();
             presentationView.ShowFailResolution(failedPot);
             _eventPublisher.Publish(new LevelFailureScreenRequested());
             Debug.Log($"Level failed: {reason}.");
@@ -393,6 +392,20 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _eventPublisher.Publish(new LevelRestarted());
             StartLevelSession();
+        }
+
+        private void TryKeepPlaying()
+        {
+            if (_session == null || !_session.TryContinueAfterWaitingOverflow())
+            {
+                return;
+            }
+
+            _stepTimer = 0f;
+            _conveyorEntryDelayTimer = 0f;
+            _isFastForwardingConveyor = false;
+            PublishConveyorPotCount();
+            _eventPublisher.Publish(new LevelKeepPlayingStarted());
         }
 
         private void UnsubscribeSessionEvents()

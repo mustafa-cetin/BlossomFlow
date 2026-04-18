@@ -11,6 +11,8 @@ namespace BlossomFlow.Gameplay.Domain
         public event Action<LevelSession, PotModel, int> WaitingPotPlaced;
         public event Action<LevelSession, PotModel, int> WaitingPotRecalled;
         public event Action<LevelSession, PotModel> WaitingOverflowed;
+        public event Action<LevelSession, WaitingSlot> TemporaryWaitingSlotCreated;
+        public event Action<LevelSession, int> TemporaryWaitingSlotRemoved;
         public event Action<LevelSession, LevelPlayState, LevelPlayState> StateChanged;
         public event Action<LevelSession> LevelWon;
         public event Action<LevelSession, LevelFailureReason, PotModel> LevelFailed;
@@ -21,6 +23,8 @@ namespace BlossomFlow.Gameplay.Domain
             WaitingSlots = waitingSlots ?? throw new ArgumentNullException(nameof(waitingSlots));
             _launchColumns = new List<PotQueueColumn>(launchColumns ?? throw new ArgumentNullException(nameof(launchColumns))).ToArray();
             Conveyor = conveyor ?? new ConveyorBelt(ConveyorPath.CreateGreenhousePath(FlowerGrid.Width, FlowerGrid.Height));
+            WaitingSlots.TemporarySlotCreated += OnTemporaryWaitingSlotCreated;
+            WaitingSlots.TemporarySlotRemoved += OnTemporaryWaitingSlotRemoved;
 
             if (_launchColumns.Length == 0)
             {
@@ -228,7 +232,6 @@ namespace BlossomFlow.Gameplay.Domain
                 return true;
             }
 
-            pot.Break();
             FailedPot = pot;
             FailureReason = LevelFailureReason.WaitingSlotsFull;
             TransitionTo(LevelPlayState.Failed);
@@ -236,6 +239,80 @@ namespace BlossomFlow.Gameplay.Domain
             LevelFailed?.Invoke(this, FailureReason, pot);
             waitingSlotIndex = -1;
             return false;
+        }
+
+        public bool TryContinueAfterWaitingOverflow()
+        {
+            if (State != LevelPlayState.Failed ||
+                FailureReason != LevelFailureReason.WaitingSlotsFull ||
+                FailedPot == null ||
+                FailedPot.IsTerminal)
+            {
+                return false;
+            }
+
+            if (!TryActivateOverflowRescue(FailedPot, out _))
+            {
+                return false;
+            }
+
+            FailedPot = null;
+            FailureReason = LevelFailureReason.None;
+            TransitionTo(LevelPlayState.Playing);
+            EvaluateWinCondition();
+            return true;
+        }
+
+        private bool TryActivateOverflowRescue(PotModel overflowPot, out int overflowPotSlotIndex)
+        {
+            overflowPotSlotIndex = -1;
+            if (!WaitingSlots.IsFull || Conveyor.Pots.Count == 0)
+            {
+                return false;
+            }
+
+            if (!WaitingSlots.TryMoveToTemporarySlot(
+                WaitingSlots.Capacity - 1,
+                out var relocatedWaitingPot,
+                out var relocatedTemporarySlotIndex))
+            {
+                return false;
+            }
+
+            WaitingPotRecalled?.Invoke(this, relocatedWaitingPot, WaitingSlots.Capacity - 1);
+            WaitingPotPlaced?.Invoke(this, relocatedWaitingPot, relocatedTemporarySlotIndex);
+
+            var conveyorPots = new List<ConveyorPot>(Conveyor.Pots);
+            for (var i = 0; i < conveyorPots.Count; i++)
+            {
+                var conveyorPot = conveyorPots[i];
+                if (!Conveyor.TryGetPot(conveyorPot.Pot, out _))
+                {
+                    continue;
+                }
+
+                var temporarySlotIndex = WaitingSlots.PlaceInTemporarySlot(conveyorPot.Pot);
+                Conveyor.RemovePot(conveyorPot.Pot);
+                _activePots.Remove(conveyorPot.Pot);
+                WaitingPotPlaced?.Invoke(this, conveyorPot.Pot, temporarySlotIndex);
+
+                if (ReferenceEquals(conveyorPot.Pot, overflowPot))
+                {
+                    overflowPotSlotIndex = temporarySlotIndex;
+                }
+            }
+
+            return true;
+        }
+
+        private void OnTemporaryWaitingSlotCreated(WaitingSlots waitingSlots, WaitingSlot slot)
+        {
+            TemporaryWaitingSlotCreated?.Invoke(this, slot);
+        }
+
+        private void OnTemporaryWaitingSlotRemoved(WaitingSlots waitingSlots, int slotIndex)
+        {
+            TemporaryWaitingSlotRemoved?.Invoke(this, slotIndex);
         }
 
         private void EnsureConveyorCanEnter()
@@ -296,7 +373,7 @@ namespace BlossomFlow.Gameplay.Domain
                 LevelPlayState.NotStarted => to == LevelPlayState.Playing,
                 LevelPlayState.Playing => to == LevelPlayState.Won || to == LevelPlayState.Failed,
                 LevelPlayState.Won => false,
-                LevelPlayState.Failed => false,
+                LevelPlayState.Failed => to == LevelPlayState.Playing,
                 _ => false
             };
         }
