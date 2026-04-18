@@ -4,6 +4,7 @@ using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
+using CrazyGames;
 using Reflex.Attributes;
 using UnityEngine;
 
@@ -36,6 +37,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
         private bool _isFastForwardingConveyor;
+        private bool _isGameplayReportedActive;
 
         private const float MinimumStepSeconds = 0.01f;
 
@@ -85,6 +87,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 presentationView.UnbindSession();
             }
 
+            NotifyGameplayStop();
             UnsubscribeSessionEvents();
             _restartRequestedSubscription?.Dispose();
             _restartRequestedSubscription = null;
@@ -169,6 +172,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void StartLevelSession()
         {
+            NotifyGameplayStop();
             UnsubscribeSessionEvents();
             presentationView.UnbindSession();
             presentationView.ClearViews();
@@ -185,6 +189,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             presentationView.BindSession(_session);
             _session.Start();
+            NotifyGameplayStartIfPlaying();
             presentationView.BuildInitialViews();
             PublishConveyorPotCount();
         }
@@ -289,7 +294,12 @@ namespace BlossomFlow.Gameplay.Presentation
                 _session.State == LevelPlayState.Playing &&
                 AreLaunchColumnsEmpty() &&
                 _session.Conveyor.Pots.Count > 0 &&
-                _session.Conveyor.MaxPots > _session.WaitingSlots.OccupiedCount;
+                IsWaitingAndConveyorPotCountAtWaitingCapacity();
+        }
+
+        private bool IsWaitingAndConveyorPotCountAtWaitingCapacity()
+        {
+            return _session.WaitingSlots.OccupiedCount + _session.Conveyor.Pots.Count <= _session.WaitingSlots.Capacity;
         }
 
         private bool IsConveyorFastForwardActive()
@@ -332,6 +342,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private void OnLevelWon(LevelSession session)
         {
             _isFastForwardingConveyor = false;
+            NotifyGameplayStop();
             presentationView.ShowWinResolution();
             _eventPublisher.Publish(new LevelVictoryScreenRequested());
             Debug.Log("Level won.");
@@ -340,6 +351,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private void OnLevelFailed(LevelSession session, LevelFailureReason reason, PotModel failedPot)
         {
             _isFastForwardingConveyor = false;
+            NotifyGameplayStop();
             presentationView.ShowFailResolution(failedPot);
             _eventPublisher.Publish(new LevelFailureScreenRequested());
             Debug.Log($"Level failed: {reason}.");
@@ -405,7 +417,39 @@ namespace BlossomFlow.Gameplay.Presentation
             _conveyorEntryDelayTimer = 0f;
             _isFastForwardingConveyor = false;
             PublishConveyorPotCount();
+            NotifyGameplayStartIfPlaying();
             _eventPublisher.Publish(new LevelKeepPlayingStarted());
+        }
+
+        private void NotifyGameplayStartIfPlaying()
+        {
+            if (_session == null || _session.State != LevelPlayState.Playing || _isGameplayReportedActive)
+            {
+                return;
+            }
+
+            if (!CrazySDK.IsAvailable || !CrazySDK.IsInitialized)
+            {
+                return;
+            }
+
+            CrazySDK.Game.GameplayStart();
+            _isGameplayReportedActive = true;
+        }
+
+        private void NotifyGameplayStop()
+        {
+            if (!_isGameplayReportedActive)
+            {
+                return;
+            }
+
+            if (CrazySDK.IsAvailable && CrazySDK.IsInitialized)
+            {
+                CrazySDK.Game.GameplayStop();
+            }
+
+            _isGameplayReportedActive = false;
         }
 
         private void UnsubscribeSessionEvents()

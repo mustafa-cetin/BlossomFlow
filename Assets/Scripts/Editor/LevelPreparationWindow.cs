@@ -32,6 +32,14 @@ namespace BlossomFlow.Editor
         private int _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
         private CellBrush _brush = CellBrush.Red;
         private FlowerColor?[,] _flowers;
+        private string _importText = DefaultImportText;
+        private string _importMessage = "Paste level text, then import it into the working level.";
+        private MessageType _importMessageType = MessageType.Info;
+        private int _randomQueuePotsPerColumn = 4;
+        private bool _useRandomQueueSeed;
+        private int _randomQueueSeed;
+        private string _randomQueueMessage = "Build random queues from the current flower grid.";
+        private MessageType _randomQueueMessageType = MessageType.Info;
         private readonly List<PotDefinition>[] _launchColumns =
         {
             new(),
@@ -41,6 +49,21 @@ namespace BlossomFlow.Editor
         private Vector2 _scroll;
         private string _validationMessage = "No level loaded.";
         private MessageType _validationType = MessageType.Info;
+
+        private const string DefaultImportText =
+            "size 5x3\n" +
+            "waiting 5\n" +
+            "conveyor 6\n" +
+            "\n" +
+            "grid:\n" +
+            "R R Y B B\n" +
+            "R . Y B B\n" +
+            "P P U U W\n" +
+            "\n" +
+            "queues:\n" +
+            "1: R2, Y2\n" +
+            "2: B4, P2\n" +
+            "3: U2, W1";
 
         [MenuItem("Tools/Blossom Flow/Level Preparation")]
         public static void Open()
@@ -75,6 +98,8 @@ namespace BlossomFlow.Editor
             DrawAssetToolbar();
             EditorGUILayout.Space(8f);
             DrawLevelSettings();
+            EditorGUILayout.Space(8f);
+            DrawTextImport();
             EditorGUILayout.Space(8f);
             DrawPalette();
             EditorGUILayout.Space(8f);
@@ -162,6 +187,41 @@ namespace BlossomFlow.Editor
             }
         }
 
+        private void DrawTextImport()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Text Import", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "Format: size 5x3, waiting 5, conveyor 6, grid:, queues:. Colors: R Red, Y Yellow, B Blue, P Pink, U Purple, W White, . Empty.",
+                    MessageType.None);
+
+                _importText = EditorGUILayout.TextArea(_importText, GUILayout.MinHeight(130f));
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Import Text"))
+                    {
+                        ImportTextLevel(false);
+                    }
+
+                    if (GUILayout.Button("Import Text + Auto Queues"))
+                    {
+                        ImportTextLevel(true);
+                    }
+
+                    if (GUILayout.Button("Copy Current Level As Text"))
+                    {
+                        _importText = ExportWorkingLevelText();
+                        _importMessage = "Current working level copied into the import box.";
+                        _importMessageType = MessageType.Info;
+                    }
+                }
+
+                EditorGUILayout.HelpBox(_importMessage, _importMessageType);
+            }
+        }
+
         private void DrawPalette()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -242,6 +302,35 @@ namespace BlossomFlow.Editor
                         BuildQueuesFromFlowers();
                     }
                 }
+
+                EditorGUILayout.Space(8f);
+                DrawRandomQueueBuilder();
+            }
+        }
+
+        private void DrawRandomQueueBuilder()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Random Queue Builder", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "Creates random pot queues from the current grid while keeping every color capacity equal to its flower count.",
+                    MessageType.None);
+
+                _randomQueuePotsPerColumn = Mathf.Max(1, EditorGUILayout.IntField("Pots Per Queue", _randomQueuePotsPerColumn));
+                _useRandomQueueSeed = EditorGUILayout.Toggle("Use Seed", _useRandomQueueSeed);
+
+                using (new EditorGUI.DisabledScope(!_useRandomQueueSeed))
+                {
+                    _randomQueueSeed = EditorGUILayout.IntField("Seed", _randomQueueSeed);
+                }
+
+                if (GUILayout.Button("Build Random Queues From Grid"))
+                {
+                    BuildRandomQueuesFromFlowers();
+                }
+
+                EditorGUILayout.HelpBox(_randomQueueMessage, _randomQueueMessageType);
             }
         }
 
@@ -528,6 +617,184 @@ namespace BlossomFlow.Editor
             ValidateWorkingLevel();
         }
 
+        private void ImportTextLevel(bool forceAutoQueues)
+        {
+            try
+            {
+                var imported = ParseImportText(_importText);
+                _width = imported.Width;
+                _height = imported.Height;
+                _waitingSlotCount = imported.WaitingSlotCount;
+                _conveyorMaxPots = imported.ConveyorMaxPots;
+                _flowers = imported.Flowers;
+
+                foreach (var column in _launchColumns)
+                {
+                    column.Clear();
+                }
+
+                if (forceAutoQueues || !imported.HasQueues)
+                {
+                    BuildQueuesFromFlowers();
+                }
+                else
+                {
+                    for (var i = 0; i < _launchColumns.Length; i++)
+                    {
+                        _launchColumns[i].AddRange(imported.LaunchColumns[i]);
+                    }
+
+                    ValidateWorkingLevel();
+                }
+
+                _importMessage = forceAutoQueues
+                    ? "Imported grid and rebuilt queues from flower counts."
+                    : imported.HasQueues
+                        ? "Imported grid, settings, and queues."
+                        : "Imported grid and settings. Queues were rebuilt because no queues section was found.";
+                _importMessageType = MessageType.Info;
+            }
+            catch (Exception exception)
+            {
+                _importMessage = exception.Message;
+                _importMessageType = MessageType.Error;
+            }
+        }
+
+        private ImportedLevel ParseImportText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new ArgumentException("Import text is empty.");
+            }
+
+            int? declaredWidth = null;
+            int? declaredHeight = null;
+            var waitingSlotCount = _waitingSlotCount;
+            var conveyorMaxPots = _conveyorMaxPots;
+            var gridRows = new List<List<FlowerColor?>>();
+            var launchColumns = Enumerable.Range(0, LevelDefinition.DefaultLaunchColumnCount)
+                .Select(_ => new List<PotDefinition>())
+                .ToArray();
+            var hasQueues = false;
+            var section = ImportSection.Header;
+
+            var rawLines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+            for (var lineIndex = 0; lineIndex < rawLines.Length; lineIndex++)
+            {
+                var line = StripImportComment(rawLines[lineIndex]).Trim();
+                if (string.IsNullOrEmpty(line))
+                {
+                    continue;
+                }
+
+                if (IsSectionHeader(line, "grid"))
+                {
+                    section = ImportSection.Grid;
+                    continue;
+                }
+
+                if (IsSectionHeader(line, "queues"))
+                {
+                    section = ImportSection.Queues;
+                    hasQueues = true;
+                    continue;
+                }
+
+                if (section == ImportSection.Grid)
+                {
+                    gridRows.Add(ParseGridRow(line, lineIndex + 1));
+                    continue;
+                }
+
+                if (section == ImportSection.Queues)
+                {
+                    ParseQueueLine(line, lineIndex + 1, launchColumns);
+                    continue;
+                }
+
+                ParseImportSetting(line, lineIndex + 1, ref declaredWidth, ref declaredHeight, ref waitingSlotCount, ref conveyorMaxPots);
+            }
+
+            if (gridRows.Count == 0)
+            {
+                throw new ArgumentException("Import text must include a grid: section with at least one row.");
+            }
+
+            var width = declaredWidth ?? gridRows.Max(row => row.Count);
+            var height = declaredHeight ?? gridRows.Count;
+            width = ValidateImportSize(width, "width");
+            height = ValidateImportSize(height, "height");
+
+            if (gridRows.Count > height)
+            {
+                throw new ArgumentException($"Grid has {gridRows.Count} rows, but declared height is {height}.");
+            }
+
+            var flowers = new FlowerColor?[width, height];
+            for (var rowIndex = 0; rowIndex < gridRows.Count; rowIndex++)
+            {
+                var row = gridRows[rowIndex];
+                if (row.Count > width)
+                {
+                    throw new ArgumentException($"Grid row {rowIndex + 1} has {row.Count} cells, but width is {width}.");
+                }
+
+                var y = height - 1 - rowIndex;
+                for (var x = 0; x < row.Count; x++)
+                {
+                    flowers[x, y] = row[x];
+                }
+            }
+
+            waitingSlotCount = Mathf.Max(1, waitingSlotCount);
+            conveyorMaxPots = Mathf.Max(1, conveyorMaxPots);
+
+            return new ImportedLevel(
+                width,
+                height,
+                waitingSlotCount,
+                conveyorMaxPots,
+                flowers,
+                launchColumns,
+                hasQueues);
+        }
+
+        private string ExportWorkingLevelText()
+        {
+            var lines = new List<string>
+            {
+                $"size {_width}x{_height}",
+                $"waiting {_waitingSlotCount}",
+                $"conveyor {_conveyorMaxPots}",
+                string.Empty,
+                "grid:"
+            };
+
+            for (var y = _height - 1; y >= 0; y--)
+            {
+                var row = new List<string>(_width);
+                for (var x = 0; x < _width; x++)
+                {
+                    row.Add(FlowerColorToImportToken(_flowers[x, y]));
+                }
+
+                lines.Add(string.Join(" ", row));
+            }
+
+            lines.Add(string.Empty);
+            lines.Add("queues:");
+
+            for (var i = 0; i < _launchColumns.Length; i++)
+            {
+                var pots = _launchColumns[i]
+                    .Select(pot => $"{FlowerColorToImportToken(pot.Color)}{pot.Capacity}");
+                lines.Add($"{i + 1}: {string.Join(", ", pots)}");
+            }
+
+            return string.Join("\n", lines);
+        }
+
         private void BuildQueuesFromFlowers()
         {
             foreach (var column in _launchColumns)
@@ -551,6 +818,63 @@ namespace BlossomFlow.Editor
             ValidateWorkingLevel();
         }
 
+        private void BuildRandomQueuesFromFlowers()
+        {
+            try
+            {
+                var counts = GetFlowerCounts()
+                    .Where(pair => pair.Value > 0)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+                if (counts.Count == 0)
+                {
+                    throw new ArgumentException("Grid has no flowers. Paint or import flowers before building queues.");
+                }
+
+                var totalPots = _randomQueuePotsPerColumn * _launchColumns.Length;
+                var totalFlowers = counts.Sum(pair => pair.Value);
+
+                if (totalPots < counts.Count)
+                {
+                    throw new ArgumentException($"Need at least {counts.Count} total pots because the grid uses {counts.Count} colors. Increase Pots Per Queue.");
+                }
+
+                if (totalPots > totalFlowers)
+                {
+                    throw new ArgumentException($"Cannot create {totalPots} pots from {totalFlowers} flowers because every pot needs at least 1 capacity.");
+                }
+
+                var random = _useRandomQueueSeed ? new System.Random(_randomQueueSeed) : new System.Random();
+                var potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
+                var pots = BuildRandomPots(counts, potColorCounts, random);
+                Shuffle(pots, random);
+
+                foreach (var column in _launchColumns)
+                {
+                    column.Clear();
+                }
+
+                var potIndex = 0;
+                for (var columnIndex = 0; columnIndex < _launchColumns.Length; columnIndex++)
+                {
+                    for (var i = 0; i < _randomQueuePotsPerColumn; i++)
+                    {
+                        _launchColumns[columnIndex].Add(pots[potIndex]);
+                        potIndex++;
+                    }
+                }
+
+                ValidateWorkingLevel();
+                _randomQueueMessage = $"Built {_launchColumns.Length} queues with {_randomQueuePotsPerColumn} pots each.";
+                _randomQueueMessageType = MessageType.Info;
+            }
+            catch (Exception exception)
+            {
+                _randomQueueMessage = exception.Message;
+                _randomQueueMessageType = MessageType.Error;
+            }
+        }
+
         private int CountFlowers(FlowerColor color)
         {
             var count = 0;
@@ -568,6 +892,17 @@ namespace BlossomFlow.Editor
             return count;
         }
 
+        private Dictionary<FlowerColor, int> GetFlowerCounts()
+        {
+            var counts = new Dictionary<FlowerColor, int>();
+            foreach (FlowerColor color in Enum.GetValues(typeof(FlowerColor)))
+            {
+                counts[color] = CountFlowers(color);
+            }
+
+            return counts;
+        }
+
         private int CountPotCapacity(FlowerColor color)
         {
             return _launchColumns.Sum(column => column.Where(pot => pot.Color == color).Sum(pot => pot.Capacity));
@@ -581,6 +916,350 @@ namespace BlossomFlow.Editor
         private FlowerBlockerDefinition[] PreservedBlockers(LevelDefinitionAsset asset)
         {
             return asset != null ? asset.Definition.Blockers : Array.Empty<FlowerBlockerDefinition>();
+        }
+
+        private static Dictionary<FlowerColor, int> AllocateRandomPotCountsByColor(
+            IReadOnlyDictionary<FlowerColor, int> flowerCounts,
+            int totalPots,
+            System.Random random)
+        {
+            var potCounts = flowerCounts.ToDictionary(pair => pair.Key, _ => 1);
+            var remainingPots = totalPots - potCounts.Count;
+
+            while (remainingPots > 0)
+            {
+                var eligibleColors = flowerCounts
+                    .Where(pair => potCounts[pair.Key] < pair.Value)
+                    .Select(pair => pair.Key)
+                    .ToList();
+
+                if (eligibleColors.Count == 0)
+                {
+                    throw new ArgumentException("Could not allocate random pots for the current flower counts.");
+                }
+
+                var color = PickWeightedColor(eligibleColors, flowerCounts, random);
+                potCounts[color]++;
+                remainingPots--;
+            }
+
+            return potCounts;
+        }
+
+        private static List<PotDefinition> BuildRandomPots(
+            IReadOnlyDictionary<FlowerColor, int> flowerCounts,
+            IReadOnlyDictionary<FlowerColor, int> potColorCounts,
+            System.Random random)
+        {
+            var pots = new List<PotDefinition>();
+            foreach (var pair in flowerCounts)
+            {
+                var capacities = SplitCapacityRandomly(pair.Value, potColorCounts[pair.Key], random);
+                pots.AddRange(capacities.Select(capacity => new PotDefinition(pair.Key, capacity)));
+            }
+
+            return pots;
+        }
+
+        private static List<int> SplitCapacityRandomly(int totalCapacity, int potCount, System.Random random)
+        {
+            if (potCount <= 0 || totalCapacity < potCount)
+            {
+                throw new ArgumentException("Invalid pot split requested.");
+            }
+
+            var capacities = Enumerable.Repeat(1, potCount).ToList();
+            var remainingCapacity = totalCapacity - potCount;
+
+            while (remainingCapacity > 0)
+            {
+                capacities[random.Next(capacities.Count)]++;
+                remainingCapacity--;
+            }
+
+            Shuffle(capacities, random);
+            return capacities;
+        }
+
+        private static FlowerColor PickWeightedColor(
+            IReadOnlyList<FlowerColor> colors,
+            IReadOnlyDictionary<FlowerColor, int> weights,
+            System.Random random)
+        {
+            var totalWeight = colors.Sum(color => weights[color]);
+            var roll = random.Next(totalWeight);
+
+            foreach (var color in colors)
+            {
+                roll -= weights[color];
+                if (roll < 0)
+                {
+                    return color;
+                }
+            }
+
+            return colors[colors.Count - 1];
+        }
+
+        private static void Shuffle<T>(IList<T> values, System.Random random)
+        {
+            for (var i = values.Count - 1; i > 0; i--)
+            {
+                var swapIndex = random.Next(i + 1);
+                (values[i], values[swapIndex]) = (values[swapIndex], values[i]);
+            }
+        }
+
+        private static void ParseImportSetting(
+            string line,
+            int lineNumber,
+            ref int? declaredWidth,
+            ref int? declaredHeight,
+            ref int waitingSlotCount,
+            ref int conveyorMaxPots)
+        {
+            var parts = SplitSettingLine(line);
+            if (parts.Length < 2)
+            {
+                throw new ArgumentException($"Line {lineNumber}: expected a setting such as size 5x3, waiting 5, or conveyor 6.");
+            }
+
+            var key = parts[0].ToLowerInvariant();
+            var value = parts[1];
+
+            switch (key)
+            {
+                case "size":
+                    ParseSize(value, lineNumber, out declaredWidth, out declaredHeight);
+                    break;
+                case "waiting":
+                case "waitingslots":
+                case "waiting-slots":
+                    waitingSlotCount = ParsePositiveInt(value, lineNumber, key);
+                    break;
+                case "conveyor":
+                case "conveyormaxpots":
+                case "conveyor-max-pots":
+                    conveyorMaxPots = ParsePositiveInt(value, lineNumber, key);
+                    break;
+                default:
+                    throw new ArgumentException($"Line {lineNumber}: unknown setting '{parts[0]}'.");
+            }
+        }
+
+        private static string[] SplitSettingLine(string line)
+        {
+            return line
+                .Replace(":", " ")
+                .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private static void ParseSize(string value, int lineNumber, out int? width, out int? height)
+        {
+            var sizeParts = value.ToLowerInvariant().Split('x');
+            if (sizeParts.Length != 2 ||
+                !int.TryParse(sizeParts[0], out var parsedWidth) ||
+                !int.TryParse(sizeParts[1], out var parsedHeight))
+            {
+                throw new ArgumentException($"Line {lineNumber}: size must look like 5x3.");
+            }
+
+            width = parsedWidth;
+            height = parsedHeight;
+        }
+
+        private static int ParsePositiveInt(string value, int lineNumber, string label)
+        {
+            if (!int.TryParse(value, out var result) || result <= 0)
+            {
+                throw new ArgumentException($"Line {lineNumber}: {label} must be a positive number.");
+            }
+
+            return result;
+        }
+
+        private static List<FlowerColor?> ParseGridRow(string line, int lineNumber)
+        {
+            var tokens = TokenizeGridRow(line);
+            if (tokens.Length == 0)
+            {
+                throw new ArgumentException($"Line {lineNumber}: grid row is empty.");
+            }
+
+            var row = new List<FlowerColor?>(tokens.Length);
+            foreach (var token in tokens)
+            {
+                row.Add(ParseFlowerToken(token, lineNumber));
+            }
+
+            return row;
+        }
+
+        private static string[] TokenizeGridRow(string line)
+        {
+            var hasSeparators = line.Any(char.IsWhiteSpace) || line.Contains(",") || line.Contains(";");
+            if (hasSeparators)
+            {
+                return line
+                    .Split(new[] { ' ', '\t', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            }
+
+            return line.Select(character => character.ToString()).ToArray();
+        }
+
+        private static void ParseQueueLine(string line, int lineNumber, List<PotDefinition>[] launchColumns)
+        {
+            var separatorIndex = line.IndexOf(':');
+            if (separatorIndex < 0)
+            {
+                throw new ArgumentException($"Line {lineNumber}: queue line must look like 1: R2, Y2.");
+            }
+
+            var columnLabel = line.Substring(0, separatorIndex).Trim();
+            var columnIndex = ParseQueueColumnIndex(columnLabel, lineNumber);
+            var potText = line.Substring(separatorIndex + 1).Trim();
+            launchColumns[columnIndex].Clear();
+
+            if (string.IsNullOrEmpty(potText))
+            {
+                return;
+            }
+
+            var potTokens = potText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var potToken in potTokens)
+            {
+                launchColumns[columnIndex].Add(ParsePotToken(potToken.Trim(), lineNumber));
+            }
+        }
+
+        private static int ParseQueueColumnIndex(string columnLabel, int lineNumber)
+        {
+            var digits = new string(columnLabel.Where(char.IsDigit).ToArray());
+            if (!int.TryParse(digits, out var columnNumber) ||
+                columnNumber < 1 ||
+                columnNumber > LevelDefinition.DefaultLaunchColumnCount)
+            {
+                throw new ArgumentException($"Line {lineNumber}: queue column must be between 1 and {LevelDefinition.DefaultLaunchColumnCount}.");
+            }
+
+            return columnNumber - 1;
+        }
+
+        private static PotDefinition ParsePotToken(string token, int lineNumber)
+        {
+            var normalized = token.Replace(":", " ").Trim();
+            var split = normalized.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length == 2)
+            {
+                return new PotDefinition(
+                    ParseRequiredFlowerColor(split[0], lineNumber),
+                    ParsePositiveInt(split[1], lineNumber, "pot capacity"));
+            }
+
+            var compact = normalized.Replace(" ", string.Empty);
+            var firstDigitIndex = compact.IndexOfAny("0123456789".ToCharArray());
+            if (firstDigitIndex <= 0 || firstDigitIndex >= compact.Length)
+            {
+                throw new ArgumentException($"Line {lineNumber}: pot token '{token}' must look like R2 or Red 2.");
+            }
+
+            var colorToken = compact.Substring(0, firstDigitIndex);
+            var capacityToken = compact.Substring(firstDigitIndex);
+            return new PotDefinition(
+                ParseRequiredFlowerColor(colorToken, lineNumber),
+                ParsePositiveInt(capacityToken, lineNumber, "pot capacity"));
+        }
+
+        private static FlowerColor? ParseFlowerToken(string token, int lineNumber)
+        {
+            var normalized = token.Trim().ToLowerInvariant();
+            if (normalized == "." || normalized == "-" || normalized == "_" || normalized == "empty" || normalized == "e")
+            {
+                return null;
+            }
+
+            return ParseRequiredFlowerColor(token, lineNumber);
+        }
+
+        private static FlowerColor ParseRequiredFlowerColor(string token, int lineNumber)
+        {
+            var normalized = token.Trim().ToLowerInvariant();
+            switch (normalized)
+            {
+                case "r":
+                case "red":
+                    return FlowerColor.Red;
+                case "y":
+                case "yellow":
+                    return FlowerColor.Yellow;
+                case "b":
+                case "blue":
+                    return FlowerColor.Blue;
+                case "p":
+                case "pink":
+                    return FlowerColor.Pink;
+                case "u":
+                case "purple":
+                    return FlowerColor.Purple;
+                case "w":
+                case "white":
+                    return FlowerColor.White;
+                default:
+                    throw new ArgumentException($"Line {lineNumber}: unknown color token '{token}'.");
+            }
+        }
+
+        private static int ValidateImportSize(int value, string label)
+        {
+            if (value < MinGridSize || value > MaxGridSize)
+            {
+                throw new ArgumentException($"Imported grid {label} must be between {MinGridSize} and {MaxGridSize}.");
+            }
+
+            return value;
+        }
+
+        private static bool IsSectionHeader(string line, string sectionName)
+        {
+            return string.Equals(line.Trim().TrimEnd(':'), sectionName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string StripImportComment(string line)
+        {
+            var hashIndex = line.IndexOf('#');
+            var slashIndex = line.IndexOf("//", StringComparison.Ordinal);
+            var commentIndex = -1;
+
+            if (hashIndex >= 0)
+            {
+                commentIndex = hashIndex;
+            }
+
+            if (slashIndex >= 0 && (commentIndex < 0 || slashIndex < commentIndex))
+            {
+                commentIndex = slashIndex;
+            }
+
+            return commentIndex >= 0 ? line.Substring(0, commentIndex) : line;
+        }
+
+        private static string FlowerColorToImportToken(FlowerColor? color)
+        {
+            return color.HasValue ? FlowerColorToImportToken(color.Value) : ".";
+        }
+
+        private static string FlowerColorToImportToken(FlowerColor color)
+        {
+            return color switch
+            {
+                FlowerColor.Red => "R",
+                FlowerColor.Yellow => "Y",
+                FlowerColor.Blue => "B",
+                FlowerColor.Pink => "P",
+                FlowerColor.Purple => "U",
+                FlowerColor.White => "W",
+                _ => "."
+            };
         }
 
         private static FlowerColor? BrushToFlowerColor(CellBrush brush)
@@ -619,6 +1298,42 @@ namespace BlossomFlow.Editor
         private static string CellLabel(FlowerColor? color)
         {
             return color.HasValue ? color.Value.ToString().Substring(0, 1) : "-";
+        }
+
+        private enum ImportSection
+        {
+            Header,
+            Grid,
+            Queues
+        }
+
+        private readonly struct ImportedLevel
+        {
+            public ImportedLevel(
+                int width,
+                int height,
+                int waitingSlotCount,
+                int conveyorMaxPots,
+                FlowerColor?[,] flowers,
+                List<PotDefinition>[] launchColumns,
+                bool hasQueues)
+            {
+                Width = width;
+                Height = height;
+                WaitingSlotCount = waitingSlotCount;
+                ConveyorMaxPots = conveyorMaxPots;
+                Flowers = flowers;
+                LaunchColumns = launchColumns;
+                HasQueues = hasQueues;
+            }
+
+            public int Width { get; }
+            public int Height { get; }
+            public int WaitingSlotCount { get; }
+            public int ConveyorMaxPots { get; }
+            public FlowerColor?[,] Flowers { get; }
+            public List<PotDefinition>[] LaunchColumns { get; }
+            public bool HasQueues { get; }
         }
     }
 }

@@ -1,0 +1,418 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecd619ea4a84b6a9bf694c4d4414119, type: 3}
+  m_Name: biglabyrth
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Gameplay.Domain.Levels.LevelDefinitionAsset
+  definition:
+    Width: 15
+    Height: 15
+    Flowers:
+    - X: 0
+      Y: 0
+      Color: 4
+    - X: 1
+      Y: 0
+      Color: 4
+    - X: 2
+      Y: 0
+      Color: 4
+    - X: 3
+      Y: 0
+      Color: 4
+    - X: 4
+      Y: 0
+      Color: 4
+    - X: 5
+      Y: 0
+      Color: 4
+    - X: 6
+      Y: 0
+      Color: 4
+    - X: 7
+      Y: 0
+      Color: 4
+    - X: 8
+      Y: 0
+      Color: 4
+    - X: 9
+      Y: 0
+      Color: 4
+    - X: 10
+      Y: 0
+      Color: 4
+    - X: 11
+      Y: 0
+      Color: 4
+    - X: 12
+      Y: 0
+      Color: 4
+    - X: 13
+      Y: 0
+      Color: 4
+    - X: 14
+      Y: 0
+      Color: 4
+    - X: 0
+      Y: 1
+      Color: 4
+    - X: 14
+      Y: 1
+      Color: 4
+    - X: 0
+      Y: 2
+      Color: 4
+    - X: 2
+      Y: 2
+      Color: 0
+    - X: 3
+      Y: 2
+      Color: 0
+    - X: 4
+      Y: 2
+      Color: 0
+    - X: 5
+      Y: 2
+      Color: 0
+    - X: 6
+      Y: 2
+      Color: 0
+    - X: 7
+      Y: 2
+      Color: 0
+    - X: 8
+      Y: 2
+      Color: 0
+    - X: 9
+      Y: 2
+      Color: 0
+    - X: 10
+      Y: 2
+      Color: 0
+    - X: 11
+      Y: 2
+      Color: 0
+    - X: 12
+      Y: 2
+      Color: 0
+    - X: 14
+      Y: 2
+      Color: 4
+    - X: 0
+      Y: 3
+      Color: 4
+    - X: 2
+      Y: 3
+      Color: 0
+    - X: 12
+      Y: 3
+      Color: 0
+    - X: 14
+      Y: 3
+      Color: 4
+    - X: 0
+      Y: 4
+      Color: 4
+    - X: 2
+      Y: 4
+      Color: 0
+    - X: 4
+      Y: 4
+      Color: 0
+    - X: 5
+      Y: 4
+      Color: 0
+    - X: 6
+      Y: 4
+      Color: 0
+    - X: 7
+      Y: 4
+      Color: 0
+    - X: 8
+      Y: 4
+      Color: 0
+    - X: 9
+      Y: 4
+      Color: 0
+    - X: 10
+      Y: 4
+      Color: 0
+    - X: 12
+      Y: 4
+      Color: 0
+    - X: 14
+      Y: 4
+      Color: 4
+    - X: 0
+      Y: 5
+      Color: 4
+    - X: 2
+      Y: 5
+      Color: 0
+    - X: 4
+      Y: 5
+      Color: 0
+    - X: 10
+      Y: 5
+      Color: 0
+    - X: 12
+      Y: 5
+      Color: 0
+    - X: 14
+      Y: 5
+      Color: 4
+    - X: 0
+      Y: 6
+      Color: 4
+    - X: 2
+      Y: 6
+      Color: 0
+    - X: 4
+      Y: 6
+      Color: 0
+    - X: 10
+      Y: 6
+      Color: 0
+    - X: 12
+      Y: 6
+      Color: 0
+    - X: 14
+      Y: 6
+      Color: 4
+    - X: 0
+      Y: 7
+      Color: 4
+    - X: 2
+      Y: 7
+      Color: 0
+    - X: 4
+      Y: 7
+      Color: 0
+    - X: 7
+      Y: 7
+      Color: 1
+    - X: 8
+      Y: 7
+      Color: 1
+    - X: 10
+      Y: 7
+      Color: 0
+    - X: 12
+      Y: 7
+      Color: 0
+    - X: 14
+      Y: 7
+      Color: 4
+    - X: 0
+      Y: 8
+      Color: 4
+    - X: 2
+      Y: 8
+      Color: 0
+    - X: 4
+      Y: 8
+      Color: 0
+    - X: 7
+      Y: 8
+      Color: 1
+    - X: 8
+      Y: 8
+      Color: 1
+    - X: 10
+      Y: 8
+      Color: 0
+    - X: 12
+      Y: 8
+      Color: 0
+    - X: 14
+      Y: 8
+      Color: 4
+    - X: 0
+      Y: 9
+      Color: 4
+    - X: 2
+      Y: 9
+      Color: 0
+    - X: 4
+      Y: 9
+      Color: 0
+    - X: 10
+      Y: 9
+      Color: 0
+    - X: 12
+      Y: 9
+      Color: 0
+    - X: 14
+      Y: 9
+      Color: 4
+    - X: 0
+      Y: 10
+      Color: 4
+    - X: 2
+      Y: 10
+      Color: 0
+    - X: 4
+      Y: 10
+      Color: 0
+    - X: 5
+      Y: 10
+      Color: 0
+    - X: 6
+      Y: 10
+      Color: 0
+    - X: 7
+      Y: 10
+      Color: 0
+    - X: 8
+      Y: 10
+      Color: 0
+    - X: 9
+      Y: 10
+      Color: 0
+    - X: 10
+      Y: 10
+      Color: 0
+    - X: 12
+      Y: 10
+      Color: 0
+    - X: 14
+      Y: 10
+      Color: 4
+    - X: 0
+      Y: 11
+      Color: 4
+    - X: 2
+      Y: 11
+      Color: 0
+    - X: 12
+      Y: 11
+      Color: 0
+    - X: 14
+      Y: 11
+      Color: 4
+    - X: 0
+      Y: 12
+      Color: 4
+    - X: 2
+      Y: 12
+      Color: 0
+    - X: 3
+      Y: 12
+      Color: 0
+    - X: 4
+      Y: 12
+      Color: 0
+    - X: 5
+      Y: 12
+      Color: 0
+    - X: 6
+      Y: 12
+      Color: 0
+    - X: 7
+      Y: 12
+      Color: 0
+    - X: 8
+      Y: 12
+      Color: 0
+    - X: 9
+      Y: 12
+      Color: 0
+    - X: 10
+      Y: 12
+      Color: 0
+    - X: 11
+      Y: 12
+      Color: 0
+    - X: 12
+      Y: 12
+      Color: 0
+    - X: 14
+      Y: 12
+      Color: 4
+    - X: 0
+      Y: 13
+      Color: 4
+    - X: 14
+      Y: 13
+      Color: 4
+    - X: 0
+      Y: 14
+      Color: 4
+    - X: 1
+      Y: 14
+      Color: 4
+    - X: 2
+      Y: 14
+      Color: 4
+    - X: 3
+      Y: 14
+      Color: 4
+    - X: 4
+      Y: 14
+      Color: 4
+    - X: 5
+      Y: 14
+      Color: 4
+    - X: 6
+      Y: 14
+      Color: 4
+    - X: 7
+      Y: 14
+      Color: 4
+    - X: 8
+      Y: 14
+      Color: 4
+    - X: 9
+      Y: 14
+      Color: 4
+    - X: 10
+      Y: 14
+      Color: 4
+    - X: 11
+      Y: 14
+      Color: 4
+    - X: 12
+      Y: 14
+      Color: 4
+    - X: 13
+      Y: 14
+      Color: 4
+    - X: 14
+      Y: 14
+      Color: 4
+    LaunchColumns:
+    - Pots:
+      - Color: 0
+        Capacity: 21
+      - Color: 4
+        Capacity: 19
+      - Color: 1
+        Capacity: 1
+    - Pots:
+      - Color: 4
+        Capacity: 18
+      - Color: 0
+        Capacity: 22
+      - Color: 1
+        Capacity: 1
+    - Pots:
+      - Color: 1
+        Capacity: 2
+      - Color: 4
+        Capacity: 19
+      - Color: 0
+        Capacity: 21
+    WaitingSlotCount: 5
+    ConveyorMaxPots: 5
+    ConveyorPath:
+      ReferenceId: greenhouse
+      Scans: []
+    Blockers: []
