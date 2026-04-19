@@ -32,4 +32,14 @@ namespace BlossomFlow.MainMenu.Domain
 
         public MainMenuPlayerProgress Progress { get; }
     }
+
+    public readonly struct MainMenuGardenChanged
+    {
+        public MainMenuGardenChanged(MainMenuGardenState state)
+        {
+            State = state;
+        }
+
+        public MainMenuGardenState State { get; }
+    }
 }

@@ -18,6 +18,12 @@ public class MainMenuInstaller : MonoBehaviour, IInstaller
             Lifetime.Scoped,
             Resolution.Eager);
 
+        builder.RegisterType(
+            typeof(MainMenuGardenService),
+            new[] { typeof(IGardenService) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
         builder.RegisterFactory(
             container => new UnityLevelSceneLoader(levelSceneName, container.Resolve<ISceneTransitionService>()),
             new[] { typeof(ILevelSceneLoader) },

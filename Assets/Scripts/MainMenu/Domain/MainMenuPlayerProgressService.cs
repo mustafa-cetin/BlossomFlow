@@ -66,6 +66,24 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.NextLifeCountdown));
         }
 
+        public void AddMagicalSeed(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            EnsureLoaded();
+            RefreshLifeRecovery(true);
+            SetProgress(new MainMenuPlayerProgress(
+                _current.LevelNumber,
+                _current.CurrentLives,
+                _current.MaxLives,
+                _current.Gold,
+                _current.MagicalSeed + amount,
+                _current.NextLifeCountdown));
+        }
+
         public bool TrySpendGold(int amount)
         {
             if (amount <= 0)
@@ -87,6 +105,31 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.MaxLives,
                 _current.Gold - amount,
                 _current.MagicalSeed,
+                _current.NextLifeCountdown));
+            return true;
+        }
+
+        public bool TrySpendMagicalSeed(int amount)
+        {
+            if (amount <= 0)
+            {
+                return true;
+            }
+
+            EnsureLoaded();
+            RefreshLifeRecovery(true);
+
+            if (_current.MagicalSeed < amount)
+            {
+                return false;
+            }
+
+            SetProgress(new MainMenuPlayerProgress(
+                _current.LevelNumber,
+                _current.CurrentLives,
+                _current.MaxLives,
+                _current.Gold,
+                _current.MagicalSeed - amount,
                 _current.NextLifeCountdown));
             return true;
         }

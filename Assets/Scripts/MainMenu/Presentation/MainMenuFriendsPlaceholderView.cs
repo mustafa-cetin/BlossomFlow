@@ -8,8 +8,8 @@ namespace BlossomFlow.MainMenu.Presentation
     {
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text messageText;
-        [SerializeField] private string title = "Friends";
-        [SerializeField] private string message = "Cok Yakinda!";
+        [SerializeField] private string title = "Garden";
+        [SerializeField] private string message = "Magical seed ile cicek ek.";
 
         private void OnEnable()
         {
