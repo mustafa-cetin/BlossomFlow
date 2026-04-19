@@ -199,6 +199,11 @@ namespace BlossomFlow.Gameplay.Presentation
             var activePots = new List<PotModel>(_session.ActivePots);
             for (var i = 0; i < activePots.Count && _session.State == LevelPlayState.Playing; i++)
             {
+                if (!_session.IsActive(activePots[i]))
+                {
+                    continue;
+                }
+
                 presentationView.TrackPotentialFlowerTarget(activePots[i]);
                 _session.TryCollectAtCurrentConveyorPosition(activePots[i], out _);
             }
@@ -214,20 +219,33 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void TryLaunchColumn(int columnIndex)
         {
-            if (!CanEnterConveyor())
+            if (_session == null || !_session.CanLaunchFromColumn(columnIndex))
+            {
+                return;
+            }
+
+            if (!CanEnterConveyor(_session.GetLaunchGroupSize(columnIndex)))
             {
                 PublishConveyorEntryBlockedIfFull();
                 return;
             }
 
-            var pot = _session.LaunchFromColumn(columnIndex);
+            var pots = _session.LaunchGroupFromColumn(columnIndex, out var sourceColumnIndexes);
             StartConveyorEntryDelay();
-            presentationView.ShowLaunchedPot(pot, columnIndex);
+            for (var i = 0; i < pots.Count; i++)
+            {
+                presentationView.ShowLaunchedPot(pots[i], sourceColumnIndexes[i]);
+            }
         }
 
         private void TryRecallWaitingPot(int slotIndex)
         {
-            if (!CanEnterConveyor())
+            if (_session == null || !_session.CanRecallWaitingPot(slotIndex))
+            {
+                return;
+            }
+
+            if (!CanEnterConveyor(_session.GetWaitingRecallGroupSize(slotIndex)))
             {
                 PublishConveyorEntryBlockedIfFull();
                 return;
@@ -241,11 +259,11 @@ namespace BlossomFlow.Gameplay.Presentation
             RecallWaitingPot(slotIndex, true);
         }
 
-        private bool CanEnterConveyor()
+        private bool CanEnterConveyor(int potCount = 1)
         {
             return _session != null &&
                 _session.State == LevelPlayState.Playing &&
-                _session.Conveyor.CanEnter &&
+                _session.Conveyor.CanEnterCount(potCount) &&
                 _conveyorEntryDelayTimer <= 0f;
         }
 
@@ -272,14 +290,17 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            var pot = _session.RecallWaitingPot(slotIndex);
+            var pots = _session.RecallWaitingPotGroup(slotIndex, out var recalledSlotIndexes);
 
             if (useEntryDelay)
             {
                 StartConveyorEntryDelay();
             }
 
-            presentationView.ShowRecalledPot(pot, slotIndex);
+            for (var i = 0; i < pots.Count; i++)
+            {
+                presentationView.ShowRecalledPot(pots[i], recalledSlotIndexes[i]);
+            }
         }
 
         private void RefreshConveyorFastForwardState()

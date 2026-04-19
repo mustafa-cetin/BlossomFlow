@@ -7,6 +7,7 @@ namespace BlossomFlow.Gameplay.Domain
     public sealed class ConveyorBelt
     {
         public const int DefaultMaxPots = 5;
+        private const int LinkedPotEntrySpacing = 5;
 
         private readonly List<ConveyorPot> _pots = new();
 
@@ -31,7 +32,36 @@ namespace BlossomFlow.Gameplay.Domain
         public ConveyorPath Path { get; }
         public int MaxPots { get; }
         public IReadOnlyList<ConveyorPot> Pots => _pots;
-        public bool CanEnter => _pots.Count < MaxPots && !IsPathIndexOccupied(0);
+        public bool CanEnter => CanEnterCount(1);
+
+        public bool CanEnterCount(int potCount)
+        {
+            if (potCount <= 0)
+            {
+                return false;
+            }
+
+            if (_pots.Count + potCount > MaxPots)
+            {
+                return false;
+            }
+
+            var requiredEntrySpan = GetRequiredEntrySpan(potCount);
+            if (requiredEntrySpan - 1 > Path.EndIndex)
+            {
+                return false;
+            }
+
+            for (var pathIndex = 0; pathIndex < requiredEntrySpan; pathIndex++)
+            {
+                if (IsPathIndexOccupied(pathIndex))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         public ConveyorPot AddPot(PotModel pot)
         {
@@ -40,9 +70,50 @@ namespace BlossomFlow.Gameplay.Domain
                 throw new ArgumentNullException(nameof(pot));
             }
 
-            if (!CanEnter)
+            if (!CanEnterCount(1))
             {
                 throw new InvalidOperationException("Cannot add a pot while the conveyor is full or its start is occupied.");
+            }
+
+            return AddPotAtEntryIndex(pot, 0);
+        }
+
+        public IReadOnlyList<ConveyorPot> AddPots(IReadOnlyList<PotModel> pots)
+        {
+            if (pots == null)
+            {
+                throw new ArgumentNullException(nameof(pots));
+            }
+
+            if (!CanEnterCount(pots.Count))
+            {
+                throw new InvalidOperationException("Cannot add pots while the conveyor lacks enough entry space.");
+            }
+
+            var conveyorPots = new List<ConveyorPot>(pots.Count);
+            for (var i = 0; i < pots.Count; i++)
+            {
+                conveyorPots.Add(AddPotAtEntryIndex(pots[i], GetEntryIndex(i, pots.Count)));
+            }
+
+            return conveyorPots;
+        }
+
+        private static int GetRequiredEntrySpan(int potCount)
+        {
+            return potCount <= 1 ? 1 : (potCount - 1) * LinkedPotEntrySpacing + 1;
+        }
+
+        private static int GetEntryIndex(int potIndex, int potCount)
+        {
+            return potCount <= 1 ? 0 : potIndex * LinkedPotEntrySpacing;
+        }
+
+        private ConveyorPot AddPotAtEntryIndex(PotModel pot, int pathIndex)
+        {
+            if (pot == null)
+            {
+                throw new ArgumentNullException(nameof(pot));
             }
 
             if (pot.State == PotState.Launching)
@@ -54,7 +125,7 @@ namespace BlossomFlow.Gameplay.Domain
                 throw new InvalidOperationException($"Pot must be launching or conveying before entering the conveyor, but it is {pot.State}.");
             }
 
-            var conveyorPot = new ConveyorPot(pot, Path, 0);
+            var conveyorPot = new ConveyorPot(pot, Path, pathIndex);
             _pots.Add(conveyorPot);
             PotEntered?.Invoke(this, conveyorPot);
             return conveyorPot;

@@ -82,6 +82,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private readonly Dictionary<PotModel, int> _collectedFlowerCounts = new();
         private readonly HashSet<PotModel> _trackedPotCounters = new();
         private readonly Dictionary<int, GameObject> _waitingSlotViews = new();
+        private readonly Dictionary<int, GameObject> _linkedPotViews = new();
 
         private LevelSession _session;
         private Sprite _fallbackSprite;
@@ -148,6 +149,7 @@ namespace BlossomFlow.Gameplay.Presentation
             ClearRoot(conveyorRoot);
             ClearRoot(launchColumnRoot);
             ClearRoot(waitingSlotRoot);
+            ClearLinkedPotViews();
 
             _flowerViews.Clear();
             _potViews.Clear();
@@ -275,6 +277,8 @@ namespace BlossomFlow.Gameplay.Presentation
             {
                 RefreshLaunchColumnView(columnIndex);
             }
+
+            RefreshLinkedPotViews();
         }
 
         private void BuildWaitingSlotViews()
@@ -298,6 +302,7 @@ namespace BlossomFlow.Gameplay.Presentation
             ConfigurePotView(view, pot);
             RegisterActivePotView(pot, view);
             RefreshLaunchColumnView(columnIndex, true);
+            RefreshLinkedPotViews();
             UpdateConveyorPotViews(pot, launchMoveSeconds, launchMoveEase);
         }
 
@@ -348,7 +353,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConfigurePotView(view, pot);
                 SetSortingOrder(view, 20 - queueIndex);
 
-                if (queueIndex == 0)
+                if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
                 {
                     var capturedColumn = columnIndex;
                     BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn));
@@ -362,6 +367,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             _launchColumnViews[columnIndex] = views;
+            RefreshLinkedPotViews();
         }
 
         private void RefreshLaunchColumnViewWithShift(int columnIndex, List<GameObject> previousViews)
@@ -399,7 +405,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConfigurePotView(view, pot);
                 SetSortingOrder(view, 20 - queueIndex);
 
-                if (queueIndex == 0)
+                if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
                 {
                     var capturedColumn = columnIndex;
                     BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn));
@@ -419,6 +425,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             _launchColumnViews[columnIndex] = views;
+            RefreshLinkedPotViews();
         }
 
         public void UpdateConveyorPotViews()
@@ -444,6 +451,8 @@ namespace BlossomFlow.Gameplay.Presentation
                 var ease = ReferenceEquals(conveyorPot.Pot, animatedPot) ? animatedEase : Ease.Linear;
                 AnimateConveyorPotMove(view, conveyorPot, duration, ease);
             }
+
+            RefreshLinkedPotViews();
         }
 
         private void OnFlowerRemoved(FlowerGrid grid, FlowerCell cell)
@@ -482,6 +491,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _waitingPotViews[slotIndex] = potView;
             AnimatePotMove(potView, WaitingPotPosition(slotIndex), waitingMoveSeconds, waitingMoveEase);
             StartWaitingPotPulse(potView);
+            RefreshLinkedPotViews();
         }
 
         private void OnWaitingPotRecalled(LevelSession session, PotModel pot, int slotIndex)
@@ -491,6 +501,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 _waitingPotViews.Remove(slotIndex);
                 StopWaitingPotPulse(waitingPotView);
                 waitingPotView.transform.SetParent(conveyorRoot, true);
+                RefreshLinkedPotViews();
             }
         }
 
@@ -519,7 +530,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnConveyorPotRemoved(ConveyorBelt conveyor, ConveyorPot conveyorPot)
         {
-            if (!conveyorPot.Pot.IsFull)
+            if (!ShouldRemovePotViewAfterConveyorRemoval(conveyorPot.Pot))
             {
                 return;
             }
@@ -531,7 +542,38 @@ namespace BlossomFlow.Gameplay.Presentation
                 UntrackPotCounter(conveyorPot.Pot);
                 StopWaitingPotPulse(view);
                 AnimateDisappear(view, potDisappearSeconds, potDisappearEase);
+                RefreshLinkedPotViews();
             }
+        }
+
+        private bool ShouldRemovePotViewAfterConveyorRemoval(PotModel pot)
+        {
+            if (pot == null || !pot.IsFull)
+            {
+                return false;
+            }
+
+            if (!pot.IsLinked)
+            {
+                return true;
+            }
+
+            var hasLinkedView = false;
+            foreach (var candidate in _potViews.Keys)
+            {
+                if (candidate == null || candidate.LinkedPairId != pot.LinkedPairId)
+                {
+                    continue;
+                }
+
+                hasLinkedView = true;
+                if (!candidate.IsFull)
+                {
+                    return false;
+                }
+            }
+
+            return hasLinkedView;
         }
 
         private void RegisterActivePotView(PotModel pot, GameObject view)
@@ -615,6 +657,235 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             return counter;
+        }
+
+        private void LateUpdate()
+        {
+            RefreshLinkedPotViews();
+        }
+
+        private void RefreshLinkedPotViews()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            var linkedViews = new Dictionary<int, List<LinkedPotView>>();
+            CollectLaunchLinkedViews(linkedViews);
+            CollectLiveLinkedViews(linkedViews);
+
+            var activeLinkIds = new HashSet<int>();
+            foreach (var pair in linkedViews)
+            {
+                if (pair.Value.Count < 2)
+                {
+                    continue;
+                }
+
+                activeLinkIds.Add(pair.Key);
+                var linkView = GetOrCreateLinkedPotView(pair.Key);
+                var lineRenderer = linkView.GetComponent<LineRenderer>();
+                UpdateLinkedPotLine(lineRenderer, pair.Value);
+            }
+
+            RemoveStaleLinkedPotViews(activeLinkIds);
+        }
+
+        private void CollectLaunchLinkedViews(Dictionary<int, List<LinkedPotView>> linkedViews)
+        {
+            for (var columnIndex = 0; columnIndex < _session.LaunchColumns.Count; columnIndex++)
+            {
+                if (!_launchColumnViews.TryGetValue(columnIndex, out var views))
+                {
+                    continue;
+                }
+
+                var pots = _session.LaunchColumns[columnIndex].Pots;
+                for (var queueIndex = 0; queueIndex < pots.Count && queueIndex < views.Count; queueIndex++)
+                {
+                    var pot = pots[queueIndex];
+                    if (!pot.IsLinked || views[queueIndex] == null)
+                    {
+                        continue;
+                    }
+
+                    if (!linkedViews.TryGetValue(pot.LinkedPairId, out var pairViews))
+                    {
+                        pairViews = new List<LinkedPotView>();
+                        linkedViews[pot.LinkedPairId] = pairViews;
+                    }
+
+                    pairViews.Add(new LinkedPotView(pot, views[queueIndex]));
+                }
+            }
+        }
+
+        private void CollectLiveLinkedViews(Dictionary<int, List<LinkedPotView>> linkedViews)
+        {
+            foreach (var pair in _potViews)
+            {
+                var pot = pair.Key;
+                var view = pair.Value;
+                if (pot == null || !pot.IsLinked || view == null)
+                {
+                    continue;
+                }
+
+                if (!linkedViews.TryGetValue(pot.LinkedPairId, out var pairViews))
+                {
+                    pairViews = new List<LinkedPotView>();
+                    linkedViews[pot.LinkedPairId] = pairViews;
+                }
+
+                if (!ContainsLinkedPotView(pairViews, view))
+                {
+                    pairViews.Add(new LinkedPotView(pot, view));
+                }
+            }
+        }
+
+        private static bool ContainsLinkedPotView(List<LinkedPotView> pairViews, GameObject view)
+        {
+            for (var i = 0; i < pairViews.Count; i++)
+            {
+                if (pairViews[i].View == view)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void UpdateLinkedPotLine(LineRenderer lineRenderer, IReadOnlyList<LinkedPotView> linkedViews)
+        {
+            if (lineRenderer == null || linkedViews == null || linkedViews.Count < 2)
+            {
+                return;
+            }
+
+            lineRenderer.positionCount = linkedViews.Count;
+            for (var i = 0; i < linkedViews.Count; i++)
+            {
+                if (linkedViews[i].View == null)
+                {
+                    return;
+                }
+
+                lineRenderer.SetPosition(i, linkedViews[i].View.transform.position + Vector3.forward * 0.02f);
+            }
+
+            lineRenderer.colorGradient = CreateLinkedPotGradient(linkedViews);
+        }
+
+        private static Gradient CreateLinkedPotGradient(IReadOnlyList<LinkedPotView> linkedViews)
+        {
+            var gradient = new Gradient();
+            var colorKeys = new List<GradientColorKey>();
+            var alphaKeys = new List<GradientAlphaKey>();
+            var segmentCount = linkedViews.Count - 1;
+
+            for (var i = 0; i < segmentCount; i++)
+            {
+                var firstColor = ToUnityColor(linkedViews[i].Pot.Color);
+                var secondColor = ToUnityColor(linkedViews[i + 1].Pot.Color);
+                var segmentStart = i / (float)segmentCount;
+                var segmentEnd = (i + 1) / (float)segmentCount;
+                var segmentMidpoint = (segmentStart + segmentEnd) * 0.5f;
+
+                colorKeys.Add(new GradientColorKey(firstColor, segmentStart));
+                colorKeys.Add(new GradientColorKey(firstColor, segmentMidpoint));
+                colorKeys.Add(new GradientColorKey(secondColor, segmentMidpoint));
+                colorKeys.Add(new GradientColorKey(secondColor, segmentEnd));
+
+                alphaKeys.Add(new GradientAlphaKey(firstColor.a, segmentStart));
+                alphaKeys.Add(new GradientAlphaKey(firstColor.a, segmentMidpoint));
+                alphaKeys.Add(new GradientAlphaKey(secondColor.a, segmentMidpoint));
+                alphaKeys.Add(new GradientAlphaKey(secondColor.a, segmentEnd));
+            }
+
+            gradient.SetKeys(colorKeys.ToArray(), alphaKeys.ToArray());
+
+            return gradient;
+        }
+
+        private void RemoveStaleLinkedPotViews(HashSet<int> activeLinkIds)
+        {
+            var staleLinkIds = new List<int>();
+            foreach (var pair in _linkedPotViews)
+            {
+                if (!activeLinkIds.Contains(pair.Key))
+                {
+                    staleLinkIds.Add(pair.Key);
+                }
+            }
+
+            for (var i = 0; i < staleLinkIds.Count; i++)
+            {
+                var linkId = staleLinkIds[i];
+                if (_linkedPotViews.TryGetValue(linkId, out var view) && view != null)
+                {
+                    Destroy(view);
+                }
+
+                _linkedPotViews.Remove(linkId);
+            }
+        }
+
+        private void ClearLinkedPotViews()
+        {
+            foreach (var view in _linkedPotViews.Values)
+            {
+                if (view != null)
+                {
+                    Destroy(view);
+                }
+            }
+
+            _linkedPotViews.Clear();
+        }
+
+        private GameObject GetOrCreateLinkedPotView(int linkedPairId)
+        {
+            if (_linkedPotViews.TryGetValue(linkedPairId, out var existingView) && existingView != null)
+            {
+                return existingView;
+            }
+
+            var view = new GameObject($"LinkedPotVine_{linkedPairId}");
+            view.transform.SetParent(transform, false);
+
+            var lineRenderer = view.AddComponent<LineRenderer>();
+            lineRenderer.positionCount = 2;
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.startWidth = potVisualSize * 0.28f;
+            lineRenderer.endWidth = potVisualSize * 0.28f;
+            lineRenderer.numCapVertices = 6;
+            lineRenderer.sortingOrder = 25;
+            var shader = Shader.Find("Sprites/Default");
+            if (shader != null)
+            {
+                lineRenderer.material = new Material(shader);
+            }
+
+            lineRenderer.startColor = new Color(0.16f, 0.55f, 0.18f, 0.95f);
+            lineRenderer.endColor = new Color(0.12f, 0.42f, 0.12f, 0.95f);
+
+            _linkedPotViews[linkedPairId] = view;
+            return view;
+        }
+
+        private readonly struct LinkedPotView
+        {
+            public LinkedPotView(PotModel pot, GameObject view)
+            {
+                Pot = pot;
+                View = view;
+            }
+
+            public PotModel Pot { get; }
+            public GameObject View { get; }
         }
 
         private GameObject CreateView(GameObject prefab, Transform parent, string objectName)

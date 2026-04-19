@@ -1052,17 +1052,23 @@ MonoBehaviour:
     - Pots:
       - Color: 0
         Capacity: 60
+        LinkedPairId: 4
       - Color: 1
         Capacity: 60
+        LinkedPairId: 0
     - Pots:
       - Color: 1
         Capacity: 94
+        LinkedPairId: 0
       - Color: 0
         Capacity: 67
+        LinkedPairId: 4
     - Pots:
       - Color: 1
         Capacity: 63
+        LinkedPairId: 4
     WaitingSlotCount: 5
+    ConveyorMaxPots: 5
     ConveyorPath:
       ReferenceId: greenhouse
       Scans: []

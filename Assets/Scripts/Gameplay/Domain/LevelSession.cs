@@ -6,6 +6,7 @@ namespace BlossomFlow.Gameplay.Domain
     public sealed class LevelSession
     {
         private readonly List<PotModel> _activePots = new();
+        private readonly Dictionary<int, int> _linkedGroupSizes = new();
         private readonly PotQueueColumn[] _launchColumns;
 
         public event Action<LevelSession, PotModel, int> WaitingPotPlaced;
@@ -22,6 +23,7 @@ namespace BlossomFlow.Gameplay.Domain
             FlowerGrid = flowerGrid ?? throw new ArgumentNullException(nameof(flowerGrid));
             WaitingSlots = waitingSlots ?? throw new ArgumentNullException(nameof(waitingSlots));
             _launchColumns = new List<PotQueueColumn>(launchColumns ?? throw new ArgumentNullException(nameof(launchColumns))).ToArray();
+            BuildLinkedGroupSizes();
             Conveyor = conveyor ?? new ConveyorBelt(ConveyorPath.CreateGreenhousePath(FlowerGrid.Width, FlowerGrid.Height));
             WaitingSlots.TemporarySlotCreated += OnTemporaryWaitingSlotCreated;
             WaitingSlots.TemporarySlotRemoved += OnTemporaryWaitingSlotRemoved;
@@ -42,6 +44,11 @@ namespace BlossomFlow.Gameplay.Domain
         public LevelFailureReason FailureReason { get; private set; } = LevelFailureReason.None;
         public bool IsComplete => State == LevelPlayState.Won || State == LevelPlayState.Failed;
 
+        public bool IsActive(PotModel pot)
+        {
+            return pot != null && _activePots.Contains(pot);
+        }
+
         public void Start()
         {
             if (State != LevelPlayState.NotStarted)
@@ -55,27 +62,119 @@ namespace BlossomFlow.Gameplay.Domain
 
         public PotModel LaunchFromColumn(int columnIndex)
         {
+            var launchedPots = LaunchGroupFromColumn(columnIndex, out _);
+            return launchedPots[0];
+        }
+
+        public IReadOnlyList<PotModel> LaunchGroupFromColumn(int columnIndex, out IReadOnlyList<int> sourceColumnIndexes)
+        {
             EnsurePlaying();
             EnsureColumnIndex(columnIndex);
-            EnsureConveyorCanEnter();
+            EnsureLaunchableColumn(columnIndex);
 
-            var pot = _launchColumns[columnIndex].LaunchTop();
-            _activePots.Add(pot);
-            Conveyor.AddPot(pot);
-            return pot;
+            var launchColumnIndexes = GetLaunchColumnGroupIndexes(columnIndex);
+            EnsureConveyorCanEnter(launchColumnIndexes.Count);
+
+            var launchedPots = new List<PotModel>(launchColumnIndexes.Count);
+            for (var i = 0; i < launchColumnIndexes.Count; i++)
+            {
+                var pot = _launchColumns[launchColumnIndexes[i]].LaunchTop();
+                launchedPots.Add(pot);
+                _activePots.Add(pot);
+            }
+
+            Conveyor.AddPots(launchedPots);
+            sourceColumnIndexes = launchColumnIndexes;
+            return launchedPots;
+        }
+
+        public bool CanLaunchFromColumn(int columnIndex)
+        {
+            if (columnIndex < 0 || columnIndex >= _launchColumns.Length || !_launchColumns[columnIndex].CanLaunch)
+            {
+                return false;
+            }
+
+            var pot = _launchColumns[columnIndex].PeekTop();
+            if (!pot.IsLinked)
+            {
+                return true;
+            }
+
+            return TryGetLinkedLaunchGroupColumnIndexes(pot, out _);
+        }
+
+        public int GetLaunchGroupSize(int columnIndex)
+        {
+            EnsureColumnIndex(columnIndex);
+            if (!_launchColumns[columnIndex].CanLaunch)
+            {
+                return 0;
+            }
+
+            var pot = _launchColumns[columnIndex].PeekTop();
+            if (!pot.IsLinked)
+            {
+                return 1;
+            }
+
+            return TryGetLinkedLaunchGroupColumnIndexes(pot, out var columnIndexes)
+                ? columnIndexes.Count
+                : 0;
         }
 
         public PotModel RecallWaitingPot(int slotIndex)
         {
-            EnsurePlaying();
-            EnsureConveyorCanEnter();
+            var recalledPots = RecallWaitingPotGroup(slotIndex, out _);
+            return recalledPots[0];
+        }
 
-            var recalledFromSlot = slotIndex;
-            var pot = WaitingSlots.Recall(slotIndex);
-            _activePots.Add(pot);
-            Conveyor.AddPot(pot);
-            WaitingPotRecalled?.Invoke(this, pot, recalledFromSlot);
-            return pot;
+        public IReadOnlyList<PotModel> RecallWaitingPotGroup(int slotIndex, out IReadOnlyList<int> recalledSlotIndexes)
+        {
+            EnsurePlaying();
+            if (!WaitingSlots.TryGetPot(slotIndex, out var selectedPot))
+            {
+                throw new InvalidOperationException($"Waiting slot {slotIndex} is empty.");
+            }
+
+            if (!TryGetRecallSlotGroup(selectedPot, slotIndex, out var slotIndexes))
+            {
+                throw new InvalidOperationException("All linked waiting pots must be in waiting slots before recall.");
+            }
+
+            EnsureConveyorCanEnter(slotIndexes.Count);
+
+            var recalledPots = new List<PotModel>(slotIndexes.Count);
+            for (var i = 0; i < slotIndexes.Count; i++)
+            {
+                var recalledFromSlot = slotIndexes[i];
+                var pot = WaitingSlots.Recall(recalledFromSlot);
+                recalledPots.Add(pot);
+                _activePots.Add(pot);
+                WaitingPotRecalled?.Invoke(this, pot, recalledFromSlot);
+            }
+
+            Conveyor.AddPots(recalledPots);
+            recalledSlotIndexes = slotIndexes;
+            return recalledPots;
+        }
+
+        public bool CanRecallWaitingPot(int slotIndex)
+        {
+            return WaitingSlots.TryGetPot(slotIndex, out var pot) &&
+                TryGetRecallSlotGroup(pot, slotIndex, out _);
+        }
+
+        public int GetWaitingRecallGroupSize(int slotIndex)
+        {
+            if (!WaitingSlots.TryGetPot(slotIndex, out var pot))
+            {
+                return 0;
+            }
+
+            return TryGetRecallSlotGroup(pot, slotIndex, out var slotIndexes)
+                ? slotIndexes.Count
+                : 0;
         }
 
         public IReadOnlyList<ConveyorPot> AdvanceConveyor(bool reenterUnfinishedPotsAtEnd = false)
@@ -118,7 +217,7 @@ namespace BlossomFlow.Gameplay.Domain
                     continue;
                 }
 
-                if (conveyorPot.Pot.IsFull)
+                if (ShouldResolvePotAtBeltEndDuringFastForward(conveyorPot.Pot))
                 {
                     ResolvePotAtBeltEnd(conveyorPot.Pot, out _);
                     continue;
@@ -128,10 +227,32 @@ namespace BlossomFlow.Gameplay.Domain
             }
         }
 
+        private bool ShouldResolvePotAtBeltEndDuringFastForward(PotModel pot)
+        {
+            if (!pot.IsFull)
+            {
+                return false;
+            }
+
+            if (!pot.IsLinked)
+            {
+                return true;
+            }
+
+            var linkedPots = GetActiveLinkedGroup(pot);
+            return IsCompleteLinkedGroup(pot, linkedPots) && AreAllPotsFull(linkedPots);
+        }
+
         public bool TryCollectAtCurrentConveyorPosition(PotModel pot, out FlowerCell collected)
         {
             EnsurePlaying();
             EnsureActive(pot);
+
+            if (pot.IsFull)
+            {
+                collected = null;
+                return false;
+            }
 
             if (!Conveyor.TryGetPot(pot, out var conveyorPot) || !conveyorPot.TryGetCurrentScan(out var scan))
             {
@@ -179,6 +300,19 @@ namespace BlossomFlow.Gameplay.Domain
 
             if (pot.IsFull)
             {
+                if (pot.IsLinked)
+                {
+                    var linkedPots = GetActiveLinkedGroup(pot);
+                    if (!IsCompleteLinkedGroup(pot, linkedPots) || !AreAllPotsFull(linkedPots))
+                    {
+                        return true;
+                    }
+
+                    RemoveActiveLinkedPots(linkedPots);
+                    EvaluateWinCondition();
+                    return true;
+                }
+
                 if (Conveyor.TryGetPot(pot, out _))
                 {
                     Conveyor.RemovePot(pot);
@@ -199,6 +333,18 @@ namespace BlossomFlow.Gameplay.Domain
             if (Conveyor.TryGetPot(pot, out var conveyorPot) && !conveyorPot.HasReachedEnd)
             {
                 throw new InvalidOperationException("Pot has not reached the conveyor end.");
+            }
+
+            if (pot.IsLinked)
+            {
+                var linkedPots = GetActiveLinkedGroup(pot);
+                if (!IsCompleteLinkedGroup(pot, linkedPots))
+                {
+                    waitingSlotIndex = -1;
+                    return true;
+                }
+
+                return ResolveLinkedPotsAtBeltEnd(linkedPots, out waitingSlotIndex);
             }
 
             if (pot.State == PotState.Launching)
@@ -239,6 +385,62 @@ namespace BlossomFlow.Gameplay.Domain
             LevelFailed?.Invoke(this, FailureReason, pot);
             waitingSlotIndex = -1;
             return false;
+        }
+
+        private bool ResolveLinkedPotsAtBeltEnd(IReadOnlyList<PotModel> linkedPots, out int waitingSlotIndex)
+        {
+            for (var i = 0; i < linkedPots.Count; i++)
+            {
+                if (linkedPots[i].State == PotState.Launching)
+                {
+                    linkedPots[i].BeginConveying();
+                }
+            }
+
+            if (AreAllPotsFull(linkedPots))
+            {
+                RemoveActiveLinkedPots(linkedPots);
+                waitingSlotIndex = -1;
+                EvaluateWinCondition();
+                return true;
+            }
+
+            var waitingPots = new List<PotModel>(linkedPots);
+
+            if (WaitingSlots.TryPlaceMany(waitingPots, out var waitingSlotIndexes))
+            {
+                RemoveActiveLinkedPots(linkedPots);
+                for (var i = 0; i < waitingPots.Count; i++)
+                {
+                    WaitingPotPlaced?.Invoke(this, waitingPots[i], waitingSlotIndexes[i]);
+                }
+
+                waitingSlotIndex = waitingSlotIndexes.Length > 0 ? waitingSlotIndexes[0] : -1;
+                EvaluateWinCondition();
+                return true;
+            }
+
+            var failedPot = linkedPots.Count > 0 ? linkedPots[0] : null;
+            FailedPot = failedPot;
+            FailureReason = LevelFailureReason.WaitingSlotsFull;
+            TransitionTo(LevelPlayState.Failed);
+            WaitingOverflowed?.Invoke(this, failedPot);
+            LevelFailed?.Invoke(this, FailureReason, failedPot);
+            waitingSlotIndex = -1;
+            return false;
+        }
+
+        private void RemoveActiveLinkedPots(IReadOnlyList<PotModel> pots)
+        {
+            for (var i = 0; i < pots.Count; i++)
+            {
+                if (Conveyor.TryGetPot(pots[i], out _))
+                {
+                    Conveyor.RemovePot(pots[i]);
+                }
+
+                _activePots.Remove(pots[i]);
+            }
         }
 
         public bool TryContinueAfterWaitingOverflow()
@@ -315,12 +517,187 @@ namespace BlossomFlow.Gameplay.Domain
             TemporaryWaitingSlotRemoved?.Invoke(this, slotIndex);
         }
 
-        private void EnsureConveyorCanEnter()
+        private void EnsureConveyorCanEnter(int potCount = 1)
         {
-            if (!Conveyor.CanEnter)
+            if (!Conveyor.CanEnterCount(potCount))
             {
                 throw new InvalidOperationException("Cannot enter the conveyor while its start is occupied.");
             }
+        }
+
+        private void BuildLinkedGroupSizes()
+        {
+            _linkedGroupSizes.Clear();
+            for (var columnIndex = 0; columnIndex < _launchColumns.Length; columnIndex++)
+            {
+                var pots = _launchColumns[columnIndex].Pots;
+                for (var potIndex = 0; potIndex < pots.Count; potIndex++)
+                {
+                    var pot = pots[potIndex];
+                    if (!pot.IsLinked)
+                    {
+                        continue;
+                    }
+
+                    _linkedGroupSizes.TryGetValue(pot.LinkedPairId, out var count);
+                    _linkedGroupSizes[pot.LinkedPairId] = count + 1;
+                }
+            }
+        }
+
+        private void EnsureLaunchableColumn(int columnIndex)
+        {
+            if (!CanLaunchFromColumn(columnIndex))
+            {
+                throw new InvalidOperationException("Cannot launch a linked pot until all linked pots are at the front of their columns.");
+            }
+        }
+
+        private IReadOnlyList<int> GetLaunchColumnGroupIndexes(int columnIndex)
+        {
+            var pot = _launchColumns[columnIndex].PeekTop();
+            if (!pot.IsLinked)
+            {
+                return new[] { columnIndex };
+            }
+
+            if (!TryGetLinkedLaunchGroupColumnIndexes(pot, out var columnIndexes))
+            {
+                throw new InvalidOperationException($"Linked pot group {pot.LinkedPairId} is missing a frontmost member.");
+            }
+
+            return columnIndexes;
+        }
+
+        private bool TryGetLinkedLaunchGroupColumnIndexes(PotModel pot, out IReadOnlyList<int> columnIndexes)
+        {
+            columnIndexes = Array.Empty<int>();
+
+            if (pot == null || !pot.IsLinked)
+            {
+                return false;
+            }
+
+            var groupColumnIndexes = new List<int>();
+            for (var columnIndex = 0; columnIndex < _launchColumns.Length; columnIndex++)
+            {
+                var pots = _launchColumns[columnIndex].Pots;
+                for (var potIndex = 0; potIndex < pots.Count; potIndex++)
+                {
+                    var candidate = pots[potIndex];
+                    if (candidate.LinkedPairId != pot.LinkedPairId)
+                    {
+                        continue;
+                    }
+
+                    if (!_launchColumns[columnIndex].IsTop(candidate))
+                    {
+                        return false;
+                    }
+
+                    groupColumnIndexes.Add(columnIndex);
+                    break;
+                }
+            }
+
+            if (groupColumnIndexes.Count != GetLinkedGroupSize(pot.LinkedPairId))
+            {
+                return false;
+            }
+
+            groupColumnIndexes.Sort();
+            columnIndexes = groupColumnIndexes;
+            return true;
+        }
+
+        private IReadOnlyList<PotModel> GetActiveLinkedGroup(PotModel pot)
+        {
+            if (pot == null || !pot.IsLinked)
+            {
+                return Array.Empty<PotModel>();
+            }
+
+            var group = new List<PotModel>();
+            for (var i = 0; i < _activePots.Count; i++)
+            {
+                var candidate = _activePots[i];
+                if (candidate.LinkedPairId == pot.LinkedPairId)
+                {
+                    group.Add(candidate);
+                }
+            }
+
+            return group;
+        }
+
+        private bool TryGetRecallSlotGroup(PotModel pot, int slotIndex, out IReadOnlyList<int> slotIndexes)
+        {
+            if (pot == null)
+            {
+                slotIndexes = Array.Empty<int>();
+                return false;
+            }
+
+            if (!pot.IsLinked)
+            {
+                slotIndexes = new[] { slotIndex };
+                return true;
+            }
+
+            var groupSlotIndexes = new List<int>();
+            for (var i = 0; i < WaitingSlots.Slots.Count; i++)
+            {
+                var slot = WaitingSlots.Slots[i];
+                var candidate = slot.Pot;
+                if (candidate == null ||
+                    candidate.LinkedPairId != pot.LinkedPairId)
+                {
+                    continue;
+                }
+
+                groupSlotIndexes.Add(slot.Index);
+            }
+
+            if (groupSlotIndexes.Count != GetLinkedGroupSize(pot.LinkedPairId))
+            {
+                slotIndexes = Array.Empty<int>();
+                return false;
+            }
+
+            groupSlotIndexes.Sort();
+            slotIndexes = groupSlotIndexes;
+            return true;
+        }
+
+        private int GetLinkedGroupSize(int linkedGroupId)
+        {
+            return _linkedGroupSizes.TryGetValue(linkedGroupId, out var count) ? count : 0;
+        }
+
+        private bool IsCompleteLinkedGroup(PotModel pot, IReadOnlyList<PotModel> linkedPots)
+        {
+            return pot != null &&
+                pot.IsLinked &&
+                linkedPots != null &&
+                linkedPots.Count == GetLinkedGroupSize(pot.LinkedPairId);
+        }
+
+        private static bool AreAllPotsFull(IReadOnlyList<PotModel> pots)
+        {
+            if (pots == null || pots.Count == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < pots.Count; i++)
+            {
+                if (!pots[i].IsFull)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void EvaluateWinCondition()

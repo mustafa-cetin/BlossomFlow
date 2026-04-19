@@ -37,5 +37,10 @@ namespace BlossomFlow.Gameplay.Domain
             pot.Launch();
             return pot;
         }
+
+        public bool IsTop(PotModel pot)
+        {
+            return CanLaunch && ReferenceEquals(_pots.Peek(), pot);
+        }
     }
 }

@@ -67,6 +67,36 @@ namespace BlossomFlow.Gameplay.Domain
             return true;
         }
 
+        public bool TryPlaceMany(IReadOnlyList<PotModel> pots, out int[] slotIndexes)
+        {
+            if (pots == null)
+            {
+                throw new ArgumentNullException(nameof(pots));
+            }
+
+            var emptySlots = _slots
+                .Where(candidate => !candidate.IsTemporary && !candidate.IsOccupied)
+                .Take(pots.Count)
+                .ToArray();
+
+            if (emptySlots.Length < pots.Count)
+            {
+                slotIndexes = Array.Empty<int>();
+                return false;
+            }
+
+            slotIndexes = new int[pots.Count];
+            for (var i = 0; i < pots.Count; i++)
+            {
+                var slot = emptySlots[i];
+                slot.Place(pots[i]);
+                slotIndexes[i] = slot.Index;
+                PotPlaced?.Invoke(this, slot, pots[i]);
+            }
+
+            return true;
+        }
+
         public bool TryRecall(int slotIndex, out PotModel pot)
         {
             var slot = GetSlot(slotIndex);

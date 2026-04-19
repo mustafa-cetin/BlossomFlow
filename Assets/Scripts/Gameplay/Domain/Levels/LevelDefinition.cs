@@ -207,6 +207,66 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                     {
                         throw new ArgumentOutOfRangeException(nameof(pot.Capacity), $"Launch column {columnIndex} contains a pot with invalid capacity.");
                     }
+
+                    if (pot.LinkedPairId < 0)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(pot.LinkedPairId), $"Launch column {columnIndex} contains a pot with an invalid linked group id.");
+                    }
+                }
+            }
+
+            ValidateLinkedPots();
+        }
+
+        private void ValidateLinkedPots()
+        {
+            var linkedPots = new Dictionary<int, List<(int ColumnIndex, int QueueIndex)>>();
+            for (var columnIndex = 0; columnIndex < LaunchColumns.Length; columnIndex++)
+            {
+                var pots = LaunchColumns[columnIndex].Pots ?? Array.Empty<PotDefinition>();
+                for (var queueIndex = 0; queueIndex < pots.Length; queueIndex++)
+                {
+                    var linkedPairId = pots[queueIndex].LinkedPairId;
+                    if (linkedPairId <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (!linkedPots.TryGetValue(linkedPairId, out var positions))
+                    {
+                        positions = new List<(int ColumnIndex, int QueueIndex)>();
+                        linkedPots[linkedPairId] = positions;
+                    }
+
+                    positions.Add((columnIndex, queueIndex));
+                }
+            }
+
+            foreach (var pair in linkedPots)
+            {
+                if (pair.Value.Count < 2)
+                {
+                    throw new ArgumentException($"Linked pot group {pair.Key} must be used by at least two pots.");
+                }
+
+                var usedColumns = new HashSet<int>();
+                var minColumnIndex = int.MaxValue;
+                var maxColumnIndex = int.MinValue;
+                for (var i = 0; i < pair.Value.Count; i++)
+                {
+                    var columnIndex = pair.Value[i].ColumnIndex;
+                    if (!usedColumns.Add(columnIndex))
+                    {
+                        throw new ArgumentException($"Linked pot group {pair.Key} must connect pots in different launch columns.");
+                    }
+
+                    minColumnIndex = Math.Min(minColumnIndex, columnIndex);
+                    maxColumnIndex = Math.Max(maxColumnIndex, columnIndex);
+                }
+
+                if (maxColumnIndex - minColumnIndex + 1 != pair.Value.Count)
+                {
+                    throw new ArgumentException($"Linked pot group {pair.Key} must connect contiguous adjacent launch columns.");
                 }
             }
         }

@@ -20,7 +20,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             var flowerGrid = new FlowerGrid(definition.Width, definition.Height, flowers);
             var waitingSlots = new WaitingSlots(definition.WaitingSlotCount);
             var launchColumns = definition.LaunchColumns.Select(column =>
-                new PotQueueColumn(column.Select(pot => new PotModel(pot.Color, pot.Capacity))));
+                new PotQueueColumn(column.Select(pot => new PotModel(pot.Color, pot.Capacity, pot.LinkedPairId))));
             var conveyor = new ConveyorBelt(definition.CreateConveyorPath(), definition.ConveyorMaxPots);
 
             return new LevelSession(flowerGrid, waitingSlots, launchColumns, conveyor);

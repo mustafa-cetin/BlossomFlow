@@ -339,7 +339,7 @@ namespace BlossomFlow.Editor
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.LabelField("Pot Queues", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("Each column is launched front-first from the top row in this list.", MessageType.None);
+                EditorGUILayout.HelpBox("Each column is launched front-first from the top row in this list. Link id 0 is a normal pot; matching positive link ids create a Linked Pot group across adjacent columns.", MessageType.None);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -367,6 +367,7 @@ namespace BlossomFlow.Editor
                     {
                         pot.Color = (FlowerColor)EditorGUILayout.EnumPopup(pot.Color, GUILayout.Width(72f));
                         pot.Capacity = Mathf.Max(1, EditorGUILayout.IntField(pot.Capacity, GUILayout.Width(44f)));
+                        pot.LinkedPairId = Mathf.Max(0, EditorGUILayout.IntField(pot.LinkedPairId, GUILayout.Width(36f)));
 
                         if (GUILayout.Button("Up", EditorStyles.miniButtonLeft, GUILayout.Width(32f)) && potIndex > 0)
                         {
@@ -788,7 +789,7 @@ namespace BlossomFlow.Editor
             for (var i = 0; i < _launchColumns.Length; i++)
             {
                 var pots = _launchColumns[i]
-                    .Select(pot => $"{FlowerColorToImportToken(pot.Color)}{pot.Capacity}");
+                    .Select(FormatPotImportToken);
                 lines.Add($"{i + 1}: {string.Join(", ", pots)}");
             }
 
@@ -1151,9 +1152,11 @@ namespace BlossomFlow.Editor
             var split = normalized.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
             if (split.Length == 2)
             {
+                ParseCapacityAndLink(split[1], lineNumber, out var capacity, out var linkedPairId);
                 return new PotDefinition(
                     ParseRequiredFlowerColor(split[0], lineNumber),
-                    ParsePositiveInt(split[1], lineNumber, "pot capacity"));
+                    capacity,
+                    linkedPairId);
             }
 
             var compact = normalized.Replace(" ", string.Empty);
@@ -1165,9 +1168,31 @@ namespace BlossomFlow.Editor
 
             var colorToken = compact.Substring(0, firstDigitIndex);
             var capacityToken = compact.Substring(firstDigitIndex);
+            ParseCapacityAndLink(capacityToken, lineNumber, out var compactCapacity, out var compactLinkedPairId);
             return new PotDefinition(
                 ParseRequiredFlowerColor(colorToken, lineNumber),
-                ParsePositiveInt(capacityToken, lineNumber, "pot capacity"));
+                compactCapacity,
+                compactLinkedPairId);
+        }
+
+        private static string FormatPotImportToken(PotDefinition pot)
+        {
+            var token = $"{FlowerColorToImportToken(pot.Color)}{pot.Capacity}";
+            return pot.LinkedPairId > 0 ? $"{token}~{pot.LinkedPairId}" : token;
+        }
+
+        private static void ParseCapacityAndLink(string token, int lineNumber, out int capacity, out int linkedPairId)
+        {
+            var linkSeparatorIndex = token.IndexOf('~');
+            if (linkSeparatorIndex < 0)
+            {
+                capacity = ParsePositiveInt(token, lineNumber, "pot capacity");
+                linkedPairId = 0;
+                return;
+            }
+
+            capacity = ParsePositiveInt(token.Substring(0, linkSeparatorIndex), lineNumber, "pot capacity");
+            linkedPairId = ParsePositiveInt(token.Substring(linkSeparatorIndex + 1), lineNumber, "linked group id");
         }
 
         private static FlowerColor? ParseFlowerToken(string token, int lineNumber)
