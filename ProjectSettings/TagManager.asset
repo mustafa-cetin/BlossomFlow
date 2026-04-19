@@ -53,5 +53,8 @@ TagManager:
   - name: flower
     uniqueID: 1941532539
     locked: 0
+  - name: yazi
+    uniqueID: 4233403271
+    locked: 0
   m_RenderingLayers:
   - Default

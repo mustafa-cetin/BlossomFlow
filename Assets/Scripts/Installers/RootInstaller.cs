@@ -4,6 +4,7 @@ using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Sprites;
+using BlossomFlow.Application.Tutorial;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Core;
 using Reflex.Enums;
@@ -104,6 +105,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
                 typeof(ILevelSelectionWriter),
                 typeof(ICurrentLevelDefinitionProvider)
             },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(FirstLevelTutorialProgressService),
+            new[] { typeof(IFirstLevelTutorialProgressService) },
             Lifetime.Singleton,
             Resolution.Lazy);
 

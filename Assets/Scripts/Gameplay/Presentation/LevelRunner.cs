@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
+using BlossomFlow.Application.Tutorial;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
+using BlossomFlow.Gameplay.Presentation.Tutorial;
 using CrazyGames;
 using Reflex.Attributes;
 using UnityEngine;
@@ -13,6 +15,7 @@ namespace BlossomFlow.Gameplay.Presentation
 {
     [RequireComponent(typeof(LevelPresentationView))]
     [RequireComponent(typeof(LevelPointerInput))]
+    [RequireComponent(typeof(FirstLevelTutorialController))]
     public class LevelRunner : MonoBehaviour
     {
         [Header("Level")]
@@ -27,11 +30,13 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private float queueEmptyConveyorSpeedMultiplier = 3f;
         [SerializeField] private LevelPresentationView presentationView;
         [SerializeField] private LevelPointerInput pointerInput;
+        [SerializeField] private FirstLevelTutorialController firstLevelTutorial;
 
         private ILevelSessionFactory _sessionFactory;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
+        private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
         private LevelSession _session;
@@ -49,12 +54,14 @@ namespace BlossomFlow.Gameplay.Presentation
             ILevelSessionFactory sessionFactory,
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
-            ICurrentLevelDefinitionProvider currentLevelProvider)
+            ICurrentLevelDefinitionProvider currentLevelProvider,
+            IFirstLevelTutorialProgressService firstLevelTutorialProgress)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _currentLevelProvider = currentLevelProvider;
+            _firstLevelTutorialProgress = firstLevelTutorialProgress;
         }
 
         private void Awake()
@@ -73,6 +80,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             presentationView.LaunchColumnRequested += TryLaunchColumn;
             presentationView.WaitingPotRecallRequested += TryRecallWaitingPot;
+            firstLevelTutorial.Initialize(presentationView, _firstLevelTutorialProgress);
             _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
             _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
 
@@ -88,6 +96,11 @@ namespace BlossomFlow.Gameplay.Presentation
                 presentationView.UnbindSession();
             }
 
+            if (firstLevelTutorial != null)
+            {
+                firstLevelTutorial.UnbindSession();
+            }
+
             NotifyGameplayStop();
             UnsubscribeSessionEvents();
             _restartRequestedSubscription?.Dispose();
@@ -98,7 +111,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void Update()
         {
-            pointerInput.Tick(_session, target => target.Click());
+            pointerInput.Tick(_session, OnClickTargetRequested);
 
             if (_session == null || _session.State != LevelPlayState.Playing)
             {
@@ -148,6 +161,15 @@ namespace BlossomFlow.Gameplay.Presentation
                     pointerInput = gameObject.AddComponent<LevelPointerInput>();
                 }
             }
+
+            if (firstLevelTutorial == null)
+            {
+                firstLevelTutorial = GetComponent<FirstLevelTutorialController>();
+                if (firstLevelTutorial == null)
+                {
+                    firstLevelTutorial = gameObject.AddComponent<FirstLevelTutorialController>();
+                }
+            }
         }
 
         private LevelDefinition GetLevelDefinition()
@@ -194,7 +216,19 @@ namespace BlossomFlow.Gameplay.Presentation
             _session.Start();
             NotifyGameplayStartIfPlaying();
             presentationView.BuildInitialViews();
+            firstLevelTutorial.BindSession(_session, _currentLevelProvider?.CurrentLevelNumber ?? 1);
             PublishConveyorPotCount();
+        }
+
+        private void OnClickTargetRequested(LevelClickTarget target)
+        {
+            if (target == null || !firstLevelTutorial.CanClick(target))
+            {
+                return;
+            }
+
+            target.Click();
+            firstLevelTutorial.HandleAcceptedClick(target);
         }
 
         private void TickActivePots()

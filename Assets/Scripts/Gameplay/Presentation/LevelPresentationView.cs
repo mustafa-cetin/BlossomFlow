@@ -101,6 +101,54 @@ namespace BlossomFlow.Gameplay.Presentation
         public int ReferenceGridAxis => referenceGridAxis;
         public float GetGridScaledDuration(float duration) => ScaleDurationForGrid(duration);
 
+        public bool TryGetLaunchColumnAnchor(int columnIndex, out Vector3 position)
+        {
+            if (_launchColumnViews.TryGetValue(columnIndex, out var views) && views != null)
+            {
+                for (var i = 0; i < views.Count; i++)
+                {
+                    if (views[i] != null)
+                    {
+                        position = views[i].transform.position;
+                        return true;
+                    }
+                }
+            }
+
+            if (_session != null && columnIndex >= 0 && columnIndex < _session.LaunchColumns.Count)
+            {
+                position = LaunchPosition(columnIndex, 0);
+                return true;
+            }
+
+            position = default;
+            return false;
+        }
+
+        public bool TryGetWaitingPotAnchor(int slotIndex, out Vector3 position)
+        {
+            if (_waitingSlotViews.TryGetValue(slotIndex, out var waitingSlotView) && waitingSlotView != null)
+            {
+                position = waitingSlotView.transform.position;
+                return true;
+            }
+
+            if (_waitingPotViews.TryGetValue(slotIndex, out var waitingPotView) && waitingPotView != null)
+            {
+                position = waitingPotView.transform.position;
+                return true;
+            }
+
+            if (_session != null && slotIndex >= 0)
+            {
+                position = WaitingPotPosition(slotIndex);
+                return true;
+            }
+
+            position = default;
+            return false;
+        }
+
         public void BindSession(LevelSession session)
         {
             if (session == null)
@@ -356,7 +404,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
                 {
                     var capturedColumn = columnIndex;
-                    BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn));
+                    BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn), LevelClickTargetKind.LaunchColumn, capturedColumn);
                 }
                 else
                 {
@@ -408,7 +456,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
                 {
                     var capturedColumn = columnIndex;
-                    BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn));
+                    BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn), LevelClickTargetKind.LaunchColumn, capturedColumn);
                 }
                 else
                 {
@@ -487,7 +535,7 @@ namespace BlossomFlow.Gameplay.Presentation
             ConfigurePotView(potView, pot);
             potView.transform.SetParent(waitingSlotRoot, true);
             SetSortingOrder(potView, 30);
-            BindClick(potView, () => WaitingPotRecallRequested?.Invoke(slotIndex));
+            BindClick(potView, () => WaitingPotRecallRequested?.Invoke(slotIndex), LevelClickTargetKind.WaitingSlot, slotIndex);
             _waitingPotViews[slotIndex] = potView;
             AnimatePotMove(potView, WaitingPotPosition(slotIndex), waitingMoveSeconds, waitingMoveEase);
             StartWaitingPotPulse(potView);
@@ -918,7 +966,7 @@ namespace BlossomFlow.Gameplay.Presentation
             ApplyVisualSize(view, waitingSlotVisualSize);
             SetAlpha(view, isTemporary ? temporaryWaitingSlotAlpha : 1f);
             var capturedSlot = slotIndex;
-            BindClick(view, () => WaitingPotRecallRequested?.Invoke(capturedSlot));
+            BindClick(view, () => WaitingPotRecallRequested?.Invoke(capturedSlot), LevelClickTargetKind.WaitingSlot, capturedSlot);
             _waitingSlotViews[slotIndex] = view;
             return view;
         }
@@ -1121,7 +1169,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _camera.orthographicSize = Mathf.Max(worldHeight * 0.5f, worldWidth / Mathf.Max(_camera.aspect, 0.01f) * 0.5f);
         }
 
-        private void BindClick(GameObject view, Action clicked)
+        private void BindClick(GameObject view, Action clicked, LevelClickTargetKind kind, int index)
         {
             if (view.GetComponent<Collider2D>() == null)
             {
@@ -1141,6 +1189,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             target.Bind(clicked);
+            target.SetTarget(kind, index);
         }
 
         private void DisableClick(GameObject view)

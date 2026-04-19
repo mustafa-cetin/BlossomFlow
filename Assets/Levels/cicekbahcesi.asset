@@ -75,10 +75,10 @@ MonoBehaviour:
       Color: 4
     - X: 3
       Y: 5
-      Color: 0
+      Color: 1
     - X: 4
       Y: 5
-      Color: 0
+      Color: 1
     - X: 5
       Y: 5
       Color: 4
@@ -99,10 +99,10 @@ MonoBehaviour:
       Color: 4
     - X: 3
       Y: 6
-      Color: 0
+      Color: 1
     - X: 4
       Y: 6
-      Color: 0
+      Color: 1
     - X: 5
       Y: 6
       Color: 4
@@ -151,19 +151,19 @@ MonoBehaviour:
     LaunchColumns:
     - Pots:
       - Color: 1
-        Capacity: 10
+        Capacity: 32
+        LinkedPairId: 0
       - Color: 4
         Capacity: 4
+        LinkedPairId: 0
     - Pots:
       - Color: 5
         Capacity: 4
-      - Color: 0
-        Capacity: 4
-      - Color: 1
-        Capacity: 18
+        LinkedPairId: 0
     - Pots:
       - Color: 4
         Capacity: 4
+        LinkedPairId: 0
     WaitingSlotCount: 5
     ConveyorMaxPots: 5
     ConveyorPath:
