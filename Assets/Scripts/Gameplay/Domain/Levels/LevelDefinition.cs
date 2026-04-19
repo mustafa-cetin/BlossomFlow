@@ -5,6 +5,13 @@ using BlossomFlow.Gameplay.Domain;
 
 namespace BlossomFlow.Gameplay.Domain.Levels
 {
+    public enum LevelDifficulty
+    {
+        Normal,
+        Hard,
+        VeryHard
+    }
+
     [Serializable]
     public sealed class LevelDefinition
     {
@@ -22,6 +29,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 .ToArray();
             WaitingSlotCount = DefaultWaitingSlotCount;
             ConveyorMaxPots = DefaultConveyorMaxPots;
+            Difficulty = LevelDifficulty.Normal;
             ConveyorPath = new ConveyorPathDefinition();
             Blockers = Array.Empty<FlowerBlockerDefinition>();
         }
@@ -34,7 +42,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             int waitingSlotCount = DefaultWaitingSlotCount,
             ConveyorPathDefinition conveyorPath = null,
             IEnumerable<FlowerBlockerDefinition> blockers = null,
-            int conveyorMaxPots = DefaultConveyorMaxPots)
+            int conveyorMaxPots = DefaultConveyorMaxPots,
+            LevelDifficulty difficulty = LevelDifficulty.Normal)
             : this(
                 width,
                 height,
@@ -44,7 +53,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 waitingSlotCount,
                 conveyorPath,
                 blockers,
-                conveyorMaxPots)
+                conveyorMaxPots,
+                difficulty)
         {
         }
 
@@ -56,7 +66,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             int waitingSlotCount = DefaultWaitingSlotCount,
             ConveyorPathDefinition conveyorPath = null,
             IEnumerable<FlowerBlockerDefinition> blockers = null,
-            int conveyorMaxPots = DefaultConveyorMaxPots)
+            int conveyorMaxPots = DefaultConveyorMaxPots,
+            LevelDifficulty difficulty = LevelDifficulty.Normal)
         {
             if (width <= 0)
             {
@@ -86,6 +97,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 .ToArray();
             WaitingSlotCount = waitingSlotCount;
             ConveyorMaxPots = conveyorMaxPots;
+            Difficulty = difficulty;
             ConveyorPath = conveyorPath ?? new ConveyorPathDefinition("greenhouse");
             Blockers = (blockers ?? Enumerable.Empty<FlowerBlockerDefinition>()).ToArray();
             Validate();
@@ -97,6 +109,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
         public PotQueueColumnDefinition[] LaunchColumns;
         public int WaitingSlotCount;
         public int ConveyorMaxPots;
+        public LevelDifficulty Difficulty;
         public ConveyorPathDefinition ConveyorPath;
         public FlowerBlockerDefinition[] Blockers;
 

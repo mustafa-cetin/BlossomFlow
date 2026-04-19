@@ -468,21 +468,24 @@ namespace BlossomFlow.Gameplay.Domain
         private bool TryActivateOverflowRescue(PotModel overflowPot, out int overflowPotSlotIndex)
         {
             overflowPotSlotIndex = -1;
-            if (!WaitingSlots.IsFull || Conveyor.Pots.Count == 0)
+            if (Conveyor.Pots.Count == 0)
             {
                 return false;
             }
 
-            if (!WaitingSlots.TryMoveToTemporarySlot(
-                WaitingSlots.Capacity - 1,
-                out var relocatedWaitingPot,
-                out var relocatedTemporarySlotIndex))
+            if (!WaitingSlots.HasEmptySlot)
             {
-                return false;
-            }
+                if (!WaitingSlots.TryMoveToTemporarySlot(
+                    WaitingSlots.Capacity - 1,
+                    out var relocatedWaitingPot,
+                    out var relocatedTemporarySlotIndex))
+                {
+                    return false;
+                }
 
-            WaitingPotRecalled?.Invoke(this, relocatedWaitingPot, WaitingSlots.Capacity - 1);
-            WaitingPotPlaced?.Invoke(this, relocatedWaitingPot, relocatedTemporarySlotIndex);
+                WaitingPotRecalled?.Invoke(this, relocatedWaitingPot, WaitingSlots.Capacity - 1);
+                WaitingPotPlaced?.Invoke(this, relocatedWaitingPot, relocatedTemporarySlotIndex);
+            }
 
             var conveyorPots = new List<ConveyorPot>(Conveyor.Pots);
             for (var i = 0; i < conveyorPots.Count; i++)

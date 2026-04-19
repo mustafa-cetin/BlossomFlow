@@ -4698,7 +4698,7 @@ MonoBehaviour:
   flowerOrigin: {x: -2.33, y: -1.12}
   launchOrigin: {x: -1.31, y: -3.1}
   waitingOrigin: {x: -4.59, y: 3.76}
-  temporaryWaitingSlotOffset: {x: 0.9, y: 0}
+  temporaryWaitingSlotOffset: {x: -1.85, y: 0}
   temporaryWaitingSlotAlpha: 0.35
   cellSize: 0.58
   referenceGridAxis: 9
@@ -4727,6 +4727,7 @@ MonoBehaviour:
   potDisappearEase: 26
   showLayoutGizmos: 1
   showVisualFootprintGizmos: 1
+  previewTemporaryWaitingSlotCount: 3
 --- !u!114 &2060034850
 MonoBehaviour:
   m_ObjectHideFlags: 0

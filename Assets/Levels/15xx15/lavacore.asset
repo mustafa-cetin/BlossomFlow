@@ -695,44 +695,63 @@ MonoBehaviour:
     - Pots:
       - Color: 1
         Capacity: 9
+        LinkedPairId: 0
       - Color: 0
         Capacity: 13
+        LinkedPairId: 0
       - Color: 1
         Capacity: 9
+        LinkedPairId: 0
       - Color: 0
         Capacity: 9
+        LinkedPairId: 0
       - Color: 2
         Capacity: 10
+        LinkedPairId: 0
       - Color: 2
         Capacity: 13
+        LinkedPairId: 0
     - Pots:
       - Color: 2
         Capacity: 9
+        LinkedPairId: 0
       - Color: 3
         Capacity: 12
+        LinkedPairId: 0
       - Color: 3
         Capacity: 14
+        LinkedPairId: 0
       - Color: 2
         Capacity: 4
+        LinkedPairId: 0
       - Color: 4
         Capacity: 18
+        LinkedPairId: 0
       - Color: 4
         Capacity: 21
+        LinkedPairId: 0
     - Pots:
       - Color: 5
         Capacity: 13
+        LinkedPairId: 0
       - Color: 1
         Capacity: 6
+        LinkedPairId: 0
       - Color: 2
         Capacity: 12
+        LinkedPairId: 0
       - Color: 3
         Capacity: 22
+        LinkedPairId: 0
       - Color: 4
         Capacity: 17
+        LinkedPairId: 0
       - Color: 0
         Capacity: 14
+        LinkedPairId: 0
     WaitingSlotCount: 5
     ConveyorMaxPots: 5
+    Difficulty: 1
     ConveyorPath:
       ReferenceId: greenhouse
       Scans: []

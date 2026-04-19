@@ -30,6 +30,7 @@ namespace BlossomFlow.Editor
         private int _height = 10;
         private int _waitingSlotCount = LevelDefinition.DefaultWaitingSlotCount;
         private int _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
+        private LevelDifficulty _difficulty = LevelDifficulty.Normal;
         private CellBrush _brush = CellBrush.Red;
         private FlowerColor?[,] _flowers;
         private string _importText = DefaultImportText;
@@ -54,6 +55,7 @@ namespace BlossomFlow.Editor
             "size 5x3\n" +
             "waiting 5\n" +
             "conveyor 6\n" +
+            "difficulty normal\n" +
             "\n" +
             "grid:\n" +
             "R R Y B B\n" +
@@ -178,6 +180,7 @@ namespace BlossomFlow.Editor
                 var newHeight = EditorGUILayout.IntSlider("Grid Height", _height, MinGridSize, MaxGridSize);
                 _waitingSlotCount = Mathf.Max(1, EditorGUILayout.IntField("Waiting Slots", _waitingSlotCount));
                 _conveyorMaxPots = Mathf.Max(1, EditorGUILayout.IntField("Conveyor Max Pots", _conveyorMaxPots));
+                _difficulty = (LevelDifficulty)EditorGUILayout.EnumPopup("Difficulty", _difficulty);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -193,7 +196,7 @@ namespace BlossomFlow.Editor
             {
                 EditorGUILayout.LabelField("Text Import", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox(
-                    "Format: size 5x3, waiting 5, conveyor 6, grid:, queues:. Colors: R Red, Y Yellow, B Blue, P Pink, U Purple, W White, . Empty.",
+                    "Format: size 5x3, waiting 5, conveyor 6, difficulty normal|hard|very-hard, grid:, queues:. Colors: R Red, Y Yellow, B Blue, P Pink, U Purple, W White, . Empty.",
                     MessageType.None);
 
                 _importText = EditorGUILayout.TextArea(_importText, GUILayout.MinHeight(130f));
@@ -442,6 +445,7 @@ namespace BlossomFlow.Editor
             _conveyorMaxPots = definition.ConveyorMaxPots <= 0
                 ? LevelDefinition.DefaultConveyorMaxPots
                 : definition.ConveyorMaxPots;
+            _difficulty = definition.Difficulty;
             _flowers = new FlowerColor?[_width, _height];
 
             foreach (var flower in definition.Flowers ?? Array.Empty<FlowerCellDefinition>())
@@ -469,6 +473,7 @@ namespace BlossomFlow.Editor
             _height = 10;
             _waitingSlotCount = LevelDefinition.DefaultWaitingSlotCount;
             _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
+            _difficulty = LevelDifficulty.Normal;
             _flowers = new FlowerColor?[_width, _height];
 
             foreach (var column in _launchColumns)
@@ -522,6 +527,7 @@ namespace BlossomFlow.Editor
                 Height = _height,
                 WaitingSlotCount = _waitingSlotCount,
                 ConveyorMaxPots = _conveyorMaxPots,
+                Difficulty = _difficulty,
                 Flowers = BuildFlowers(),
                 LaunchColumns = _launchColumns
                     .Select(column => new PotQueueColumnDefinition(column))
@@ -627,6 +633,7 @@ namespace BlossomFlow.Editor
                 _height = imported.Height;
                 _waitingSlotCount = imported.WaitingSlotCount;
                 _conveyorMaxPots = imported.ConveyorMaxPots;
+                _difficulty = imported.Difficulty;
                 _flowers = imported.Flowers;
 
                 foreach (var column in _launchColumns)
@@ -673,6 +680,7 @@ namespace BlossomFlow.Editor
             int? declaredHeight = null;
             var waitingSlotCount = _waitingSlotCount;
             var conveyorMaxPots = _conveyorMaxPots;
+            var difficulty = _difficulty;
             var gridRows = new List<List<FlowerColor?>>();
             var launchColumns = Enumerable.Range(0, LevelDefinition.DefaultLaunchColumnCount)
                 .Select(_ => new List<PotDefinition>())
@@ -714,7 +722,7 @@ namespace BlossomFlow.Editor
                     continue;
                 }
 
-                ParseImportSetting(line, lineIndex + 1, ref declaredWidth, ref declaredHeight, ref waitingSlotCount, ref conveyorMaxPots);
+                ParseImportSetting(line, lineIndex + 1, ref declaredWidth, ref declaredHeight, ref waitingSlotCount, ref conveyorMaxPots, ref difficulty);
             }
 
             if (gridRows.Count == 0)
@@ -756,6 +764,7 @@ namespace BlossomFlow.Editor
                 height,
                 waitingSlotCount,
                 conveyorMaxPots,
+                difficulty,
                 flowers,
                 launchColumns,
                 hasQueues);
@@ -768,6 +777,7 @@ namespace BlossomFlow.Editor
                 $"size {_width}x{_height}",
                 $"waiting {_waitingSlotCount}",
                 $"conveyor {_conveyorMaxPots}",
+                $"difficulty {FormatDifficultyImportToken(_difficulty)}",
                 string.Empty,
                 "grid:"
             };
@@ -1017,7 +1027,8 @@ namespace BlossomFlow.Editor
             ref int? declaredWidth,
             ref int? declaredHeight,
             ref int waitingSlotCount,
-            ref int conveyorMaxPots)
+            ref int conveyorMaxPots,
+            ref LevelDifficulty difficulty)
         {
             var parts = SplitSettingLine(line);
             if (parts.Length < 2)
@@ -1043,9 +1054,25 @@ namespace BlossomFlow.Editor
                 case "conveyor-max-pots":
                     conveyorMaxPots = ParsePositiveInt(value, lineNumber, key);
                     break;
+                case "difficulty":
+                case "leveldifficulty":
+                case "level-difficulty":
+                    difficulty = ParseDifficulty(value, lineNumber);
+                    break;
                 default:
                     throw new ArgumentException($"Line {lineNumber}: unknown setting '{parts[0]}'.");
             }
+        }
+
+        private static LevelDifficulty ParseDifficulty(string value, int lineNumber)
+        {
+            var normalized = value.Replace("-", string.Empty).Replace("_", string.Empty);
+            if (Enum.TryParse(normalized, true, out LevelDifficulty difficulty))
+            {
+                return difficulty;
+            }
+
+            throw new ArgumentException($"Line {lineNumber}: difficulty must be normal, hard, or very-hard.");
         }
 
         private static string[] SplitSettingLine(string line)
@@ -1179,6 +1206,11 @@ namespace BlossomFlow.Editor
         {
             var token = $"{FlowerColorToImportToken(pot.Color)}{pot.Capacity}";
             return pot.LinkedPairId > 0 ? $"{token}~{pot.LinkedPairId}" : token;
+        }
+
+        private static string FormatDifficultyImportToken(LevelDifficulty difficulty)
+        {
+            return difficulty == LevelDifficulty.VeryHard ? "very-hard" : difficulty.ToString().ToLowerInvariant();
         }
 
         private static void ParseCapacityAndLink(string token, int lineNumber, out int capacity, out int linkedPairId)
@@ -1339,6 +1371,7 @@ namespace BlossomFlow.Editor
                 int height,
                 int waitingSlotCount,
                 int conveyorMaxPots,
+                LevelDifficulty difficulty,
                 FlowerColor?[,] flowers,
                 List<PotDefinition>[] launchColumns,
                 bool hasQueues)
@@ -1347,6 +1380,7 @@ namespace BlossomFlow.Editor
                 Height = height;
                 WaitingSlotCount = waitingSlotCount;
                 ConveyorMaxPots = conveyorMaxPots;
+                Difficulty = difficulty;
                 Flowers = flowers;
                 LaunchColumns = launchColumns;
                 HasQueues = hasQueues;
@@ -1356,6 +1390,7 @@ namespace BlossomFlow.Editor
             public int Height { get; }
             public int WaitingSlotCount { get; }
             public int ConveyorMaxPots { get; }
+            public LevelDifficulty Difficulty { get; }
             public FlowerColor?[,] Flowers { get; }
             public List<PotDefinition>[] LaunchColumns { get; }
             public bool HasQueues { get; }

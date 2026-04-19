@@ -6,7 +6,7 @@ namespace BlossomFlow.MainMenu.Domain
 {
     public sealed class MainMenuGardenService : IGardenService
     {
-        private const int GardenUnlockLevel = 50;
+        private const int GardenUnlockLevel = 20;
         private const string PlantedRegionIndexesKey = "blossom_flow.garden.planted_region_indexes";
         private const string NextWaterAvailableUtcTicksKey = "blossom_flow.garden.next_water_available_utc_ticks";
 

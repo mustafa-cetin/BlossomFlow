@@ -72,6 +72,7 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("Editor Preview")]
         [SerializeField] private bool showLayoutGizmos = true;
         [SerializeField] private bool showVisualFootprintGizmos = true;
+        [SerializeField] private int previewTemporaryWaitingSlotCount = 3;
 
         private readonly Dictionary<FlowerCell, GameObject> _flowerViews = new();
         private readonly Dictionary<PotModel, GameObject> _potViews = new();
@@ -274,6 +275,7 @@ namespace BlossomFlow.Gameplay.Presentation
             flowerFlyArcHeight = Mathf.Max(0f, flowerFlyArcHeight);
             waitingPotPulseScale = Mathf.Max(1f, waitingPotPulseScale);
             waitingPotPulseSeconds = Mathf.Max(MinimumWorldSize, waitingPotPulseSeconds);
+            previewTemporaryWaitingSlotCount = Mathf.Max(0, previewTemporaryWaitingSlotCount);
         }
 
         private void OnDrawGizmos()
@@ -295,6 +297,7 @@ namespace BlossomFlow.Gameplay.Presentation
             DrawConveyorGizmos(width, height, previewCellSize);
             DrawLaunchColumnGizmos(launchColumnCount, maxQueueCount, previewPotSpacing, previewQueuedPotSpacing);
             DrawWaitingSlotGizmos(waitingSlotCount, previewPotSpacing);
+            DrawTemporaryWaitingSlotGizmos(previewTemporaryWaitingSlotCount, previewPotSpacing);
             DrawLayoutLabels(previewCellSize, previewFlowerScale, previewPotSpacing, previewQueuedPotSpacing);
         }
 
@@ -561,18 +564,19 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             CreateWaitingSlotView(slot.Index, true);
+            RefreshTemporaryWaitingSlotPositions();
             FitCameraToLevel();
         }
 
         private void OnTemporaryWaitingSlotRemoved(LevelSession session, int slotIndex)
         {
-            if (!_waitingSlotViews.TryGetValue(slotIndex, out var waitingSlotView))
+            if (_waitingSlotViews.TryGetValue(slotIndex, out var waitingSlotView))
             {
-                return;
+                _waitingSlotViews.Remove(slotIndex);
+                AnimateDisappear(waitingSlotView, potDisappearSeconds, potDisappearEase);
             }
 
-            _waitingSlotViews.Remove(slotIndex);
-            AnimateDisappear(waitingSlotView, potDisappearSeconds, potDisappearEase);
+            RefreshTemporaryWaitingSlotPositions();
             FitCameraToLevel();
         }
 
@@ -1354,7 +1358,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (IsTemporaryWaitingSlot(slotIndex))
             {
-                var temporaryIndex = slotIndex - _session.WaitingSlots.Capacity;
+                var temporaryIndex = GetTemporaryWaitingSlotLayoutIndex(slotIndex);
                 var origin = TemporaryWaitingOrigin();
                 return new Vector3(origin.x, origin.y - temporaryIndex * _runtimePotSpacing, 0f);
             }
@@ -1381,7 +1385,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private Vector2 TemporaryWaitingOrigin()
         {
             return new Vector2(
-                waitingOrigin.x + _runtimePotSpacing + temporaryWaitingSlotOffset.x,
+                waitingOrigin.x + temporaryWaitingSlotOffset.x,
                 waitingOrigin.y + temporaryWaitingSlotOffset.y);
         }
 
@@ -1416,17 +1420,67 @@ namespace BlossomFlow.Gameplay.Presentation
                 return 0;
             }
 
-            var highestTemporaryIndex = 0;
+            var temporarySlotCount = 0;
             var slots = _session.WaitingSlots.Slots;
             for (var i = 0; i < slots.Count; i++)
             {
                 if (slots[i].IsTemporary)
                 {
-                    highestTemporaryIndex = Mathf.Max(highestTemporaryIndex, slots[i].Index - _session.WaitingSlots.Capacity);
+                    temporarySlotCount++;
                 }
             }
 
-            return highestTemporaryIndex;
+            return Mathf.Max(0, temporarySlotCount - 1);
+        }
+
+        private int GetTemporaryWaitingSlotLayoutIndex(int slotIndex)
+        {
+            if (_session == null)
+            {
+                return 0;
+            }
+
+            var layoutIndex = 0;
+            var slots = _session.WaitingSlots.Slots;
+            for (var i = 0; i < slots.Count; i++)
+            {
+                var slot = slots[i];
+                if (slot.IsTemporary && slot.Index < slotIndex)
+                {
+                    layoutIndex++;
+                }
+            }
+
+            return layoutIndex;
+        }
+
+        private void RefreshTemporaryWaitingSlotPositions()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            var slots = _session.WaitingSlots.Slots;
+            for (var i = 0; i < slots.Count; i++)
+            {
+                var slot = slots[i];
+                if (!slot.IsTemporary)
+                {
+                    continue;
+                }
+
+                if (_waitingSlotViews.TryGetValue(slot.Index, out var slotView))
+                {
+                    AnimatePotMove(slotView, WaitingSlotPosition(slot.Index), waitingMoveSeconds, waitingMoveEase);
+                }
+
+                if (slot.Pot != null && _waitingPotViews.TryGetValue(slot.Index, out var potView))
+                {
+                    AnimatePotMove(potView, WaitingPotPosition(slot.Index), waitingMoveSeconds, waitingMoveEase);
+                    StartWaitingPotPulse(potView);
+                }
+            }
         }
 
         private Vector3 ConveyorScanPosition(ConveyorScan scan, int gridWidth, int gridHeight, float layoutCellSize)
@@ -1825,6 +1879,44 @@ namespace BlossomFlow.Gameplay.Presentation
                 var last = new Vector3(waitingOrigin.x, waitingOrigin.y - (slotCount - 1) * previewPotSpacing, 0f);
                 Gizmos.DrawLine(first, last);
             }
+        }
+
+        private void DrawTemporaryWaitingSlotGizmos(int slotCount, float previewPotSpacing)
+        {
+            if (slotCount <= 0)
+            {
+                return;
+            }
+
+            var origin = PreviewTemporaryWaitingOrigin();
+            Gizmos.color = new Color(0.8f, 0.8f, 0.8f, Mathf.Lerp(0.2f, 0.75f, temporaryWaitingSlotAlpha));
+            for (var slotIndex = 0; slotIndex < slotCount; slotIndex++)
+            {
+                var position = new Vector3(origin.x, origin.y - slotIndex * previewPotSpacing, 0f);
+                Gizmos.DrawWireCube(position, new Vector3(waitingSlotVisualSize, waitingSlotVisualSize, 0.01f));
+
+                if (showVisualFootprintGizmos)
+                {
+                    Gizmos.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.12f, 0.35f, temporaryWaitingSlotAlpha));
+                    Gizmos.DrawWireCube(position, new Vector3(potVisualSize, potVisualSize, 0.01f));
+                    Gizmos.color = new Color(0.8f, 0.8f, 0.8f, Mathf.Lerp(0.2f, 0.75f, temporaryWaitingSlotAlpha));
+                }
+            }
+
+            if (slotCount > 1)
+            {
+                Gizmos.color = new Color(0.8f, 0.8f, 0.8f, Mathf.Lerp(0.12f, 0.35f, temporaryWaitingSlotAlpha));
+                var first = new Vector3(origin.x, origin.y, 0f);
+                var last = new Vector3(origin.x, origin.y - (slotCount - 1) * previewPotSpacing, 0f);
+                Gizmos.DrawLine(first, last);
+            }
+        }
+
+        private Vector2 PreviewTemporaryWaitingOrigin()
+        {
+            return new Vector2(
+                waitingOrigin.x + temporaryWaitingSlotOffset.x,
+                waitingOrigin.y + temporaryWaitingSlotOffset.y);
         }
 
         private void DrawLayoutLabels(float previewCellSize, float previewFlowerScale, float previewPotSpacing, float previewQueuedPotSpacing)
