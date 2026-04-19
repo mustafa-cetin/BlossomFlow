@@ -120,6 +120,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterType(
+            typeof(GardenTutorialProgressService),
+            new[] { typeof(IGardenTutorialProgressService) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
             typeof(CrazyGamesStartupServiceInitializer),
             new[] { typeof(IStartupServiceInitializer) },
             Lifetime.Singleton,

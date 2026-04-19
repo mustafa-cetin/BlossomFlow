@@ -4,6 +4,7 @@ namespace BlossomFlow.MainMenu.Domain
     {
         MainMenuPlayerProgress Current { get; }
         void AddGold(int amount);
+        void AdvanceLevel();
         void AddGoldAndAdvanceLevel(int goldAmount);
         void AddMagicalSeed(int amount);
         bool TrySpendGold(int amount);

@@ -411,14 +411,18 @@ MonoBehaviour:
   titleText: {fileID: 1261053573}
   rewardAmountText: {fileID: 48007006}
   rewardImage: {fileID: 1068388624}
+  magicalSeedRewardSprite: {fileID: 7839109231583336127, guid: ac5f822ed513820459d06b100ab6bb84, type: 3}
   claimButton: {fileID: 401313073}
   doubleRewardButton: {fileID: 1530349877}
   title: Well Done
-  rewardAmountFormat: +{0} coin
+  rewardAmountFormat: +{0} gold
+  magicalSeedRewardAmountFormat: +{0} magical seed
   panelFadeSeconds: 0.24
   titleSlideSeconds: 0.36
   titleStartOffsetY: 90
   rewardAppearSeconds: 0.24
+  rewardSwapShrinkSeconds: 0.1
+  rewardSwapGrowSeconds: 0.16
   buttonAppearSeconds: 0.22
   buttonStaggerSeconds: 0.08
   titleEase: 27
@@ -2075,7 +2079,6 @@ GameObject:
   - component: {fileID: 1068388623}
   - component: {fileID: 1068388625}
   - component: {fileID: 1068388624}
-  - component: {fileID: 1068388626}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -2122,7 +2125,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -5272745434054684985, guid: 15b71a5c7a97b9040ba5116ac93ef18e, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2140,28 +2143,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1068388622}
   m_CullTransparentMesh: 1
---- !u!114 &1068388626
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1068388622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29414c4a8a27ec14dbe0a8b3d95e8243, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
-  targetImage: {fileID: 1068388624}
-  spriteReference:
-    m_AssetGUID: 15b71a5c7a97b9040ba5116ac93ef18e
-    m_SubObjectName: altintutarkenkiz_0
-    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 1
-  preserveNativeSize: 0
-  clearSpriteOnDisable: 1
 --- !u!1 &1106657936
 GameObject:
   m_ObjectHideFlags: 0
@@ -3367,8 +3348,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 154192191}
   - {fileID: 977665649}
+  - {fileID: 154192191}
   - {fileID: 1904414573}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -4639,6 +4620,8 @@ MonoBehaviour:
     - Pots: []
     WaitingSlotCount: 5
     ConveyorMaxPots: 5
+    Difficulty: 0
+    MagicalSeedReward: 0
     ConveyorPath:
       ReferenceId: greenhouse
       Scans: []

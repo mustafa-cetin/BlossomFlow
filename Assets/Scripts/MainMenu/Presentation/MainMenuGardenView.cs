@@ -42,6 +42,10 @@ namespace BlossomFlow.MainMenu.Presentation
         private Tween _waterButtonPulseTween;
         private Vector3 _waterButtonInitialScale;
         private bool _hasWaterButtonInitialScale;
+        private Func<int, bool> _plantInteractionFilter;
+
+        public event Action<int> PlantSucceeded;
+        public event Action WaterSucceeded;
 
         [Inject]
         private void Construct(
@@ -199,7 +203,8 @@ namespace BlossomFlow.MainMenu.Presentation
                 var countdown = isPlanted && !isGrown
                     ? FormatCountdown(garden.GetRemainingGrowthTime(i, nowTicks))
                     : string.Empty;
-                plotViews[i].SetState(isPlanted, isGrown, countdown, isUnlocked && canPlant);
+                var canPlantHere = isUnlocked && canPlant && (_plantInteractionFilter == null || _plantInteractionFilter(i));
+                plotViews[i].SetState(isPlanted, isGrown, countdown, canPlantHere);
             }
         }
 
@@ -227,9 +232,15 @@ namespace BlossomFlow.MainMenu.Presentation
 
         private void Plant(int regionIndex)
         {
+            if (_plantInteractionFilter != null && !_plantInteractionFilter(regionIndex))
+            {
+                return;
+            }
+
             if (_gardenService != null && _gardenService.TryPlant(regionIndex, GetTiming()))
             {
                 _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
+                PlantSucceeded?.Invoke(regionIndex);
                 Refresh();
             }
         }
@@ -239,8 +250,45 @@ namespace BlossomFlow.MainMenu.Presentation
             if (_gardenService != null && _gardenService.TryWater(GetTiming()))
             {
                 _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
+                WaterSucceeded?.Invoke();
                 Refresh();
             }
+        }
+
+        public void SetPlantInteractionFilter(Func<int, bool> filter)
+        {
+            _plantInteractionFilter = filter;
+            Refresh();
+        }
+
+        public void ClearPlantInteractionFilter()
+        {
+            _plantInteractionFilter = null;
+            Refresh();
+        }
+
+        public bool TryGetPlotAnchor(int regionIndex, out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (plotViews == null || regionIndex < 0 || regionIndex >= plotViews.Length || plotViews[regionIndex] == null)
+            {
+                return false;
+            }
+
+            position = plotViews[regionIndex].transform.position;
+            return true;
+        }
+
+        public bool TryGetWaterButtonAnchor(out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (waterButton == null)
+            {
+                return false;
+            }
+
+            position = waterButton.transform.position;
+            return true;
         }
 
         private void RefreshWaterButton(bool isUnlocked)

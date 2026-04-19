@@ -1069,6 +1069,8 @@ MonoBehaviour:
         LinkedPairId: 4
     WaitingSlotCount: 5
     ConveyorMaxPots: 5
+    Difficulty: 0
+    MagicalSeedReward: 1
     ConveyorPath:
       ReferenceId: greenhouse
       Scans: []

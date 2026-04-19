@@ -752,6 +752,7 @@ MonoBehaviour:
     WaitingSlotCount: 5
     ConveyorMaxPots: 5
     Difficulty: 1
+    MagicalSeedReward: 1
     ConveyorPath:
       ReferenceId: greenhouse
       Scans: []

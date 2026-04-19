@@ -53,6 +53,19 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.NextLifeCountdown));
         }
 
+        public void AdvanceLevel()
+        {
+            EnsureLoaded();
+            RefreshLifeRecovery(true);
+            SetProgress(new MainMenuPlayerProgress(
+                _current.LevelNumber + 1,
+                _current.CurrentLives,
+                _current.MaxLives,
+                _current.Gold,
+                _current.MagicalSeed,
+                _current.NextLifeCountdown));
+        }
+
         public void AddGoldAndAdvanceLevel(int goldAmount)
         {
             EnsureLoaded();

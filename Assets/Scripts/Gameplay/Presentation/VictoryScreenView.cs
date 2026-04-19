@@ -2,6 +2,7 @@ using System;
 using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.Levels;
 using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
@@ -22,6 +23,7 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text rewardAmountText;
         [SerializeField] private Image rewardImage;
+        [SerializeField] private Sprite magicalSeedRewardSprite;
         [FormerlySerializedAs("restartButton")]
         [SerializeField] private Button claimButton;
         [SerializeField] private Button doubleRewardButton;
@@ -29,12 +31,15 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("Copy")]
         [SerializeField] private string title = "Victory";
         [SerializeField] private string rewardAmountFormat = "+{0}";
+        [SerializeField] private string magicalSeedRewardAmountFormat = "+{0} magical seed";
 
         [Header("Animation")]
         [SerializeField] private float panelFadeSeconds = 0.24f;
         [SerializeField] private float titleSlideSeconds = 0.36f;
         [SerializeField] private float titleStartOffsetY = 90f;
         [SerializeField] private float rewardAppearSeconds = 0.24f;
+        [SerializeField] private float rewardSwapShrinkSeconds = 0.1f;
+        [SerializeField] private float rewardSwapGrowSeconds = 0.16f;
         [SerializeField] private float buttonAppearSeconds = 0.22f;
         [SerializeField] private float buttonStaggerSeconds = 0.08f;
         [SerializeField] private Ease titleEase = Ease.OutBack;
@@ -51,16 +56,22 @@ namespace BlossomFlow.Gameplay.Presentation
         private Vector3 _rewardVisibleScale;
         private Vector3 _claimButtonVisibleScale;
         private Vector3 _doubleRewardButtonVisibleScale;
+        private Sprite _goldRewardSprite;
         private Sequence _showSequence;
+        private Sequence _rewardSwapSequence;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
         private IRewardedAdService _rewardedAdService;
         private ISceneTransitionService _sceneTransitionService;
+        private ICurrentLevelDefinitionProvider _currentLevelDefinitionProvider;
         private IDisposable _victoryScreenRequestedSubscription;
         private IDisposable _levelRestartedSubscription;
         private bool _rewardClaimed;
+        private bool _goldRewardClaimed;
+        private bool _awaitingMagicalSeedClaim;
         private bool _rewardedAdInProgress;
+        private int _currentMagicalSeedReward;
 
         [Inject]
         private void Construct(
@@ -68,13 +79,15 @@ namespace BlossomFlow.Gameplay.Presentation
             IEventSubscriber eventSubscriber,
             IMainMenuPlayerProgressService progressService,
             IRewardedAdService rewardedAdService,
-            ISceneTransitionService sceneTransitionService)
+            ISceneTransitionService sceneTransitionService,
+            ICurrentLevelDefinitionProvider currentLevelDefinitionProvider)
         {
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
             _rewardedAdService = rewardedAdService;
             _sceneTransitionService = sceneTransitionService;
+            _currentLevelDefinitionProvider = currentLevelDefinitionProvider;
 
             if (isActiveAndEnabled)
             {
@@ -90,9 +103,10 @@ namespace BlossomFlow.Gameplay.Presentation
             _rewardVisibleScale = rewardImage != null ? rewardImage.transform.localScale : Vector3.one;
             _claimButtonVisibleScale = claimButton != null ? claimButton.transform.localScale : Vector3.one;
             _doubleRewardButtonVisibleScale = doubleRewardButton != null ? doubleRewardButton.transform.localScale : Vector3.one;
+            _goldRewardSprite = rewardImage != null ? rewardImage.sprite : null;
             EnsureRewardAmountText();
             ApplyCopy(title);
-            RefreshRewardAmount(victoryGoldReward);
+            RefreshGoldRewardPresentation(victoryGoldReward);
 
             if (hideOnAwake)
             {
@@ -134,9 +148,12 @@ namespace BlossomFlow.Gameplay.Presentation
         public void Show()
         {
             _rewardClaimed = false;
+            _goldRewardClaimed = false;
+            _awaitingMagicalSeedClaim = false;
             _rewardedAdInProgress = false;
+            _currentMagicalSeedReward = GetCurrentMagicalSeedReward();
             ApplyCopy(title);
-            RefreshRewardAmount(victoryGoldReward);
+            RefreshGoldRewardPresentation(victoryGoldReward);
             SetButtonsInteractable(true);
             PlayShowAnimation();
         }
@@ -155,6 +172,19 @@ namespace BlossomFlow.Gameplay.Presentation
         private void ClaimReward()
         {
             PlayButtonClickSound();
+
+            if (_awaitingMagicalSeedClaim)
+            {
+                GrantMagicalSeedAndReturnToMainMenu();
+                return;
+            }
+
+            if (_currentMagicalSeedReward > 0)
+            {
+                GrantGoldAndShowMagicalSeedReward(victoryGoldReward);
+                return;
+            }
+
             GrantRewardAndReturnToMainMenu(victoryGoldReward);
         }
 
@@ -197,9 +227,52 @@ namespace BlossomFlow.Gameplay.Presentation
             ReturnToMainMenu();
         }
 
+        private void GrantGoldAndShowMagicalSeedReward(int goldAmount)
+        {
+            if (_goldRewardClaimed || _rewardClaimed)
+            {
+                return;
+            }
+
+            _goldRewardClaimed = true;
+            _rewardedAdInProgress = false;
+            _progressService?.AddGold(goldAmount);
+            _awaitingMagicalSeedClaim = true;
+
+            if (claimButton != null)
+            {
+                claimButton.interactable = false;
+            }
+
+            if (doubleRewardButton != null)
+            {
+                doubleRewardButton.interactable = false;
+            }
+
+            PlayMagicalSeedRewardSwap(_currentMagicalSeedReward);
+        }
+
+        private void GrantMagicalSeedAndReturnToMainMenu()
+        {
+            if (_rewardClaimed)
+            {
+                return;
+            }
+
+            _rewardClaimed = true;
+            _awaitingMagicalSeedClaim = false;
+            _rewardedAdInProgress = false;
+            SetButtonsInteractable(false);
+            _progressService?.AddMagicalSeed(_currentMagicalSeedReward);
+            _progressService?.AdvanceLevel();
+            ReturnToMainMenu();
+        }
+
         private void OnValidate()
         {
             victoryGoldReward = Mathf.Max(0, victoryGoldReward);
+            rewardSwapShrinkSeconds = Mathf.Max(0f, rewardSwapShrinkSeconds);
+            rewardSwapGrowSeconds = Mathf.Max(0f, rewardSwapGrowSeconds);
         }
 
         private void ApplyCopy(string nextTitle)
@@ -221,12 +294,93 @@ namespace BlossomFlow.Gameplay.Presentation
             _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
         }
 
-        private void RefreshRewardAmount(int goldAmount)
+        private int GetCurrentMagicalSeedReward()
+        {
+            if (_currentLevelDefinitionProvider == null ||
+                !_currentLevelDefinitionProvider.TryGetCurrentLevelDefinition(out var definition) ||
+                definition == null)
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, definition.MagicalSeedReward);
+        }
+
+        private void RefreshGoldRewardPresentation(int goldAmount)
+        {
+            if (_goldRewardSprite == null && rewardImage != null && rewardImage.sprite != magicalSeedRewardSprite)
+            {
+                _goldRewardSprite = rewardImage.sprite;
+            }
+
+            if (rewardImage != null && _goldRewardSprite != null)
+            {
+                rewardImage.sprite = _goldRewardSprite;
+            }
+
+            RefreshRewardAmount(goldAmount);
+        }
+
+        private void RefreshMagicalSeedRewardPresentation(int magicalSeedAmount)
+        {
+            if (rewardImage != null && magicalSeedRewardSprite != null)
+            {
+                rewardImage.sprite = magicalSeedRewardSprite;
+            }
+
+            RefreshRewardAmount(magicalSeedAmount, magicalSeedRewardAmountFormat);
+        }
+
+        private void RefreshRewardAmount(int amount)
+        {
+            RefreshRewardAmount(amount, rewardAmountFormat);
+        }
+
+        private void RefreshRewardAmount(int amount, string format)
         {
             if (rewardAmountText != null)
             {
-                rewardAmountText.text = string.Format(rewardAmountFormat, goldAmount);
+                format = string.IsNullOrEmpty(format) ? "+{0}" : format;
+                rewardAmountText.text = string.Format(format, amount);
             }
+        }
+
+        private void PlayMagicalSeedRewardSwap(int magicalSeedAmount)
+        {
+            if (rewardImage == null)
+            {
+                RefreshMagicalSeedRewardPresentation(magicalSeedAmount);
+                if (claimButton != null)
+                {
+                    claimButton.interactable = true;
+                }
+
+                return;
+            }
+
+            KillRewardSwapSequence();
+            rewardImage.transform.DOKill();
+
+            var rewardTransform = rewardImage.transform;
+            rewardTransform.localScale = _rewardVisibleScale;
+
+            _rewardSwapSequence = DOTween.Sequence()
+                .SetLink(gameObject, LinkBehaviour.KillOnDestroy)
+                .Append(rewardTransform.DOScale(_rewardVisibleScale * 0.72f, rewardSwapShrinkSeconds)
+                    .SetEase(Ease.InCubic))
+                .AppendCallback(() => RefreshMagicalSeedRewardPresentation(magicalSeedAmount))
+                .Append(rewardTransform.DOScale(_rewardVisibleScale * 1.08f, rewardSwapGrowSeconds)
+                    .SetEase(Ease.OutBack))
+                .Append(rewardTransform.DOScale(_rewardVisibleScale, rewardSwapGrowSeconds * 0.5f)
+                    .SetEase(Ease.OutSine))
+                .OnComplete(() =>
+                {
+                    if (claimButton != null)
+                    {
+                        claimButton.interactable = true;
+                    }
+                })
+                .OnKill(() => _rewardSwapSequence = null);
         }
 
         private void EnsureRewardAmountText()
@@ -397,6 +551,13 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             _showSequence?.Kill();
             _showSequence = null;
+            KillRewardSwapSequence();
+        }
+
+        private void KillRewardSwapSequence()
+        {
+            _rewardSwapSequence?.Kill();
+            _rewardSwapSequence = null;
         }
 
         private static CanvasGroup GetOrAddCanvasGroup(GameObject target)

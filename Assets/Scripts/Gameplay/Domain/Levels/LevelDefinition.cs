@@ -32,6 +32,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             Difficulty = LevelDifficulty.Normal;
             ConveyorPath = new ConveyorPathDefinition();
             Blockers = Array.Empty<FlowerBlockerDefinition>();
+            MagicalSeedReward = 0;
         }
 
         public LevelDefinition(
@@ -43,7 +44,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             ConveyorPathDefinition conveyorPath = null,
             IEnumerable<FlowerBlockerDefinition> blockers = null,
             int conveyorMaxPots = DefaultConveyorMaxPots,
-            LevelDifficulty difficulty = LevelDifficulty.Normal)
+            LevelDifficulty difficulty = LevelDifficulty.Normal,
+            int magicalSeedReward = 0)
             : this(
                 width,
                 height,
@@ -54,7 +56,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 conveyorPath,
                 blockers,
                 conveyorMaxPots,
-                difficulty)
+                difficulty,
+                magicalSeedReward)
         {
         }
 
@@ -67,7 +70,8 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             ConveyorPathDefinition conveyorPath = null,
             IEnumerable<FlowerBlockerDefinition> blockers = null,
             int conveyorMaxPots = DefaultConveyorMaxPots,
-            LevelDifficulty difficulty = LevelDifficulty.Normal)
+            LevelDifficulty difficulty = LevelDifficulty.Normal,
+            int magicalSeedReward = 0)
         {
             if (width <= 0)
             {
@@ -98,6 +102,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
             WaitingSlotCount = waitingSlotCount;
             ConveyorMaxPots = conveyorMaxPots;
             Difficulty = difficulty;
+            MagicalSeedReward = Math.Max(0, magicalSeedReward);
             ConveyorPath = conveyorPath ?? new ConveyorPathDefinition("greenhouse");
             Blockers = (blockers ?? Enumerable.Empty<FlowerBlockerDefinition>()).ToArray();
             Validate();
@@ -110,6 +115,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
         public int WaitingSlotCount;
         public int ConveyorMaxPots;
         public LevelDifficulty Difficulty;
+        public int MagicalSeedReward;
         public ConveyorPathDefinition ConveyorPath;
         public FlowerBlockerDefinition[] Blockers;
 
@@ -140,6 +146,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 throw new ArgumentOutOfRangeException(nameof(ConveyorMaxPots), "Conveyor max pots must be greater than zero.");
             }
 
+            MagicalSeedReward = Math.Max(0, MagicalSeedReward);
             ValidateFlowers();
             ValidateBlockers();
             ValidateLaunchColumns();
