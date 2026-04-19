@@ -9,6 +9,7 @@ using BlossomFlow.MainMenu.Domain;
 using Reflex.Core;
 using Reflex.Enums;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using Resolution = Reflex.Enums.Resolution;
 
 public class RootInstaller : MonoBehaviour, IInstaller
@@ -17,6 +18,8 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField] private string startupTargetSceneName = "GameScene";
     [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
     [SerializeField] private LevelCatalogAsset levelCatalog;
+    [SerializeField] private AssetReferenceT<LevelCatalogAsset> remoteLevelCatalog;
+    [SerializeField] private bool updateAddressableCatalogsBeforeLevelCatalogLoad = true;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
@@ -98,8 +101,22 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterFactory(
-            _ => new LevelCatalog(levelCatalog),
-            new[] { typeof(ILevelCatalog) },
+            _ => new AddressableLevelCatalogAssetLoader(
+                remoteLevelCatalog,
+                updateAddressableCatalogsBeforeLevelCatalogLoad),
+            new[] { typeof(ILevelCatalogAssetLoader) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            container => new RemoteLevelCatalog(
+                levelCatalog,
+                container.Resolve<ILevelCatalogAssetLoader>()),
+            new[]
+            {
+                typeof(ILevelCatalog),
+                typeof(IRemoteLevelCatalogPreloader)
+            },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -127,6 +144,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         builder.RegisterType(
             typeof(CrazyGamesStartupServiceInitializer),
+            new[] { typeof(CrazyGamesStartupServiceInitializer) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(StartupServiceInitializer),
             new[] { typeof(IStartupServiceInitializer) },
             Lifetime.Singleton,
             Resolution.Lazy);
