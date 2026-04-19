@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
@@ -90,6 +91,7 @@ namespace BlossomFlow.MainMenu.Presentation
                 return;
             }
 
+            _eventPublisher.Publish(new SoundRequested(SoundCueId.ButtonClick));
             _eventPublisher.Publish(new MainMenuPlayRequested(progress.LevelNumber));
         }
 

@@ -1,5 +1,6 @@
 using System;
 using BlossomFlow.Application.Ads;
+using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.MainMenu.Domain;
@@ -51,6 +52,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private Vector3 _claimButtonVisibleScale;
         private Vector3 _doubleRewardButtonVisibleScale;
         private Sequence _showSequence;
+        private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
         private IRewardedAdService _rewardedAdService;
@@ -62,11 +64,13 @@ namespace BlossomFlow.Gameplay.Presentation
 
         [Inject]
         private void Construct(
+            IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
             IMainMenuPlayerProgressService progressService,
             IRewardedAdService rewardedAdService,
             ISceneTransitionService sceneTransitionService)
         {
+            _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
             _rewardedAdService = rewardedAdService;
@@ -150,11 +154,13 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void ClaimReward()
         {
+            PlayButtonClickSound();
             GrantRewardAndReturnToMainMenu(victoryGoldReward);
         }
 
         private void ClaimDoubleReward()
         {
+            PlayButtonClickSound();
             if (_rewardClaimed || _rewardedAdInProgress)
             {
                 return;
@@ -420,6 +426,11 @@ namespace BlossomFlow.Gameplay.Presentation
             _levelRestartedSubscription?.Dispose();
             _victoryScreenRequestedSubscription = null;
             _levelRestartedSubscription = null;
+        }
+
+        private void PlayButtonClickSound()
+        {
+            _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
         }
     }
 }

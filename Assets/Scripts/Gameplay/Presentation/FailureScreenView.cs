@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.MainMenu.Domain;
@@ -144,6 +145,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnPrimaryClicked()
         {
+            PlayButtonClickSound();
             if (_state == FailureScreenState.RetryOnly)
             {
                 TryRestartLevel();
@@ -155,6 +157,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnCloseClicked()
         {
+            PlayButtonClickSound();
             if (_state == FailureScreenState.KeepPlayingOffer)
             {
                 _state = FailureScreenState.ConfirmQuit;
@@ -395,6 +398,11 @@ namespace BlossomFlow.Gameplay.Presentation
             _keepPlayingStartedSubscription = null;
             _levelRestartedSubscription = null;
             _progressChangedSubscription = null;
+        }
+
+        private void PlayButtonClickSound()
+        {
+            _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
         }
 
         private enum FailureScreenState

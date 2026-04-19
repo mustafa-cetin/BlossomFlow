@@ -1,3 +1,5 @@
+using BlossomFlow.Application.Audio;
+using BlossomFlow.Application.Events;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using UnityEngine;
@@ -12,12 +14,14 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField] private MainMenuTab tab;
 
         private Button _button;
+        private IEventPublisher _eventPublisher;
         private IMainMenuNavigator _navigator;
 
         [Inject]
-        private void Construct(IMainMenuNavigator navigator)
+        private void Construct(IMainMenuNavigator navigator, IEventPublisher eventPublisher)
         {
             _navigator = navigator;
+            _eventPublisher = eventPublisher;
         }
 
         private void Awake()
@@ -43,7 +47,10 @@ namespace BlossomFlow.MainMenu.Presentation
 
         private void SelectTab()
         {
-            _navigator?.TrySelect(tab);
+            if (_navigator != null && _navigator.TrySelect(tab))
+            {
+                _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
+            }
         }
     }
 }

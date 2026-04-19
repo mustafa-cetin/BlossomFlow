@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
 using BlossomFlow.Gameplay.Domain;
@@ -184,6 +185,8 @@ namespace BlossomFlow.Gameplay.Presentation
             _session = _sessionFactory.Create(GetLevelDefinition());
             _session.LevelWon += OnLevelWon;
             _session.LevelFailed += OnLevelFailed;
+            _session.WaitingPotPlaced += OnWaitingPotPlaced;
+            _session.WaitingPotRecalled += OnWaitingPotRecalled;
             _session.Conveyor.PotEntered += OnConveyorPotCountChanged;
             _session.Conveyor.PotRemoved += OnConveyorPotCountChanged;
 
@@ -204,8 +207,16 @@ namespace BlossomFlow.Gameplay.Presentation
                     continue;
                 }
 
-                presentationView.TrackPotentialFlowerTarget(activePots[i]);
-                _session.TryCollectAtCurrentConveyorPosition(activePots[i], out _);
+                var activePot = activePots[i];
+                presentationView.TrackPotentialFlowerTarget(activePot);
+                if (_session.TryCollectAtCurrentConveyorPosition(activePot, out _))
+                {
+                    PublishSound(SoundCueId.FlowerCollect);
+                    if (activePot.IsFull)
+                    {
+                        PublishSound(SoundCueId.PotFull);
+                    }
+                }
             }
 
             if (_session.State != LevelPlayState.Playing)
@@ -232,6 +243,8 @@ namespace BlossomFlow.Gameplay.Presentation
 
             var pots = _session.LaunchGroupFromColumn(columnIndex, out var sourceColumnIndexes);
             StartConveyorEntryDelay();
+            PublishSound(SoundCueId.GameplayTap);
+            PublishSound(SoundCueId.PotLaunch);
             for (var i = 0; i < pots.Count; i++)
             {
                 presentationView.ShowLaunchedPot(pots[i], sourceColumnIndexes[i]);
@@ -257,6 +270,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             RecallWaitingPot(slotIndex, true);
+            PublishSound(SoundCueId.GameplayTap);
         }
 
         private bool CanEnterConveyor(int potCount = 1)
@@ -364,6 +378,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             _isFastForwardingConveyor = false;
             NotifyGameplayStop();
+            PublishSound(SoundCueId.LevelWin);
             presentationView.ShowWinResolution();
             _eventPublisher.Publish(new LevelVictoryScreenRequested());
             Debug.Log("Level won.");
@@ -373,9 +388,25 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             _isFastForwardingConveyor = false;
             NotifyGameplayStop();
+            PublishSound(SoundCueId.LevelFail);
+            if (failedPot != null)
+            {
+                PublishSound(SoundCueId.PotBreak);
+            }
+
             presentationView.ShowFailResolution(failedPot);
             _eventPublisher.Publish(new LevelFailureScreenRequested());
             Debug.Log($"Level failed: {reason}.");
+        }
+
+        private void OnWaitingPotPlaced(LevelSession session, PotModel pot, int slotIndex)
+        {
+            PublishSound(SoundCueId.WaitingPotPlaced);
+        }
+
+        private void OnWaitingPotRecalled(LevelSession session, PotModel pot, int slotIndex)
+        {
+            PublishSound(SoundCueId.WaitingPotRecalled);
         }
 
         private void OnConveyorPotCountChanged(ConveyorBelt conveyor, ConveyorPot pot)
@@ -414,6 +445,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             _eventPublisher.Publish(new ConveyorPotEntryBlocked(_session.Conveyor.Pots.Count, _session.Conveyor.MaxPots));
+            PublishSound(SoundCueId.ConveyorEntryBlocked);
         }
 
         public void RestartLevel()
@@ -482,8 +514,15 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _session.LevelWon -= OnLevelWon;
             _session.LevelFailed -= OnLevelFailed;
+            _session.WaitingPotPlaced -= OnWaitingPotPlaced;
+            _session.WaitingPotRecalled -= OnWaitingPotRecalled;
             _session.Conveyor.PotEntered -= OnConveyorPotCountChanged;
             _session.Conveyor.PotRemoved -= OnConveyorPotCountChanged;
+        }
+
+        private void PublishSound(SoundCueId cueId)
+        {
+            _eventPublisher?.Publish(new SoundRequested(cueId));
         }
     }
 }
