@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace BlossomFlow.Application.Audio
 {
@@ -7,6 +10,7 @@ namespace BlossomFlow.Application.Audio
     {
         private readonly ISoundCatalog _soundCatalog;
         private readonly IMusicCatalog _musicCatalog;
+        private readonly Dictionary<string, AsyncOperationHandle<AudioClip>> _loadedClipHandles = new();
         private AudioSource _soundEffectsSource;
         private AudioSource _musicSource;
         private GameObject _audioRoot;
@@ -14,6 +18,7 @@ namespace BlossomFlow.Application.Audio
         private float _musicVolume;
         private bool _areSoundEffectsMuted;
         private bool _isMusicMuted;
+        private bool _isDisposed;
         private MusicTrackId? _currentMusicTrackId;
 
         public UnityAudioPlayer(ISoundCatalog soundCatalog, IMusicCatalog musicCatalog, float soundEffectsVolume, float musicVolume)
@@ -31,18 +36,15 @@ namespace BlossomFlow.Application.Audio
 
         public void Play(SoundCueId cueId, float volumeScale)
         {
-            if (_areSoundEffectsMuted || _soundCatalog == null || !_soundCatalog.TryGetClip(cueId, out var clip))
+            if (_areSoundEffectsMuted ||
+                _soundCatalog == null ||
+                !_soundCatalog.TryGetClipReference(cueId, out var clipReference))
             {
                 return;
             }
 
-            var source = GetOrCreateSoundEffectsSource();
-            if (source == null)
-            {
-                return;
-            }
-
-            source.PlayOneShot(clip, Mathf.Clamp01(volumeScale) * _soundEffectsVolume);
+            var clampedVolumeScale = Mathf.Clamp01(volumeScale);
+            LoadClip(clipReference, clip => PlayLoadedSoundEffect(clip, clampedVolumeScale));
         }
 
         public void SetSoundEffectsVolume(float volume)
@@ -57,27 +59,13 @@ namespace BlossomFlow.Application.Audio
 
         public void PlayLoop(MusicTrackId trackId)
         {
-            if (_musicCatalog == null || !_musicCatalog.TryGetClip(trackId, out var clip))
-            {
-                return;
-            }
-
-            var source = GetOrCreateMusicSource();
-            if (source == null)
-            {
-                return;
-            }
-
-            if (_currentMusicTrackId == trackId && source.clip == clip && source.isPlaying)
+            if (_musicCatalog == null || !_musicCatalog.TryGetClipReference(trackId, out var clipReference))
             {
                 return;
             }
 
             _currentMusicTrackId = trackId;
-            source.clip = clip;
-            source.loop = true;
-            source.volume = GetMusicSourceVolume();
-            source.Play();
+            LoadClip(clipReference, clip => PlayLoadedMusic(trackId, clip));
         }
 
         public void Stop()
@@ -112,14 +100,57 @@ namespace BlossomFlow.Application.Audio
 
         public void Dispose()
         {
+            _isDisposed = true;
             if (_audioRoot != null)
             {
                 UnityEngine.Object.Destroy(_audioRoot);
             }
 
+            ReleaseLoadedClips();
             _audioRoot = null;
             _soundEffectsSource = null;
             _musicSource = null;
+        }
+
+        private void PlayLoadedSoundEffect(AudioClip clip, float volumeScale)
+        {
+            if (_isDisposed || _areSoundEffectsMuted || clip == null)
+            {
+                return;
+            }
+
+            var source = GetOrCreateSoundEffectsSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            source.PlayOneShot(clip, volumeScale * _soundEffectsVolume);
+        }
+
+        private void PlayLoadedMusic(MusicTrackId trackId, AudioClip clip)
+        {
+            if (_isDisposed || _currentMusicTrackId != trackId || clip == null)
+            {
+                return;
+            }
+
+            var source = GetOrCreateMusicSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            if (source.clip == clip && source.isPlaying)
+            {
+                source.volume = GetMusicSourceVolume();
+                return;
+            }
+
+            source.clip = clip;
+            source.loop = true;
+            source.volume = GetMusicSourceVolume();
+            source.Play();
         }
 
         private AudioSource GetOrCreateSoundEffectsSource()
@@ -165,6 +196,76 @@ namespace BlossomFlow.Application.Audio
         private float GetMusicSourceVolume()
         {
             return _isMusicMuted ? 0f : _musicVolume;
+        }
+
+        private void LoadClip(AssetReferenceT<AudioClip> clipReference, Action<AudioClip> onLoaded)
+        {
+            if (_isDisposed || clipReference == null || !clipReference.RuntimeKeyIsValid())
+            {
+                return;
+            }
+
+            var cacheKey = GetReferenceCacheKey(clipReference);
+            if (_loadedClipHandles.TryGetValue(cacheKey, out var cachedHandle))
+            {
+                if (cachedHandle.IsValid() && cachedHandle.Status == AsyncOperationStatus.Succeeded)
+                {
+                    onLoaded?.Invoke(cachedHandle.Result);
+                    return;
+                }
+
+                if (cachedHandle.IsValid() && !cachedHandle.IsDone)
+                {
+                    cachedHandle.Completed += handle => OnClipLoadCompleted(cacheKey, handle, onLoaded);
+                    return;
+                }
+
+                _loadedClipHandles.Remove(cacheKey);
+            }
+
+            var handle = clipReference.LoadAssetAsync();
+            _loadedClipHandles[cacheKey] = handle;
+            handle.Completed += completedHandle => OnClipLoadCompleted(cacheKey, completedHandle, onLoaded);
+        }
+
+        private void OnClipLoadCompleted(
+            string cacheKey,
+            AsyncOperationHandle<AudioClip> handle,
+            Action<AudioClip> onLoaded)
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            if (!handle.IsValid() || handle.Status != AsyncOperationStatus.Succeeded)
+            {
+                _loadedClipHandles.Remove(cacheKey);
+                return;
+            }
+
+            _loadedClipHandles[cacheKey] = handle;
+            onLoaded?.Invoke(handle.Result);
+        }
+
+        private void ReleaseLoadedClips()
+        {
+            foreach (var handle in _loadedClipHandles.Values)
+            {
+                if (handle.IsValid())
+                {
+                    Addressables.Release(handle);
+                }
+            }
+
+            _loadedClipHandles.Clear();
+        }
+
+        private static string GetReferenceCacheKey(AssetReferenceT<AudioClip> clipReference)
+        {
+            return !string.IsNullOrEmpty(clipReference.AssetGUID)
+                ? clipReference.AssetGUID
+                : clipReference.RuntimeKey.ToString();
         }
     }
 }

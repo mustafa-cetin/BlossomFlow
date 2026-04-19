@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace BlossomFlow.Application.Audio
 {
     public interface IMusicCatalog
     {
-        bool TryGetClip(MusicTrackId trackId, out AudioClip clip);
+        bool TryGetClipReference(MusicTrackId trackId, out AssetReferenceT<AudioClip> clipReference);
     }
 }
