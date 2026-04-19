@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -11,6 +12,7 @@ namespace BlossomFlow.Application.Audio
         private readonly ISoundCatalog _soundCatalog;
         private readonly IMusicCatalog _musicCatalog;
         private readonly Dictionary<string, AsyncOperationHandle<AudioClip>> _loadedClipHandles = new();
+        private AudioRuntimeHost _runtimeHost;
         private AudioSource _soundEffectsSource;
         private AudioSource _musicSource;
         private GameObject _audioRoot;
@@ -119,6 +121,11 @@ namespace BlossomFlow.Application.Audio
                 return;
             }
 
+            PlayWhenReady(clip, readyClip => PlayReadySoundEffect(readyClip, volumeScale));
+        }
+
+        private void PlayReadySoundEffect(AudioClip clip, float volumeScale)
+        {
             var source = GetOrCreateSoundEffectsSource();
             if (source == null)
             {
@@ -131,6 +138,16 @@ namespace BlossomFlow.Application.Audio
         private void PlayLoadedMusic(MusicTrackId trackId, AudioClip clip)
         {
             if (_isDisposed || _currentMusicTrackId != trackId || clip == null)
+            {
+                return;
+            }
+
+            PlayWhenReady(clip, readyClip => PlayReadyMusic(trackId, readyClip));
+        }
+
+        private void PlayReadyMusic(MusicTrackId trackId, AudioClip clip)
+        {
+            if (_isDisposed || _currentMusicTrackId != trackId)
             {
                 return;
             }
@@ -151,6 +168,40 @@ namespace BlossomFlow.Application.Audio
             source.loop = true;
             source.volume = GetMusicSourceVolume();
             source.Play();
+        }
+
+        private void PlayWhenReady(AudioClip clip, Action<AudioClip> play)
+        {
+            if (clip == null || play == null)
+            {
+                return;
+            }
+
+            if (clip.loadState == AudioDataLoadState.Loaded)
+            {
+                play.Invoke(clip);
+                return;
+            }
+
+            if (clip.loadState == AudioDataLoadState.Failed)
+            {
+                Debug.LogWarning($"Audio clip '{clip.name}' failed to load audio data. Check the source file format/import settings.");
+                return;
+            }
+
+            if (clip.loadState == AudioDataLoadState.Unloaded && !clip.LoadAudioData())
+            {
+                Debug.LogWarning($"Audio clip '{clip.name}' could not start loading audio data. Check the source file format/import settings.");
+                return;
+            }
+
+            GetOrCreateRuntimeHost().PlayWhenLoaded(clip, readyClip =>
+            {
+                if (!_isDisposed)
+                {
+                    play.Invoke(readyClip);
+                }
+            });
         }
 
         private AudioSource GetOrCreateSoundEffectsSource()
@@ -190,7 +241,24 @@ namespace BlossomFlow.Application.Audio
 
             _audioRoot = new GameObject("BlossomFlowAudioPlayer");
             UnityEngine.Object.DontDestroyOnLoad(_audioRoot);
+            _runtimeHost = _audioRoot.AddComponent<AudioRuntimeHost>();
             return _audioRoot;
+        }
+
+        private AudioRuntimeHost GetOrCreateRuntimeHost()
+        {
+            if (_runtimeHost != null)
+            {
+                return _runtimeHost;
+            }
+
+            _runtimeHost = GetOrCreateAudioRoot().GetComponent<AudioRuntimeHost>();
+            if (_runtimeHost == null)
+            {
+                _runtimeHost = _audioRoot.AddComponent<AudioRuntimeHost>();
+            }
+
+            return _runtimeHost;
         }
 
         private float GetMusicSourceVolume()
@@ -266,6 +334,35 @@ namespace BlossomFlow.Application.Audio
             return !string.IsNullOrEmpty(clipReference.AssetGUID)
                 ? clipReference.AssetGUID
                 : clipReference.RuntimeKey.ToString();
+        }
+
+        private sealed class AudioRuntimeHost : MonoBehaviour
+        {
+            public void PlayWhenLoaded(AudioClip clip, Action<AudioClip> play)
+            {
+                StartCoroutine(WaitForClipLoad(clip, play));
+            }
+
+            private static IEnumerator WaitForClipLoad(AudioClip clip, Action<AudioClip> play)
+            {
+                while (clip != null && clip.loadState == AudioDataLoadState.Loading)
+                {
+                    yield return null;
+                }
+
+                if (clip == null)
+                {
+                    yield break;
+                }
+
+                if (clip.loadState == AudioDataLoadState.Loaded)
+                {
+                    play?.Invoke(clip);
+                    yield break;
+                }
+
+                Debug.LogWarning($"Audio clip '{clip.name}' did not finish loading audio data. State: {clip.loadState}.");
+            }
         }
     }
 }

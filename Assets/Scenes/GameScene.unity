@@ -1863,9 +1863,24 @@ MonoBehaviour:
   artworkImage: {fileID: 769697555}
   primaryButton: {fileID: 1184595918}
   closeButton: {fileID: 1438704162}
-  keepPlayingSprite: {fileID: 21300000, guid: 4efcc44f79fca1d4c8ed5a1052c89ba5, type: 3}
-  confirmQuitSprite: {fileID: 7677707037994875169, guid: b611255a8d318984aa26277f89124de5, type: 3}
-  retrySprite: {fileID: -1697048040685015222, guid: eebd2dfe40c25c8418a6479b71eeeedf, type: 3}
+  keepPlayingSpriteReference:
+    m_AssetGUID: 4efcc44f79fca1d4c8ed5a1052c89ba5
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  confirmQuitSpriteReference:
+    m_AssetGUID: b611255a8d318984aa26277f89124de5
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  retrySpriteReference:
+    m_AssetGUID: eebd2dfe40c25c8418a6479b71eeeedf
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
   keepPlayingMessage: Keep Playing
   confirmQuitMessage: Are you sure?
   retryMessage: Try Again?
@@ -2060,6 +2075,7 @@ GameObject:
   - component: {fileID: 1068388623}
   - component: {fileID: 1068388625}
   - component: {fileID: 1068388624}
+  - component: {fileID: 1068388626}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -2106,7 +2122,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5272745434054684985, guid: 15b71a5c7a97b9040ba5116ac93ef18e, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2124,6 +2140,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1068388622}
   m_CullTransparentMesh: 1
+--- !u!114 &1068388626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068388622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29414c4a8a27ec14dbe0a8b3d95e8243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
+  targetImage: {fileID: 1068388624}
+  spriteReference:
+    m_AssetGUID: 15b71a5c7a97b9040ba5116ac93ef18e
+    m_SubObjectName: altintutarkenkiz_0
+    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 1
+  preserveNativeSize: 0
+  clearSpriteOnDisable: 1
 --- !u!1 &1106657936
 GameObject:
   m_ObjectHideFlags: 0
@@ -2316,6 +2354,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1127604436}
   - component: {fileID: 1127604437}
+  - component: {fileID: 1127604438}
   m_Layer: 0
   m_Name: TESTBACKGROUND_0
   m_TagString: Untagged
@@ -2387,7 +2426,7 @@ SpriteRenderer:
   m_SortingLayer: -1
   m_SortingOrder: -13
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -5633304916546162570, guid: d3c10e63fbc32c84ba641b10dded7e75, type: 3}
+  m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -2395,8 +2434,29 @@ SpriteRenderer:
   m_Size: {x: 15.36, y: 27.521679}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1127604438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1127604435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7173b5a2c435e67449d08b7ee0fe6ca6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableSpriteRendererView
+  targetRenderer: {fileID: 1127604437}
+  spriteReference:
+    m_AssetGUID: d3c10e63fbc32c84ba641b10dded7e75
+    m_SubObjectName: ingamebackground_0
+    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 1
+  clearSpriteOnDisable: 1
 --- !u!1 &1134201893
 GameObject:
   m_ObjectHideFlags: 0

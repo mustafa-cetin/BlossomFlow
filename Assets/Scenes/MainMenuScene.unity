@@ -724,11 +724,11 @@ RectTransform:
   - {fileID: 511676374}
   m_Father: {fileID: 226276858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0.5}
-  m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -3061.4746, y: 922}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 253, y: -139}
   m_SizeDelta: {x: 496.9287, y: 171.0415}
-  m_Pivot: {x: 1, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!114 &258132378
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1123,6 +1123,7 @@ GameObject:
   - component: {fileID: 599598443}
   - component: {fileID: 599598442}
   - component: {fileID: 599598444}
+  - component: {fileID: 599598445}
   m_Layer: 5
   m_Name: background
   m_TagString: Untagged
@@ -1169,7 +1170,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 5079798517673629522, guid: 4f338006fcaf02f41ba32f4e7490d01d, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -1204,6 +1205,28 @@ MonoBehaviour:
   floatOffsetY: 8
   cycleSeconds: 2.4
   ease: 4
+--- !u!114 &599598445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599598440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29414c4a8a27ec14dbe0a8b3d95e8243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
+  targetImage: {fileID: 599598442}
+  spriteReference:
+    m_AssetGUID: 4f338006fcaf02f41ba32f4e7490d01d
+    m_SubObjectName: mainmenuartwork_0
+    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 1
+  preserveNativeSize: 0
+  clearSpriteOnDisable: 1
 --- !u!1 &623202951
 GameObject:
   m_ObjectHideFlags: 0
@@ -2080,6 +2103,7 @@ GameObject:
   - component: {fileID: 1139795070}
   - component: {fileID: 1139795069}
   - component: {fileID: 1139795068}
+  - component: {fileID: 1139795071}
   m_Layer: 5
   m_Name: logo
   m_TagString: Untagged
@@ -2141,7 +2165,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4320295261928297051, guid: bdbfeb151a4278b4ba20b175f1688b72, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2159,6 +2183,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1139795066}
   m_CullTransparentMesh: 1
+--- !u!114 &1139795071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1139795066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29414c4a8a27ec14dbe0a8b3d95e8243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
+  targetImage: {fileID: 0}
+  spriteReference:
+    m_AssetGUID: bdbfeb151a4278b4ba20b175f1688b72
+    m_SubObjectName: logo_0
+    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 1
+  preserveNativeSize: 0
+  clearSpriteOnDisable: 1
 --- !u!1 &1246620303
 GameObject:
   m_ObjectHideFlags: 0
@@ -2506,7 +2552,7 @@ GameObject:
   - component: {fileID: 1589559849}
   - component: {fileID: 1589559852}
   m_Layer: 5
-  m_Name: Friends
+  m_Name: SETTINGS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2994,7 +3040,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1681744106
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3452,7 +3498,7 @@ GameObject:
   - component: {fileID: 1920247418}
   - component: {fileID: 1920247417}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: SETTINGS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3497,7 +3543,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: FRIENDS
+  m_text: SETTINGS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: aafac24a11719b74999af9f3a980f821, type: 2}
   m_sharedMaterial: {fileID: -3710065787015080171, guid: aafac24a11719b74999af9f3a980f821, type: 2}

@@ -2,11 +2,13 @@ using System;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.SceneLoading;
+using BlossomFlow.Application.Sprites;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
 using Reflex.Attributes;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 
 namespace BlossomFlow.Gameplay.Presentation
@@ -25,9 +27,9 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private Button closeButton;
 
         [Header("Artwork")]
-        [SerializeField] private Sprite keepPlayingSprite;
-        [SerializeField] private Sprite confirmQuitSprite;
-        [SerializeField] private Sprite retrySprite;
+        [SerializeField] private AssetReferenceT<Sprite> keepPlayingSpriteReference;
+        [SerializeField] private AssetReferenceT<Sprite> confirmQuitSpriteReference;
+        [SerializeField] private AssetReferenceT<Sprite> retrySpriteReference;
 
         [Header("Copy")]
         [SerializeField] private string keepPlayingMessage = "Keep Playing";
@@ -53,12 +55,16 @@ namespace BlossomFlow.Gameplay.Presentation
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
         private ISceneTransitionService _sceneTransitionService;
+        private IAddressableSpriteLoader _spriteLoader;
         private IDisposable _failureScreenRequestedSubscription;
         private IDisposable _keepPlayingStartedSubscription;
         private IDisposable _levelRestartedSubscription;
         private IDisposable _progressChangedSubscription;
+        private IDisposable _activeArtworkLoad;
         private FailureScreenState _state;
         private Sprite _currentArtworkSprite;
+        private string _currentArtworkReferenceKey;
+        private int _artworkLoadVersion;
         private Vector3 _artworkBaseScale = Vector3.one;
         private Sequence _artworkSequence;
 
@@ -67,16 +73,19 @@ namespace BlossomFlow.Gameplay.Presentation
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
             IMainMenuPlayerProgressService progressService,
-            ISceneTransitionService sceneTransitionService)
+            ISceneTransitionService sceneTransitionService,
+            IAddressableSpriteLoader spriteLoader)
         {
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
             _sceneTransitionService = sceneTransitionService;
+            _spriteLoader = spriteLoader;
 
             if (isActiveAndEnabled)
             {
                 SubscribeToEvents();
+                Refresh();
             }
         }
 
@@ -120,6 +129,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             KillArtworkSequence();
+            ReleaseArtworkLoad(true);
             UnsubscribeFromEvents();
         }
 
@@ -230,9 +240,9 @@ namespace BlossomFlow.Gameplay.Presentation
                 primaryButtonCurrencyIcon.gameObject.SetActive(ShouldShowPrimaryButtonCurrencyIcon());
             }
 
-            if (artworkImage != null)
+            if (artworkImage != null && IsVisible())
             {
-                ApplyArtworkSprite(GetArtworkSprite());
+                ApplyArtworkSpriteReference(GetArtworkSpriteReference());
             }
 
             if (closeButton != null)
@@ -287,13 +297,13 @@ namespace BlossomFlow.Gameplay.Presentation
             return _state != FailureScreenState.RetryOnly;
         }
 
-        private Sprite GetArtworkSprite()
+        private AssetReferenceT<Sprite> GetArtworkSpriteReference()
         {
             return _state switch
             {
-                FailureScreenState.ConfirmQuit => confirmQuitSprite,
-                FailureScreenState.RetryOnly => retrySprite,
-                _ => keepPlayingSprite
+                FailureScreenState.ConfirmQuit => confirmQuitSpriteReference,
+                FailureScreenState.RetryOnly => retrySpriteReference,
+                _ => keepPlayingSpriteReference
             };
         }
 
@@ -308,7 +318,44 @@ namespace BlossomFlow.Gameplay.Presentation
             _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
         }
 
-        private void ApplyArtworkSprite(Sprite sprite)
+        private void ApplyArtworkSpriteReference(AssetReferenceT<Sprite> spriteReference)
+        {
+            if (artworkImage == null)
+            {
+                return;
+            }
+
+            var referenceKey = GetReferenceKey(spriteReference);
+            if (_currentArtworkReferenceKey == referenceKey &&
+                (_activeArtworkLoad != null || _currentArtworkSprite != null || !IsValidReference(spriteReference)))
+            {
+                artworkImage.enabled = _currentArtworkSprite != null;
+                return;
+            }
+
+            ReleaseArtworkLoad(false);
+            _currentArtworkReferenceKey = referenceKey;
+
+            if (_spriteLoader == null || !IsValidReference(spriteReference))
+            {
+                ApplyLoadedArtworkSprite(null);
+                return;
+            }
+
+            var requestVersion = ++_artworkLoadVersion;
+            artworkImage.enabled = false;
+            _activeArtworkLoad = _spriteLoader.Load(spriteReference, sprite =>
+            {
+                if (requestVersion != _artworkLoadVersion)
+                {
+                    return;
+                }
+
+                ApplyLoadedArtworkSprite(sprite);
+            });
+        }
+
+        private void ApplyLoadedArtworkSprite(Sprite sprite)
         {
             if (artworkImage == null)
             {
@@ -325,6 +372,40 @@ namespace BlossomFlow.Gameplay.Presentation
             artworkImage.sprite = sprite;
             artworkImage.enabled = sprite != null;
             PlayArtworkChangedAnimation();
+        }
+
+        private void ReleaseArtworkLoad(bool clearSprite)
+        {
+            _artworkLoadVersion++;
+            _activeArtworkLoad?.Dispose();
+            _activeArtworkLoad = null;
+
+            if (!clearSprite || artworkImage == null)
+            {
+                return;
+            }
+
+            _currentArtworkSprite = null;
+            _currentArtworkReferenceKey = null;
+            artworkImage.sprite = null;
+            artworkImage.enabled = false;
+        }
+
+        private static bool IsValidReference(AssetReferenceT<Sprite> spriteReference)
+        {
+            return spriteReference != null && spriteReference.RuntimeKeyIsValid();
+        }
+
+        private static string GetReferenceKey(AssetReferenceT<Sprite> spriteReference)
+        {
+            if (!IsValidReference(spriteReference))
+            {
+                return string.Empty;
+            }
+
+            return !string.IsNullOrEmpty(spriteReference.AssetGUID)
+                ? spriteReference.AssetGUID
+                : spriteReference.RuntimeKey.ToString();
         }
 
         private void PlayArtworkChangedAnimation()
@@ -365,6 +446,11 @@ namespace BlossomFlow.Gameplay.Presentation
                 panelRoot.SetActive(visible);
             }
 
+            if (!visible)
+            {
+                ReleaseArtworkLoad(true);
+            }
+
             if (_canvasGroup == null)
             {
                 return;
@@ -373,6 +459,16 @@ namespace BlossomFlow.Gameplay.Presentation
             _canvasGroup.alpha = visible ? 1f : 0f;
             _canvasGroup.interactable = visible;
             _canvasGroup.blocksRaycasts = visible;
+        }
+
+        private bool IsVisible()
+        {
+            if (panelRoot != null && panelRoot != gameObject && !panelRoot.activeSelf)
+            {
+                return false;
+            }
+
+            return _canvasGroup == null || _canvasGroup.alpha > 0f;
         }
 
         private void SubscribeToEvents()
