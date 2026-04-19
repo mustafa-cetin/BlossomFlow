@@ -2,6 +2,7 @@ using System;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.MainMenu.Domain;
+using DG.Tweening;
 using Reflex.Attributes;
 using TMPro;
 using UnityEngine;
@@ -24,6 +25,9 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField, Min(0f)] private float growthHours = 24f;
         [SerializeField, Min(0f)] private float waterReductionHours = 1f;
         [SerializeField, Min(0f)] private float waterCooldownMinutes = 10f;
+        [SerializeField, Min(1f)] private float waterButtonPulseScale = 1.08f;
+        [SerializeField, Min(0.01f)] private float waterButtonPulseSeconds = 0.45f;
+        [SerializeField] private Ease waterButtonPulseEase = Ease.InOutSine;
         [SerializeField] private bool collectPlotViewsFromChildren = true;
 
         private const float RefreshIntervalSeconds = 1f;
@@ -35,6 +39,9 @@ namespace BlossomFlow.MainMenu.Presentation
         private IDisposable _gardenChangedSubscription;
         private IDisposable _progressChangedSubscription;
         private float _refreshTimer;
+        private Tween _waterButtonPulseTween;
+        private Vector3 _waterButtonInitialScale;
+        private bool _hasWaterButtonInitialScale;
 
         [Inject]
         private void Construct(
@@ -93,6 +100,8 @@ namespace BlossomFlow.MainMenu.Presentation
 
         private void OnDisable()
         {
+            StopWaterButtonPulse();
+
             if (waterButton != null)
             {
                 waterButton.onClick.RemoveListener(Water);
@@ -243,6 +252,15 @@ namespace BlossomFlow.MainMenu.Presentation
                 waterButton.interactable = canWater;
             }
 
+            if (canWater)
+            {
+                StartWaterButtonPulse();
+            }
+            else
+            {
+                StopWaterButtonPulse();
+            }
+
             if (waterCountdownText != null)
             {
                 var countdown = _gardenService.WaterCountdown;
@@ -257,6 +275,39 @@ namespace BlossomFlow.MainMenu.Presentation
                 TimeSpan.FromHours(growthHours),
                 TimeSpan.FromHours(waterReductionHours),
                 TimeSpan.FromMinutes(waterCooldownMinutes));
+        }
+
+        private void StartWaterButtonPulse()
+        {
+            if (waterButton == null || _waterButtonPulseTween != null)
+            {
+                return;
+            }
+
+            var target = waterButton.transform;
+            if (!_hasWaterButtonInitialScale)
+            {
+                _waterButtonInitialScale = target.localScale;
+                _hasWaterButtonInitialScale = true;
+            }
+
+            target.localScale = _waterButtonInitialScale;
+            _waterButtonPulseTween = target
+                .DOScale(_waterButtonInitialScale * waterButtonPulseScale, waterButtonPulseSeconds)
+                .SetEase(waterButtonPulseEase)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetLink(waterButton.gameObject, LinkBehaviour.KillOnDestroy);
+        }
+
+        private void StopWaterButtonPulse()
+        {
+            _waterButtonPulseTween?.Kill();
+            _waterButtonPulseTween = null;
+
+            if (waterButton != null && _hasWaterButtonInitialScale)
+            {
+                waterButton.transform.localScale = _waterButtonInitialScale;
+            }
         }
 
         private static string FormatCountdown(TimeSpan remaining)
