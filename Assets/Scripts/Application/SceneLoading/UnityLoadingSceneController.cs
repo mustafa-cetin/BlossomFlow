@@ -24,19 +24,16 @@ namespace BlossomFlow.Application.SceneLoading
         {
             reportProgress?.Invoke(0f);
 
+            yield return _startupServiceInitializer.InitializeIfNeeded();
+            reportProgress?.Invoke(StartupServicesProgress);
+
             if (!_targetProvider.TryGetTarget(out var target))
             {
                 Debug.LogError("Loading scene opened without a pending target scene.");
                 yield break;
             }
 
-            if (target.InitializeStartupServices)
-            {
-                yield return _startupServiceInitializer.InitializeIfNeeded();
-                reportProgress?.Invoke(StartupServicesProgress);
-            }
-
-            var loadStartProgress = target.InitializeStartupServices ? StartupServicesProgress : 0f;
+            var loadStartProgress = StartupServicesProgress;
             var loadOperation = SceneManager.LoadSceneAsync(target.SceneName);
             if (loadOperation == null)
             {

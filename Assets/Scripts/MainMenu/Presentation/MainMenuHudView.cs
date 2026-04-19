@@ -12,6 +12,7 @@ namespace BlossomFlow.MainMenu.Presentation
     {
         [SerializeField] private TMP_Text livesText;
         [SerializeField] private TMP_Text goldText;
+        [SerializeField] private TMP_Text magicalSeedText;
         [SerializeField] private TMP_Text countdownText;
 
         private const float CountdownRefreshSeconds = 1f;
@@ -93,6 +94,11 @@ namespace BlossomFlow.MainMenu.Presentation
             if (goldText != null)
             {
                 goldText.text = progress.Gold.ToString();
+            }
+
+            if (magicalSeedText != null)
+            {
+                magicalSeedText.text = progress.MagicalSeed.ToString();
             }
 
             if (countdownText != null)

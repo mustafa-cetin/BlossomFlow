@@ -35,7 +35,7 @@ namespace BlossomFlow.MainMenu.Domain
             }
 
             var nextTabIndex = (int)CurrentTab + direction;
-            if (nextTabIndex < (int)MainMenuTab.Shop || nextTabIndex > (int)MainMenuTab.Friends)
+            if (nextTabIndex < (int)MainMenuTab.Shop || nextTabIndex > (int)MainMenuTab.Garden)
             {
                 return false;
             }

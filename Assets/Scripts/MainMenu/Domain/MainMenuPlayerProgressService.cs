@@ -11,6 +11,7 @@ namespace BlossomFlow.MainMenu.Domain
         private const string CurrentLivesKey = "blossom_flow.progress.current_lives";
         private const string MaxLivesKey = "blossom_flow.progress.max_lives";
         private const string GoldKey = "blossom_flow.progress.gold";
+        private const string MagicalSeedKey = "blossom_flow.progress.magical_seed";
         private const string NextLifeCountdownKey = "blossom_flow.progress.next_life_countdown";
         private const string NextLifeReadyUtcTicksKey = "blossom_flow.progress.next_life_ready_utc_ticks";
 
@@ -48,6 +49,7 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.CurrentLives,
                 _current.MaxLives,
                 _current.Gold + amount,
+                _current.MagicalSeed,
                 _current.NextLifeCountdown));
         }
 
@@ -60,6 +62,7 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.CurrentLives,
                 _current.MaxLives,
                 _current.Gold + Math.Max(0, goldAmount),
+                _current.MagicalSeed,
                 _current.NextLifeCountdown));
         }
 
@@ -83,6 +86,7 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.CurrentLives,
                 _current.MaxLives,
                 _current.Gold - amount,
+                _current.MagicalSeed,
                 _current.NextLifeCountdown));
             return true;
         }
@@ -108,6 +112,7 @@ namespace BlossomFlow.MainMenu.Domain
                 nextLives,
                 _current.MaxLives,
                 _current.Gold,
+                _current.MagicalSeed,
                 GetCurrentLifeCountdown()));
             return true;
         }
@@ -136,6 +141,7 @@ namespace BlossomFlow.MainMenu.Domain
                 Math.Min(maxLives, Math.Max(0, SafePlayerPrefs.GetInt(CurrentLivesKey, fallback.CurrentLives))),
                 maxLives,
                 Math.Max(0, SafePlayerPrefs.GetInt(GoldKey, fallback.Gold)),
+                Math.Max(0, SafePlayerPrefs.GetInt(MagicalSeedKey, fallback.MagicalSeed)),
                 SafePlayerPrefs.GetString(NextLifeCountdownKey, fallback.NextLifeCountdown));
             _nextLifeReadyUtcTicks = ReadLong(NextLifeReadyUtcTicksKey, 0L);
             _isLoaded = true;
@@ -236,6 +242,7 @@ namespace BlossomFlow.MainMenu.Domain
                 Math.Min(maxLives, Math.Max(0, progress.CurrentLives)),
                 maxLives,
                 Math.Max(0, progress.Gold),
+                Math.Max(0, progress.MagicalSeed),
                 progress.NextLifeCountdown ?? string.Empty);
         }
 
@@ -246,6 +253,7 @@ namespace BlossomFlow.MainMenu.Domain
                 lives,
                 progress.MaxLives,
                 progress.Gold,
+                progress.MagicalSeed,
                 countdown ?? string.Empty);
         }
 
@@ -261,6 +269,7 @@ namespace BlossomFlow.MainMenu.Domain
             SafePlayerPrefs.SetInt(CurrentLivesKey, progress.CurrentLives);
             SafePlayerPrefs.SetInt(MaxLivesKey, progress.MaxLives);
             SafePlayerPrefs.SetInt(GoldKey, progress.Gold);
+            SafePlayerPrefs.SetInt(MagicalSeedKey, progress.MagicalSeed);
             SafePlayerPrefs.SetString(NextLifeCountdownKey, progress.NextLifeCountdown ?? string.Empty);
             SafePlayerPrefs.SetString(NextLifeReadyUtcTicksKey, nextLifeReadyUtcTicks > 0L ? nextLifeReadyUtcTicks.ToString() : string.Empty);
             SafePlayerPrefs.Save();

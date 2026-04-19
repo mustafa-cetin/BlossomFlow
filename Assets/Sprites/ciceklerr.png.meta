@@ -1,0 +1,1183 @@
+fileFormatVersion: 2
+guid: 82a3b77b214cc1d4495d69b697bb36d3
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 9014194998894921306
+    second: ciceklerr_0
+  - first:
+      213: -6394950314835449341
+    second: ciceklerr_1
+  - first:
+      213: 844177991867945893
+    second: ciceklerr_2
+  - first:
+      213: -7619065474943482882
+    second: ciceklerr_3
+  - first:
+      213: 3378583703058298703
+    second: ciceklerr_4
+  - first:
+      213: 1870079801504845822
+    second: ciceklerr_5
+  - first:
+      213: 5948403127730267234
+    second: ciceklerr_6
+  - first:
+      213: -3370380846556453646
+    second: ciceklerr_7
+  - first:
+      213: -7022924186522793420
+    second: ciceklerr_8
+  - first:
+      213: 2680494163577844102
+    second: ciceklerr_9
+  - first:
+      213: 3832918741424846519
+    second: ciceklerr_10
+  - first:
+      213: 7449002780656329048
+    second: ciceklerr_11
+  - first:
+      213: -3597185782131820618
+    second: ciceklerr_12
+  - first:
+      213: -5946026907518284195
+    second: ciceklerr_13
+  - first:
+      213: -3315613587686128295
+    second: ciceklerr_14
+  - first:
+      213: 7056818417739489097
+    second: ciceklerr_15
+  - first:
+      213: -2052933117470140397
+    second: ciceklerr_16
+  - first:
+      213: -5701811882963974031
+    second: ciceklerr_17
+  - first:
+      213: 4625573957577911137
+    second: ciceklerr_18
+  - first:
+      213: 7532506201394931420
+    second: ciceklerr_19
+  - first:
+      213: 7881590222266423851
+    second: ciceklerr_20
+  - first:
+      213: 7245432451822848879
+    second: ciceklerr_21
+  - first:
+      213: 479825839562063346
+    second: ciceklerr_22
+  - first:
+      213: -553985787288656787
+    second: ciceklerr_23
+  - first:
+      213: 6860928535734252740
+    second: ciceklerr_24
+  - first:
+      213: -3024310602172121887
+    second: ciceklerr_25
+  - first:
+      213: -7777620522226996688
+    second: ciceklerr_26
+  - first:
+      213: 2684467218930552275
+    second: ciceklerr_27
+  - first:
+      213: -6997235745556342853
+    second: ciceklerr_28
+  - first:
+      213: -9003298910328678521
+    second: ciceklerr_29
+  - first:
+      213: -1602866150446802120
+    second: ciceklerr_30
+  - first:
+      213: -4883801098794654221
+    second: ciceklerr_31
+  - first:
+      213: -1231434536982896536
+    second: ciceklerr_32
+  - first:
+      213: 4597013063802713643
+    second: ciceklerr_33
+  - first:
+      213: 8601453882986256177
+    second: ciceklerr_34
+  - first:
+      213: 289055290055421519
+    second: ciceklerr_35
+  - first:
+      213: 3114949392379579221
+    second: ciceklerr_36
+  - first:
+      213: -3428491841156259333
+    second: ciceklerr_37
+  - first:
+      213: 4595645328589960541
+    second: ciceklerr_38
+  - first:
+      213: -3649869047688851054
+    second: ciceklerr_39
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ciceklerr_0
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 815
+        width: 138
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a560c3d979ad81d70800000000000000
+      internalID: 9014194998894921306
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_1
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 795
+        width: 59
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30ae5ff02929047a0800000000000000
+      internalID: -6394950314835449341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_2
+      rect:
+        serializedVersion: 2
+        x: 471
+        y: 809
+        width: 133
+        height: 143
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a3dd74396f17bb00800000000000000
+      internalID: 844177991867945893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_3
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 813
+        width: 126
+        height: 139
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef30d8d6154a34690800000000000000
+      internalID: -7619065474943482882
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_4
+      rect:
+        serializedVersion: 2
+        x: 952
+        y: 814
+        width: 127
+        height: 138
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f47b6b83af323ee20800000000000000
+      internalID: 3378583703058298703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_5
+      rect:
+        serializedVersion: 2
+        x: 1182
+        y: 824
+        width: 131
+        height: 141
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eff445edbabd3f910800000000000000
+      internalID: 1870079801504845822
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_6
+      rect:
+        serializedVersion: 2
+        x: 1584
+        y: 824
+        width: 152
+        height: 151
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2646f21f029fc8250800000000000000
+      internalID: 5948403127730267234
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_7
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 795
+        width: 86
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f4e8332a700a31d0800000000000000
+      internalID: -3370380846556453646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_8
+      rect:
+        serializedVersion: 2
+        x: 681
+        y: 537
+        width: 396
+        height: 222
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43a4fc159af898e90800000000000000
+      internalID: -7022924186522793420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_9
+      rect:
+        serializedVersion: 2
+        x: 1235
+        y: 539
+        width: 231
+        height: 196
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 681b09a6d37033520800000000000000
+      internalID: 2680494163577844102
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_10
+      rect:
+        serializedVersion: 2
+        x: 1286
+        y: 730
+        width: 25
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b6b093a943413530800000000000000
+      internalID: 3832918741424846519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_11
+      rect:
+        serializedVersion: 2
+        x: 1627
+        y: 603
+        width: 146
+        height: 135
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 851eaefff8c206760800000000000000
+      internalID: 7449002780656329048
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_12
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 563
+        width: 202
+        height: 140
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b772f0079a341ec0800000000000000
+      internalID: -3597185782131820618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_13
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 539
+        width: 215
+        height: 167
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5e4570f7087b7da0800000000000000
+      internalID: -5946026907518284195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_14
+      rect:
+        serializedVersion: 2
+        x: 676
+        y: 632
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 955828542039cf1d0800000000000000
+      internalID: -3315613587686128295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_15
+      rect:
+        serializedVersion: 2
+        x: 1624
+        y: 638
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94fdbc956fadee160800000000000000
+      internalID: 7056818417739489097
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_16
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 571
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3189e81e4348283e0800000000000000
+      internalID: -2052933117470140397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_17
+      rect:
+        serializedVersion: 2
+        x: 394
+        y: 540
+        width: 17
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 178c4db4d481fd0b0800000000000000
+      internalID: -5701811882963974031
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_18
+      rect:
+        serializedVersion: 2
+        x: 444
+        y: 539
+        width: 20
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 16baabfc107513040800000000000000
+      internalID: 4625573957577911137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_19
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 541
+        width: 12
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd662923b76d88860800000000000000
+      internalID: 7532506201394931420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_20
+      rect:
+        serializedVersion: 2
+        x: 1584
+        y: 255
+        width: 277
+        height: 231
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2ad1677c88016d60800000000000000
+      internalID: 7881590222266423851
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_21
+      rect:
+        serializedVersion: 2
+        x: 1670
+        y: 476
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6b0dfe4d62fc8460800000000000000
+      internalID: 7245432451822848879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_22
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 280
+        width: 241
+        height: 195
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2fd76211f0fa8a600800000000000000
+      internalID: 479825839562063346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_23
+      rect:
+        serializedVersion: 2
+        x: 494
+        y: 302
+        width: 216
+        height: 152
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d646b029cd8df48f0800000000000000
+      internalID: -553985787288656787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_24
+      rect:
+        serializedVersion: 2
+        x: 865
+        y: 298
+        width: 180
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c4f7c9072ae63f50800000000000000
+      internalID: 6860928535734252740
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_25
+      rect:
+        serializedVersion: 2
+        x: 1254
+        y: 296
+        width: 185
+        height: 147
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ec3513e78d7706d0800000000000000
+      internalID: -3024310602172121887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_26
+      rect:
+        serializedVersion: 2
+        x: 1288
+        y: 439
+        width: 27
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03a2fd6b757501490800000000000000
+      internalID: -7777620522226996688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_27
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 366
+        width: 14
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dd498376b4214520800000000000000
+      internalID: 2684467218930552275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_28
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 340
+        width: 11
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb7d2709923d4ee90800000000000000
+      internalID: -6997235745556342853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_29
+      rect:
+        serializedVersion: 2
+        x: 524
+        y: 303
+        width: 37
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7879233b75bdd0380800000000000000
+      internalID: -9003298910328678521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_30
+      rect:
+        serializedVersion: 2
+        x: 631
+        y: 301
+        width: 19
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83bde108ab971c9e0800000000000000
+      internalID: -1602866150446802120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_31
+      rect:
+        serializedVersion: 2
+        x: 1187
+        y: 72
+        width: 258
+        height: 183
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f5aea0b6c0493cb0800000000000000
+      internalID: -4883801098794654221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_32
+      rect:
+        serializedVersion: 2
+        x: 1256
+        y: 251
+        width: 12
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 860acf220d019eee0800000000000000
+      internalID: -1231434536982896536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_33
+      rect:
+        serializedVersion: 2
+        x: 1269
+        y: 245
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b267ac7860fdbcf30800000000000000
+      internalID: 4597013063802713643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_34
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 30
+        width: 308
+        height: 209
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 137dc4febb08e5770800000000000000
+      internalID: 8601453882986256177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_35
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 30
+        width: 250
+        height: 209
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4e633c314ee20400800000000000000
+      internalID: 289055290055421519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_36
+      rect:
+        serializedVersion: 2
+        x: 1182
+        y: 104
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55b8a1af7f58a3b20800000000000000
+      internalID: 3114949392379579221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_37
+      rect:
+        serializedVersion: 2
+        x: 476
+        y: 71
+        width: 15
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf16e8cd5dc8b60d0800000000000000
+      internalID: -3428491841156259333
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_38
+      rect:
+        serializedVersion: 2
+        x: 1182
+        y: 88
+        width: 18
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d55b94cd31307cf30800000000000000
+      internalID: 4595645328589960541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ciceklerr_39
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 49
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29110df507f095dc0800000000000000
+      internalID: -3649869047688851054
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      ciceklerr_0: 9014194998894921306
+      ciceklerr_1: -6394950314835449341
+      ciceklerr_10: 3832918741424846519
+      ciceklerr_11: 7449002780656329048
+      ciceklerr_12: -3597185782131820618
+      ciceklerr_13: -5946026907518284195
+      ciceklerr_14: -3315613587686128295
+      ciceklerr_15: 7056818417739489097
+      ciceklerr_16: -2052933117470140397
+      ciceklerr_17: -5701811882963974031
+      ciceklerr_18: 4625573957577911137
+      ciceklerr_19: 7532506201394931420
+      ciceklerr_2: 844177991867945893
+      ciceklerr_20: 7881590222266423851
+      ciceklerr_21: 7245432451822848879
+      ciceklerr_22: 479825839562063346
+      ciceklerr_23: -553985787288656787
+      ciceklerr_24: 6860928535734252740
+      ciceklerr_25: -3024310602172121887
+      ciceklerr_26: -7777620522226996688
+      ciceklerr_27: 2684467218930552275
+      ciceklerr_28: -6997235745556342853
+      ciceklerr_29: -9003298910328678521
+      ciceklerr_3: -7619065474943482882
+      ciceklerr_30: -1602866150446802120
+      ciceklerr_31: -4883801098794654221
+      ciceklerr_32: -1231434536982896536
+      ciceklerr_33: 4597013063802713643
+      ciceklerr_34: 8601453882986256177
+      ciceklerr_35: 289055290055421519
+      ciceklerr_36: 3114949392379579221
+      ciceklerr_37: -3428491841156259333
+      ciceklerr_38: 4595645328589960541
+      ciceklerr_39: -3649869047688851054
+      ciceklerr_4: 3378583703058298703
+      ciceklerr_5: 1870079801504845822
+      ciceklerr_6: 5948403127730267234
+      ciceklerr_7: -3370380846556453646
+      ciceklerr_8: -7022924186522793420
+      ciceklerr_9: 2680494163577844102
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

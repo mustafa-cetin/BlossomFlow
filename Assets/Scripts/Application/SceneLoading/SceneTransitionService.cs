@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Tutorial;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,13 +9,21 @@ namespace BlossomFlow.Application.SceneLoading
     {
         private readonly string _loadingSceneName;
         private readonly string _startupTargetSceneName;
+        private readonly string _startupTutorialCompletedTargetSceneName;
+        private readonly IFirstLevelTutorialProgressService _firstLevelTutorialProgressService;
         private string _pendingTargetSceneName;
         private bool _startupTargetConsumed;
 
-        public SceneTransitionService(string loadingSceneName, string startupTargetSceneName)
+        public SceneTransitionService(
+            string loadingSceneName,
+            string startupTargetSceneName,
+            string startupTutorialCompletedTargetSceneName,
+            IFirstLevelTutorialProgressService firstLevelTutorialProgressService)
         {
             _loadingSceneName = loadingSceneName;
             _startupTargetSceneName = startupTargetSceneName;
+            _startupTutorialCompletedTargetSceneName = startupTutorialCompletedTargetSceneName;
+            _firstLevelTutorialProgressService = firstLevelTutorialProgressService;
         }
 
         public void LoadSceneThroughLoading(string targetSceneName)
@@ -52,10 +61,11 @@ namespace BlossomFlow.Application.SceneLoading
                 return true;
             }
 
-            if (!_startupTargetConsumed && !string.IsNullOrWhiteSpace(_startupTargetSceneName))
+            var startupTargetSceneName = GetStartupTargetSceneName();
+            if (!_startupTargetConsumed && !string.IsNullOrWhiteSpace(startupTargetSceneName))
             {
                 _startupTargetConsumed = true;
-                target = new LoadingSceneTarget(_startupTargetSceneName.Trim(), true);
+                target = new LoadingSceneTarget(startupTargetSceneName.Trim(), true);
                 return true;
             }
 
@@ -66,6 +76,15 @@ namespace BlossomFlow.Application.SceneLoading
         public void ClearPendingTargetScene()
         {
             _pendingTargetSceneName = null;
+        }
+
+        private string GetStartupTargetSceneName()
+        {
+            return _firstLevelTutorialProgressService != null &&
+                _firstLevelTutorialProgressService.IsCompleted &&
+                !string.IsNullOrWhiteSpace(_startupTutorialCompletedTargetSceneName)
+                    ? _startupTutorialCompletedTargetSceneName
+                    : _startupTargetSceneName;
         }
     }
 }

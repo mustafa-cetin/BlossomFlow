@@ -4,6 +4,6 @@ namespace BlossomFlow.MainMenu.Domain
     {
         Shop = 0,
         Home = 1,
-        Friends = 2
+        Garden = 2
     }
 }

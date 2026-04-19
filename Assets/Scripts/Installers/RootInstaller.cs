@@ -14,7 +14,8 @@ using Resolution = Reflex.Enums.Resolution;
 public class RootInstaller : MonoBehaviour, IInstaller
 {
     [SerializeField] private string loadingSceneName = "LoadingScene";
-    [SerializeField] private string startupTargetSceneName = "MainMenuScene";
+    [SerializeField] private string startupTargetSceneName = "GameScene";
+    [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
     [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
@@ -83,7 +84,11 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Eager);
 
         builder.RegisterFactory(
-            _ => new SceneTransitionService(loadingSceneName, startupTargetSceneName),
+            container => new SceneTransitionService(
+                loadingSceneName,
+                startupTargetSceneName,
+                startupTutorialCompletedTargetSceneName,
+                container.Resolve<IFirstLevelTutorialProgressService>()),
             new[]
             {
                 typeof(ISceneTransitionService),
