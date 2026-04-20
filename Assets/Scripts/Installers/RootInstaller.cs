@@ -12,6 +12,10 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Resolution = Reflex.Enums.Resolution;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using BlossomFlow.Application.Debugging;
+#endif
+
 public class RootInstaller : MonoBehaviour, IInstaller
 {
     [SerializeField] private string loadingSceneName = "LoadingScene";
@@ -167,6 +171,10 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Eager);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        RegisterRuntimeDebugging(builder);
+#endif
+
         builder.RegisterType(
             typeof(CrazyGamesRewardedAdService),
             new[] { typeof(IRewardedAdService) },
@@ -175,4 +183,21 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         Debug.Log("RootInstaller: InstallBindings called");
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private static void RegisterRuntimeDebugging(ContainerBuilder builder)
+    {
+        builder.RegisterType(
+            typeof(GameDebugStateService),
+            new[] { typeof(IGameDebugStateService) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(RuntimeDebugOverlayBootstrapper),
+            new[] { typeof(RuntimeDebugOverlayBootstrapper) },
+            Lifetime.Singleton,
+            Resolution.Eager);
+    }
+#endif
 }

@@ -11,6 +11,10 @@ using CrazyGames;
 using Reflex.Attributes;
 using UnityEngine;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using BlossomFlow.Application.Debugging;
+#endif
+
 namespace BlossomFlow.Gameplay.Presentation
 {
     [RequireComponent(typeof(LevelPresentationView))]
@@ -39,6 +43,9 @@ namespace BlossomFlow.Gameplay.Presentation
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private IDisposable _debugLevelReloadRequestedSubscription;
+#endif
         private IDisposable _levelLoadRequest;
         private LevelSession _session;
         private float _stepTimer;
@@ -85,6 +92,9 @@ namespace BlossomFlow.Gameplay.Presentation
             firstLevelTutorial.Initialize(presentationView, _firstLevelTutorialProgress);
             _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
             _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugLevelReloadRequestedSubscription = _eventSubscriber.Subscribe<GameDebugLevelReloadRequested>(OnDebugLevelReloadRequested);
+#endif
 
             StartLevelSession();
         }
@@ -109,6 +119,10 @@ namespace BlossomFlow.Gameplay.Presentation
             _restartRequestedSubscription = null;
             _keepPlayingRequestedSubscription?.Dispose();
             _keepPlayingRequestedSubscription = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugLevelReloadRequestedSubscription?.Dispose();
+            _debugLevelReloadRequestedSubscription = null;
+#endif
             _levelLoadRequest?.Dispose();
             _levelLoadRequest = null;
         }
@@ -535,6 +549,13 @@ namespace BlossomFlow.Gameplay.Presentation
             _eventPublisher.Publish(new LevelRestarted());
             StartLevelSession();
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void OnDebugLevelReloadRequested(GameDebugLevelReloadRequested reloadRequested)
+        {
+            RestartLevel();
+        }
+#endif
 
         private void TryKeepPlaying()
         {
