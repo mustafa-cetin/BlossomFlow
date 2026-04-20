@@ -6,18 +6,22 @@ namespace BlossomFlow.MainMenu.Domain
     public sealed class MainMenuPlayerProgressService : IMainMenuPlayerProgressService
     {
         private const int LifeRecoveryMinutes = 10;
+        private const int GardenUnlockLevel = 20;
+        private const int GardenUnlockMagicalSeedReward = 1;
         private const long LifeRecoveryTicks = TimeSpan.TicksPerMinute * LifeRecoveryMinutes;
         private const string LevelNumberKey = "blossom_flow.progress.level_number";
         private const string CurrentLivesKey = "blossom_flow.progress.current_lives";
         private const string MaxLivesKey = "blossom_flow.progress.max_lives";
         private const string GoldKey = "blossom_flow.progress.gold";
         private const string MagicalSeedKey = "blossom_flow.progress.magical_seed";
+        private const string GardenUnlockSeedGrantedKey = "blossom_flow.progress.garden_unlock_seed_granted";
         private const string NextLifeCountdownKey = "blossom_flow.progress.next_life_countdown";
         private const string NextLifeReadyUtcTicksKey = "blossom_flow.progress.next_life_ready_utc_ticks";
 
         private readonly IEventPublisher _eventPublisher;
         private MainMenuPlayerProgress _current = MainMenuPlayerProgress.Default;
         private long _nextLifeReadyUtcTicks;
+        private bool _gardenUnlockSeedGranted;
         private bool _isLoaded;
 
         public MainMenuPlayerProgressService(IEventPublisher eventPublisher)
@@ -57,12 +61,13 @@ namespace BlossomFlow.MainMenu.Domain
         {
             EnsureLoaded();
             RefreshLifeRecovery(true);
+            var nextLevelNumber = _current.LevelNumber + 1;
             SetProgress(new MainMenuPlayerProgress(
-                _current.LevelNumber + 1,
+                nextLevelNumber,
                 _current.CurrentLives,
                 _current.MaxLives,
                 _current.Gold,
-                _current.MagicalSeed,
+                GetMagicalSeedAfterLevelAdvance(nextLevelNumber),
                 _current.NextLifeCountdown));
         }
 
@@ -70,12 +75,13 @@ namespace BlossomFlow.MainMenu.Domain
         {
             EnsureLoaded();
             RefreshLifeRecovery(true);
+            var nextLevelNumber = _current.LevelNumber + 1;
             SetProgress(new MainMenuPlayerProgress(
-                _current.LevelNumber + 1,
+                nextLevelNumber,
                 _current.CurrentLives,
                 _current.MaxLives,
                 _current.Gold + Math.Max(0, goldAmount),
-                _current.MagicalSeed,
+                GetMagicalSeedAfterLevelAdvance(nextLevelNumber),
                 _current.NextLifeCountdown));
         }
 
@@ -177,6 +183,24 @@ namespace BlossomFlow.MainMenu.Domain
         {
             _current = NormalizeProgress(progress);
             _isLoaded = true;
+            if (!_gardenUnlockSeedGranted &&
+                _current.LevelNumber >= GardenUnlockLevel &&
+                _current.MagicalSeed <= 0)
+            {
+                _current = new MainMenuPlayerProgress(
+                    _current.LevelNumber,
+                    _current.CurrentLives,
+                    _current.MaxLives,
+                    _current.Gold,
+                    GardenUnlockMagicalSeedReward,
+                    _current.NextLifeCountdown);
+                _gardenUnlockSeedGranted = true;
+            }
+            else if (_current.LevelNumber >= GardenUnlockLevel || _current.MagicalSeed > 0)
+            {
+                _gardenUnlockSeedGranted = true;
+            }
+
             UpdateLifeTimerForCurrentProgress();
             UpdateCurrentLifeCountdown();
             SaveProgress(_current, _nextLifeReadyUtcTicks);
@@ -200,7 +224,9 @@ namespace BlossomFlow.MainMenu.Domain
                 Math.Max(0, SafePlayerPrefs.GetInt(MagicalSeedKey, fallback.MagicalSeed)),
                 SafePlayerPrefs.GetString(NextLifeCountdownKey, fallback.NextLifeCountdown));
             _nextLifeReadyUtcTicks = ReadLong(NextLifeReadyUtcTicksKey, 0L);
+            _gardenUnlockSeedGranted = SafePlayerPrefs.GetInt(GardenUnlockSeedGrantedKey, 0) == 1;
             _isLoaded = true;
+            ApplyGardenUnlockSeedMigration();
         }
 
         private void RefreshLifeRecovery(bool publishIfChanged)
@@ -313,6 +339,48 @@ namespace BlossomFlow.MainMenu.Domain
                 countdown ?? string.Empty);
         }
 
+        private int GetMagicalSeedAfterLevelAdvance(int nextLevelNumber)
+        {
+            if (_current.LevelNumber < GardenUnlockLevel &&
+                nextLevelNumber >= GardenUnlockLevel &&
+                !_gardenUnlockSeedGranted &&
+                _current.MagicalSeed <= 0)
+            {
+                _gardenUnlockSeedGranted = true;
+                return GardenUnlockMagicalSeedReward;
+            }
+
+            if (nextLevelNumber >= GardenUnlockLevel && !_gardenUnlockSeedGranted && _current.MagicalSeed > 0)
+            {
+                _gardenUnlockSeedGranted = true;
+            }
+
+            return _current.MagicalSeed;
+        }
+
+        private void ApplyGardenUnlockSeedMigration()
+        {
+            if (_gardenUnlockSeedGranted || _current.LevelNumber < GardenUnlockLevel)
+            {
+                return;
+            }
+
+            _gardenUnlockSeedGranted = true;
+            if (_current.MagicalSeed <= 0)
+            {
+                _current = new MainMenuPlayerProgress(
+                    _current.LevelNumber,
+                    _current.CurrentLives,
+                    _current.MaxLives,
+                    _current.Gold,
+                    GardenUnlockMagicalSeedReward,
+                    _current.NextLifeCountdown);
+            }
+
+            SaveProgress(_current, _nextLifeReadyUtcTicks);
+            _eventPublisher.Publish(new MainMenuPlayerProgressChanged(_current));
+        }
+
         private static long ReadLong(string key, long defaultValue)
         {
             var value = SafePlayerPrefs.GetString(key, string.Empty);
@@ -326,6 +394,7 @@ namespace BlossomFlow.MainMenu.Domain
             SafePlayerPrefs.SetInt(MaxLivesKey, progress.MaxLives);
             SafePlayerPrefs.SetInt(GoldKey, progress.Gold);
             SafePlayerPrefs.SetInt(MagicalSeedKey, progress.MagicalSeed);
+            SafePlayerPrefs.SetInt(GardenUnlockSeedGrantedKey, progress.LevelNumber >= GardenUnlockLevel || progress.MagicalSeed > 0 ? 1 : 0);
             SafePlayerPrefs.SetString(NextLifeCountdownKey, progress.NextLifeCountdown ?? string.Empty);
             SafePlayerPrefs.SetString(NextLifeReadyUtcTicksKey, nextLifeReadyUtcTicks > 0L ? nextLifeReadyUtcTicks.ToString() : string.Empty);
             SafePlayerPrefs.Save();

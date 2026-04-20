@@ -1,4 +1,5 @@
 using BlossomFlow.Application.SceneLoading;
+using BlossomFlow.MainMenu.DailyLogin;
 using BlossomFlow.MainMenu.Domain;
 using BlossomFlow.MainMenu.Presentation;
 using Reflex.Core;
@@ -21,6 +22,12 @@ public class MainMenuInstaller : MonoBehaviour, IInstaller
         builder.RegisterType(
             typeof(MainMenuGardenService),
             new[] { typeof(IGardenService) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(DailyLoginBonusService),
+            new[] { typeof(IDailyLoginBonusService) },
             Lifetime.Scoped,
             Resolution.Lazy);
 

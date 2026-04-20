@@ -76,6 +76,21 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterType(
+            typeof(CrazyGamesAudioMuteProvider),
+            new[] { typeof(IExternalAudioMuteProvider) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            container => new AudioSettingsService(
+                container.Resolve<IAudioPlayer>(),
+                container.Resolve<IMusicPlayer>(),
+                container.Resolve<IExternalAudioMuteProvider>()),
+            new[] { typeof(IAudioSettingsService) },
+            Lifetime.Singleton,
+            Resolution.Eager);
+
+        builder.RegisterType(
             typeof(SoundEventController),
             new[] { typeof(SoundEventController) },
             Lifetime.Singleton,

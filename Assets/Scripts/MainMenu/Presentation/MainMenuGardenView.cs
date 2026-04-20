@@ -258,6 +258,7 @@ namespace BlossomFlow.MainMenu.Presentation
         public void SetPlantInteractionFilter(Func<int, bool> filter)
         {
             _plantInteractionFilter = filter;
+            InitializePlots();
             Refresh();
         }
 
@@ -269,6 +270,7 @@ namespace BlossomFlow.MainMenu.Presentation
 
         public bool TryGetPlotAnchor(int regionIndex, out Vector3 position)
         {
+            InitializePlots();
             position = Vector3.zero;
             if (plotViews == null || regionIndex < 0 || regionIndex >= plotViews.Length || plotViews[regionIndex] == null)
             {

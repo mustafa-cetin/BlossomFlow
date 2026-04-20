@@ -15,6 +15,7 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField] private MainMenuGardenView gardenView;
         [SerializeField] private string plantPrompt = "Magical seed'i ek";
         [SerializeField] private string waterPrompt = "Simdi sula";
+        [SerializeField] private string finalPrompt = "Play while you wait for the flower to grow";
         [SerializeField] private Vector3 plantTargetOffset = new(0f, 0.35f, 0f);
         [SerializeField] private Vector3 waterTargetOffset = new(0f, 0.25f, 0f);
 
@@ -25,6 +26,8 @@ namespace BlossomFlow.MainMenu.Presentation
         private IEventSubscriber _eventSubscriber;
         private IDisposable _progressChangedSubscription;
         private IDisposable _gardenChangedSubscription;
+        private IDisposable _tabChangedSubscription;
+        private IDisposable _playRequestedSubscription;
         private MainMenuGardenTutorialView _view;
         private TutorialStep _step;
         private int _targetRegionIndex = -1;
@@ -77,6 +80,10 @@ namespace BlossomFlow.MainMenu.Presentation
             _progressChangedSubscription = null;
             _gardenChangedSubscription?.Dispose();
             _gardenChangedSubscription = null;
+            _tabChangedSubscription?.Dispose();
+            _tabChangedSubscription = null;
+            _playRequestedSubscription?.Dispose();
+            _playRequestedSubscription = null;
 
             if (gardenView != null)
             {
@@ -97,6 +104,8 @@ namespace BlossomFlow.MainMenu.Presentation
 
             _progressChangedSubscription ??= _eventSubscriber.Subscribe<MainMenuPlayerProgressChanged>(_ => TryStartTutorial());
             _gardenChangedSubscription ??= _eventSubscriber.Subscribe<MainMenuGardenChanged>(_ => RefreshCurrentPrompt());
+            _tabChangedSubscription ??= _eventSubscriber.Subscribe<MainMenuTabChanged>(OnTabChanged);
+            _playRequestedSubscription ??= _eventSubscriber.Subscribe<MainMenuPlayRequested>(_ => HideFinalMessage());
         }
 
         private void TryStartTutorial()
@@ -221,13 +230,40 @@ namespace BlossomFlow.MainMenu.Presentation
                 return;
             }
 
-            CompleteTutorial();
+            ShowFinalMessageAndComplete();
+        }
+
+        private void ShowFinalMessageAndComplete()
+        {
+            _tutorialProgress?.MarkCompleted();
+            gardenView?.ClearPlantInteractionFilter();
+            _step = TutorialStep.ShowingFinalMessage;
+            _view?.ShowCenterMessage(finalPrompt);
         }
 
         private void CompleteTutorial()
         {
             _tutorialProgress?.MarkCompleted();
             gardenView?.ClearPlantInteractionFilter();
+            _step = TutorialStep.Completed;
+            HideVisual();
+        }
+
+        private void OnTabChanged(MainMenuTabChanged tabChanged)
+        {
+            if (tabChanged.CurrentTab == MainMenuTab.Home)
+            {
+                HideFinalMessage();
+            }
+        }
+
+        private void HideFinalMessage()
+        {
+            if (_step != TutorialStep.ShowingFinalMessage && _step != TutorialStep.Completed)
+            {
+                return;
+            }
+
             _step = TutorialStep.Completed;
             HideVisual();
         }
@@ -248,6 +284,7 @@ namespace BlossomFlow.MainMenu.Presentation
             Inactive,
             AwaitingPlant,
             AwaitingWater,
+            ShowingFinalMessage,
             Completed
         }
     }

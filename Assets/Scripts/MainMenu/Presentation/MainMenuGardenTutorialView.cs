@@ -14,8 +14,9 @@ namespace BlossomFlow.MainMenu.Presentation
         [Header("Layout")]
         [SerializeField] private Vector3 handOffset = new(0.28f, 0.05f, 0f);
         [SerializeField] private Vector3 labelOffset = new(0f, 0.56f, 0f);
-        [SerializeField] private float pulseDistance = 0.18f;
-        [SerializeField] private float pulseSeconds = 0.55f;
+        [SerializeField] private Vector3 centerMessageOffset = Vector3.zero;
+        [SerializeField, Min(0f)] private float handBobDistance = 0.18f;
+        [SerializeField, Min(0.01f)] private float handBobSeconds = 0.55f;
 
         private Transform _hand;
         private TextMeshProUGUI _label;
@@ -39,10 +40,10 @@ namespace BlossomFlow.MainMenu.Presentation
 
                 _pulseSequence = DOTween.Sequence()
                     .SetLink(_hand.gameObject, LinkBehaviour.KillOnDestroy)
-                    .SetLoops(-1, LoopType.Restart);
+                    .SetUpdate(true)
+                    .SetLoops(-1, LoopType.Yoyo);
 
-                _pulseSequence.Append(_hand.DOMove(handPosition + Vector3.up * pulseDistance, pulseSeconds).SetEase(Ease.InOutSine));
-                _pulseSequence.Append(_hand.DOMove(handPosition, pulseSeconds).SetEase(Ease.InOutSine));
+                _pulseSequence.Append(_hand.DOMove(handPosition + Vector3.up * handBobDistance, handBobSeconds).SetEase(Ease.InOutSine));
             }
 
             if (_label != null)
@@ -66,6 +67,26 @@ namespace BlossomFlow.MainMenu.Presentation
             {
                 _label.gameObject.SetActive(false);
             }
+        }
+
+        public void ShowCenterMessage(string text)
+        {
+            EnsureVisuals();
+            KillPulse();
+
+            if (_hand != null)
+            {
+                _hand.gameObject.SetActive(false);
+            }
+
+            if (_label == null)
+            {
+                return;
+            }
+
+            _label.gameObject.SetActive(true);
+            _label.transform.position = GetCenterPosition() + centerMessageOffset;
+            _label.text = text ?? string.Empty;
         }
 
         private void OnDestroy()
@@ -93,6 +114,19 @@ namespace BlossomFlow.MainMenu.Presentation
         {
             _pulseSequence?.Kill();
             _pulseSequence = null;
+        }
+
+        private Vector3 GetCenterPosition()
+        {
+            if (canvas == null)
+            {
+                return transform.position;
+            }
+
+            var rectTransform = canvas.transform as RectTransform;
+            return rectTransform != null
+                ? rectTransform.TransformPoint(rectTransform.rect.center)
+                : canvas.transform.position;
         }
     }
 }
