@@ -1,0 +1,30 @@
+<linker>
+  <assembly fullname="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="BlossomFlow.Application.Levels.LevelCatalogAsset" preserve="all" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.LevelDefinitionAsset" preserve="all" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.ConveyorPathDefinition" preserve="nothing" serialized="true" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.FlowerCellDefinition" preserve="nothing" serialized="true" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.LevelDefinition" preserve="nothing" serialized="true" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.PotDefinition" preserve="nothing" serialized="true" />
+    <type fullname="BlossomFlow.Gameplay.Domain.Levels.PotQueueColumnDefinition" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="Unity.Addressables, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.AddressableAssets.Addressables" preserve="all" />
+    <type fullname="UnityEngine.AddressableAssets.AssetReferenceT`1" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.InstanceProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.SceneProvider" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.AudioClip" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.ComputeShader" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.Sprite" preserve="all" />
+    <type fullname="UnityEngine.Texture2D" preserve="all" />
+  </assembly>
+</linker>
