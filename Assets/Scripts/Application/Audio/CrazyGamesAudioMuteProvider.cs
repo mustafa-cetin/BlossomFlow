@@ -35,8 +35,6 @@ namespace BlossomFlow.Application.Audio
                 return;
             }
 
-            TryRefreshCurrentSettings();
-
             try
             {
                 CrazySDK.Init(OnCrazyGamesInitialized);
