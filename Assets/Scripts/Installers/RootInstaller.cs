@@ -2,6 +2,7 @@ using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
 using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.Application.Ads;
+using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Sprites;
 using BlossomFlow.Application.Tutorial;
@@ -96,6 +97,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Eager);
 
+        builder.RegisterType(
+            typeof(ByteBrewAnalyticsEventService),
+            new[] { typeof(IAnalyticsEventService) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
         builder.RegisterFactory(
             container => new BackgroundMusicController(
                 container.Resolve<IMusicPlayer>(),
@@ -165,6 +172,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterType(
             typeof(CrazyGamesStartupServiceInitializer),
             new[] { typeof(CrazyGamesStartupServiceInitializer) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(ByteBrewStartupServiceInitializer),
+            new[] { typeof(ByteBrewStartupServiceInitializer) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
