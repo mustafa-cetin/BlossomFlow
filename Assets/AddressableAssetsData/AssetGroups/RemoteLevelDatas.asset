@@ -1,0 +1,208 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: RemoteLevelDatas
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: RemoteLevelDatas
+  m_GUID: e3b9ffd7bdd91f7449f76566e0d02371
+  m_SerializeEntries:
+  - m_GUID: 00d7f72311fa5cc4fbd8ab2d4485f9b6
+    m_Address: Assets/Levels/15xx15/flowers.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 118d8055fea9acc4caf6006b9a31f3e9
+    m_Address: Assets/Levels/20x20/n/new/kahve.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 148fe9f1675a07947b527c0f911dcd58
+    m_Address: Assets/Levels/pixelwaves.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c507a6331c61a541aa81e2512f3ad83
+    m_Address: Assets/Levels/20x20/cola.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2dbc172481c2f2b4495f94ab81a17679
+    m_Address: Assets/Levels/skyblues.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3a19c9eeb9adc6d4a8cd8bcd678005d4
+    m_Address: Assets/Levels/20x20/n/soccerball.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c1ed5a40677d684394a41a6e9fce960
+    m_Address: Assets/Levels/20x20/core.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 41aa87a41bf421c45b641ed9a50997f7
+    m_Address: Assets/Levels/labyrinth.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 44243ee811a72644c86e2a2341bec3fe
+    m_Address: Assets/Levels/amogus.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 467ac33ea3022684a891f1cd97c82fa5
+    m_Address: Assets/Levels/oneline.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6012a4ac2560a0646998f3fa3a45ce86
+    m_Address: Assets/Levels/15xx15/zorumsu.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 71c85058456f7a14b90e2feab6128b3a
+    m_Address: Assets/Levels/city.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7588438c179f1f64cb6211abea0998da
+    m_Address: Assets/Levels/15xx15/creativeheart.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77548d02f88bb074f8e0dd209d026a67
+    m_Address: Assets/Levels/15xx15/panda.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7d9708c43cf350543af8d9066e62c149
+    m_Address: Assets/Levels/failuretest.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ebe67ec51d1bd541a416e3e45a22944
+    m_Address: Assets/Levels/15xx15/sunsetpeaks.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 825b82b9abec1f94e9816bc0556afc70
+    m_Address: Assets/Levels/20x20/n/new/laptop.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8cb7d24318f2da149a697b623a5f4cc8
+    m_Address: Assets/Levels/20x20/no.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93c2779dbe8911f45b18b27fdd331b0d
+    m_Address: Assets/Levels/15xx15/lavacore.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ca2e8d6d09f79f47a9c7a82f453871a
+    m_Address: Assets/Levels/20x20/n/new/dondurmaaa.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a83c622ca7d2a0d48b021aec6482818d
+    m_Address: Assets/Levels/20x20/remember.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: add0b9956075b3e4eb58870f4ed67610
+    m_Address: Assets/Levels/cicekbahcesi.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: afa8958ab4916e645af0d8b02b62ee77
+    m_Address: Assets/Levels/20x20/n/emoji.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: baf3ceaa9426c3e4196b8339b9a8a886
+    m_Address: Assets/Levels/15xx15/biglabyrth.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cbc93dacd2b16dd4f8197f942617a5f8
+    m_Address: Assets/Levels/15xx15/magiccrystal.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cbe6cf36026e05743a18371df234a21b
+    m_Address: Assets/Levels/20x20/n/pizza.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc0005454457cb24788717333510ab69
+    m_Address: Assets/Levels/emoji.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce4ff203df99e3e499dea88fdfaa1b1b
+    m_Address: Assets/Levels/20x20/n/new/cips.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7f607b394de7d642becc5377ee11886
+    m_Address: Assets/Levels/20x20/hamburger.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d914356bba51ae243b61d2b3ac2a1b22
+    m_Address: Assets/Levels/15xx15/neonsunset.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc668151586a8f248b4ba4a55676c33d
+    m_Address: Assets/Levels/LevelDefinition.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd53bec88737e344c91c9839a88528c3
+    m_Address: Assets/Levels/15xx15/nightforest.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eecb55a50d54de743989e2339d939295
+    m_Address: Assets/Levels/15xx15/icecream.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3a2905ebd024df41ac6b00ffa0924af
+    m_Address: Assets/Levels/20x20/n/new/chips.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fa4fb7f14f20d8a4191ae520946fbcde
+    m_Address: Assets/Levels/wowencarpet.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fc1603dd22570e64599778d6c3d156f9
+    m_Address: Assets/Levels/20x20/cappybara.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fdaf52959c90b0848a7bf9e1bf662626
+    m_Address: Assets/Levels/20x20/n/new/telefon.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 0bf3ed2c847ebac49a24d8b785d22680, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 76b4162073bec544787f19379599d37f, type: 2}
+    - {fileID: 11400000, guid: 81209b0401a1c3c418d26def79d027a3, type: 2}

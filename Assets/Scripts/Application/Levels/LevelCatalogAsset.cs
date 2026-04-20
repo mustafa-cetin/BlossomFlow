@@ -1,5 +1,6 @@
-using BlossomFlow.Gameplay.Domain.Levels;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using BlossomFlow.Gameplay.Domain.Levels;
 
 namespace BlossomFlow.Application.Levels
 {
@@ -8,32 +9,40 @@ namespace BlossomFlow.Application.Levels
         menuName = "Blossom Flow/Level Catalog")]
     public sealed class LevelCatalogAsset : ScriptableObject
     {
-        [SerializeField] private LevelDefinitionAsset[] levels = System.Array.Empty<LevelDefinitionAsset>();
+        [SerializeField] private AssetReferenceT<LevelDefinitionAsset>[] levels = System.Array.Empty<AssetReferenceT<LevelDefinitionAsset>>();
 
         public int LevelCount => levels?.Length ?? 0;
 
-        public bool TryGetDefinition(int levelNumber, out LevelDefinition definition)
+        public bool TryGetLevelReference(int levelNumber, out AssetReferenceT<LevelDefinitionAsset> levelReference)
         {
-            definition = null;
+            levelReference = null;
 
             if (levels == null || levelNumber <= 0 || levelNumber > levels.Length)
             {
                 return false;
             }
 
-            var levelAsset = levels[levelNumber - 1];
-            if (levelAsset == null)
+            levelReference = levels[levelNumber - 1];
+            return levelReference != null && levelReference.RuntimeKeyIsValid();
+        }
+
+        public bool TryGetDefinition(int levelNumber, out LevelDefinition definition)
+        {
+            definition = null;
+
+            if (!TryGetLevelReference(levelNumber, out var levelReference) || levelReference.Asset == null)
             {
                 return false;
             }
 
+            var levelAsset = (LevelDefinitionAsset)levelReference.Asset;
             definition = levelAsset.Definition;
             return definition != null;
         }
 
         private void OnValidate()
         {
-            levels ??= System.Array.Empty<LevelDefinitionAsset>();
+            levels ??= System.Array.Empty<AssetReferenceT<LevelDefinitionAsset>>();
         }
     }
 }

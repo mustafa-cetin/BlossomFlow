@@ -24,5 +24,10 @@ namespace BlossomFlow.Application.Levels
         {
             return _levelCatalog.TryGetDefinition(_currentLevelNumber, out definition);
         }
+
+        public IDisposable LoadCurrentLevelDefinition(Action<LevelDefinition> onLoaded, Action<Exception> onFailed)
+        {
+            return _levelCatalog.LoadDefinition(_currentLevelNumber, onLoaded, onFailed);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using BlossomFlow.Gameplay.Domain.Levels;
 
 namespace BlossomFlow.Application.Levels
@@ -6,5 +7,6 @@ namespace BlossomFlow.Application.Levels
     {
         int LevelCount { get; }
         bool TryGetDefinition(int levelNumber, out LevelDefinition definition);
+        IDisposable LoadDefinition(int levelNumber, Action<LevelDefinition> onLoaded, Action<Exception> onFailed);
     }
 }

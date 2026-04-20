@@ -35,8 +35,12 @@ namespace BlossomFlow.MainMenu.Presentation
         private IMainMenuPlayerProgressService _progressService;
         private ILevelCatalog _levelCatalog;
         private IDisposable _progressChangedSubscription;
+        private IDisposable _difficultyLoadRequest;
         private Tween _breathingTween;
         private Vector3 _initialScale;
+        private int _loadingDifficultyLevelNumber;
+        private int _loadedDifficultyLevelNumber;
+        private LevelDifficulty _loadedDifficulty = LevelDifficulty.Normal;
 
         [Inject]
         private void Construct(
@@ -88,6 +92,8 @@ namespace BlossomFlow.MainMenu.Presentation
             StopBreathing();
             _progressChangedSubscription?.Dispose();
             _progressChangedSubscription = null;
+            _difficultyLoadRequest?.Dispose();
+            _difficultyLoadRequest = null;
         }
 
         private void RequestPlay()
@@ -159,14 +165,58 @@ namespace BlossomFlow.MainMenu.Presentation
 
             try
             {
-                return _levelCatalog.TryGetDefinition(levelNumber, out var definition)
-                    ? definition.Difficulty
-                    : LevelDifficulty.Normal;
+                if (_levelCatalog.TryGetDefinition(levelNumber, out var definition))
+                {
+                    CacheDifficulty(levelNumber, definition);
+                    return definition.Difficulty;
+                }
             }
             catch (Exception)
             {
                 return LevelDifficulty.Normal;
             }
+
+            if (_loadedDifficultyLevelNumber == levelNumber)
+            {
+                return _loadedDifficulty;
+            }
+
+            StartDifficultyLoad(levelNumber);
+            return LevelDifficulty.Normal;
+        }
+
+        private void StartDifficultyLoad(int levelNumber)
+        {
+            if (_loadingDifficultyLevelNumber == levelNumber && _difficultyLoadRequest != null)
+            {
+                return;
+            }
+
+            _difficultyLoadRequest?.Dispose();
+            _difficultyLoadRequest = _levelCatalog.LoadDefinition(
+                levelNumber,
+                definition =>
+                {
+                    CacheDifficulty(levelNumber, definition);
+                    _difficultyLoadRequest = null;
+                    RefreshLabel();
+                },
+                _ =>
+                {
+                    _difficultyLoadRequest = null;
+                });
+            _loadingDifficultyLevelNumber = levelNumber;
+        }
+
+        private void CacheDifficulty(int levelNumber, LevelDefinition definition)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            _loadedDifficultyLevelNumber = levelNumber;
+            _loadedDifficulty = definition.Difficulty;
         }
 
         private string GetDifficultyText(LevelDifficulty difficulty)

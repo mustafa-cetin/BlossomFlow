@@ -24,7 +24,7 @@ namespace BlossomFlow.Application.Levels
         {
             if (_catalogReference == null || !_catalogReference.RuntimeKeyIsValid())
             {
-                onLoaded?.Invoke(null);
+                onFailed?.Invoke(new InvalidOperationException("Remote level catalog Addressables reference is missing or invalid."));
                 return DisposableAction.Empty;
             }
 
@@ -44,6 +44,7 @@ namespace BlossomFlow.Application.Levels
             private AsyncOperationHandle<List<IResourceLocator>> _catalogUpdateHandle;
             private AsyncOperationHandle<LevelCatalogAsset> _catalogLoadHandle;
             private bool _isDisposed;
+            private bool _isComplete;
 
             public LoadRequest(
                 AssetReferenceT<LevelCatalogAsset> catalogReference,
@@ -59,8 +60,15 @@ namespace BlossomFlow.Application.Levels
 
             public void Start()
             {
-                _initializeHandle = Addressables.InitializeAsync(false);
-                _initializeHandle.Completed += OnAddressablesInitialized;
+                try
+                {
+                    _initializeHandle = Addressables.InitializeAsync(false);
+                    _initializeHandle.Completed += OnAddressablesInitialized;
+                }
+                catch (Exception exception)
+                {
+                    Fail(exception);
+                }
             }
 
             public void Dispose()
@@ -91,8 +99,16 @@ namespace BlossomFlow.Application.Levels
 
                 if (_updateCatalogsBeforeLoad)
                 {
-                    _catalogCheckHandle = Addressables.CheckForCatalogUpdates(false);
-                    _catalogCheckHandle.Completed += OnCatalogUpdateCheckCompleted;
+                    try
+                    {
+                        _catalogCheckHandle = Addressables.CheckForCatalogUpdates(false);
+                        _catalogCheckHandle.Completed += OnCatalogUpdateCheckCompleted;
+                    }
+                    catch (Exception exception)
+                    {
+                        Fail(exception);
+                    }
+
                     return;
                 }
 
@@ -118,8 +134,15 @@ namespace BlossomFlow.Application.Levels
                     return;
                 }
 
-                _catalogUpdateHandle = Addressables.UpdateCatalogs(new List<string>(handle.Result), false);
-                _catalogUpdateHandle.Completed += OnCatalogUpdateCompleted;
+                try
+                {
+                    _catalogUpdateHandle = Addressables.UpdateCatalogs(new List<string>(handle.Result), false);
+                    _catalogUpdateHandle.Completed += OnCatalogUpdateCompleted;
+                }
+                catch (Exception exception)
+                {
+                    Fail(exception);
+                }
             }
 
             private void OnCatalogUpdateCompleted(AsyncOperationHandle<List<IResourceLocator>> handle)
@@ -140,8 +163,15 @@ namespace BlossomFlow.Application.Levels
 
             private void LoadCatalogAsset()
             {
-                _catalogLoadHandle = _catalogReference.LoadAssetAsync();
-                _catalogLoadHandle.Completed += OnCatalogLoaded;
+                try
+                {
+                    _catalogLoadHandle = _catalogReference.LoadAssetAsync();
+                    _catalogLoadHandle.Completed += OnCatalogLoaded;
+                }
+                catch (Exception exception)
+                {
+                    Fail(exception);
+                }
             }
 
             private void OnCatalogLoaded(AsyncOperationHandle<LevelCatalogAsset> handle)
@@ -157,22 +187,53 @@ namespace BlossomFlow.Application.Levels
                     return;
                 }
 
-                _onLoaded?.Invoke(handle.Result);
+                Complete(handle.Result);
             }
 
             private void Fail(Exception exception)
             {
+                if (_isComplete)
+                {
+                    return;
+                }
+
+                _isComplete = true;
+
                 if (exception != null)
                 {
                     Debug.LogWarning($"Remote level catalog load failed. Local catalog will be used. {exception.Message}");
                 }
 
                 _onFailed?.Invoke(exception);
+                ReleaseFailedHandles();
+            }
+
+            private void Complete(LevelCatalogAsset catalogAsset)
+            {
+                if (_isComplete)
+                {
+                    return;
+                }
+
+                _isComplete = true;
+                _onLoaded?.Invoke(catalogAsset);
+                ReleaseTransientHandles();
             }
 
             private void ReleaseHandles()
             {
                 ReleaseHandle(ref _catalogLoadHandle);
+                ReleaseTransientHandles();
+            }
+
+            private void ReleaseFailedHandles()
+            {
+                ReleaseHandle(ref _catalogLoadHandle);
+                ReleaseTransientHandles();
+            }
+
+            private void ReleaseTransientHandles()
+            {
                 ReleaseHandle(ref _catalogUpdateHandle);
                 ReleaseHandle(ref _catalogCheckHandle);
                 ReleaseHandle(ref _initializeHandle);

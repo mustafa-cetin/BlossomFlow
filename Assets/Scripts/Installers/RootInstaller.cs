@@ -17,9 +17,9 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField] private string loadingSceneName = "LoadingScene";
     [SerializeField] private string startupTargetSceneName = "GameScene";
     [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
-    [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private AssetReferenceT<LevelCatalogAsset> remoteLevelCatalog;
     [SerializeField] private bool updateAddressableCatalogsBeforeLevelCatalogLoad = true;
+    [SerializeField, Min(1f)] private float remoteLevelCatalogPreloadTimeoutSeconds = 10f;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
@@ -110,8 +110,9 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         builder.RegisterFactory(
             container => new RemoteLevelCatalog(
-                levelCatalog,
-                container.Resolve<ILevelCatalogAssetLoader>()),
+                container.Resolve<ILevelCatalogAssetLoader>(),
+                container.Resolve<IEventPublisher>(),
+                remoteLevelCatalogPreloadTimeoutSeconds),
             new[]
             {
                 typeof(ILevelCatalog),

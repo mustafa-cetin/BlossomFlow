@@ -39,11 +39,13 @@ namespace BlossomFlow.Gameplay.Presentation
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
+        private IDisposable _levelLoadRequest;
         private LevelSession _session;
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
         private bool _isFastForwardingConveyor;
         private bool _isGameplayReportedActive;
+        private int _levelLoadVersion;
 
         private const float MinimumStepSeconds = 0.01f;
 
@@ -107,6 +109,8 @@ namespace BlossomFlow.Gameplay.Presentation
             _restartRequestedSubscription = null;
             _keepPlayingRequestedSubscription?.Dispose();
             _keepPlayingRequestedSubscription = null;
+            _levelLoadRequest?.Dispose();
+            _levelLoadRequest = null;
         }
 
         private void Update()
@@ -172,14 +176,62 @@ namespace BlossomFlow.Gameplay.Presentation
             }
         }
 
-        private LevelDefinition GetLevelDefinition()
+        private void StartLevelSession()
         {
-            if (_currentLevelProvider != null &&
-                _currentLevelProvider.TryGetCurrentLevelDefinition(out var selectedDefinition))
+            NotifyGameplayStop();
+            UnsubscribeSessionEvents();
+            _session = null;
+            _levelLoadRequest?.Dispose();
+            _levelLoadRequest = null;
+            presentationView.UnbindSession();
+            presentationView.ClearViews();
+
+            _stepTimer = 0f;
+            _conveyorEntryDelayTimer = 0f;
+            _isFastForwardingConveyor = false;
+
+            var loadVersion = ++_levelLoadVersion;
+            if (_currentLevelProvider != null)
             {
-                return selectedDefinition;
+                _levelLoadRequest = _currentLevelProvider.LoadCurrentLevelDefinition(
+                    definition => StartLoadedLevelSession(loadVersion, definition),
+                    exception => StartFallbackLevelSession(loadVersion, exception));
+                return;
             }
 
+            StartLoadedLevelSession(loadVersion, GetFallbackLevelDefinition());
+        }
+
+        private void StartLoadedLevelSession(int loadVersion, LevelDefinition definition)
+        {
+            if (loadVersion != _levelLoadVersion)
+            {
+                return;
+            }
+
+            _levelLoadRequest?.Dispose();
+            _levelLoadRequest = null;
+
+            CreateLevelSession(definition ?? GetFallbackLevelDefinition());
+        }
+
+        private void StartFallbackLevelSession(int loadVersion, Exception exception)
+        {
+            if (loadVersion != _levelLoadVersion)
+            {
+                return;
+            }
+
+            if (exception != null)
+            {
+                Debug.LogWarning($"Could not load selected level definition. Fallback level will be used. {exception.Message}");
+            }
+
+            StartLoadedLevelSession(loadVersion, GetFallbackLevelDefinition());
+        }
+
+        private LevelDefinition GetFallbackLevelDefinition()
+        {
             if (useBuiltInTestLevel)
             {
                 return BuiltInPrototypeLevelDefinition.Create();
@@ -193,18 +245,9 @@ namespace BlossomFlow.Gameplay.Presentation
             return levelDefinition ?? BuiltInPrototypeLevelDefinition.Create();
         }
 
-        private void StartLevelSession()
+        private void CreateLevelSession(LevelDefinition definition)
         {
-            NotifyGameplayStop();
-            UnsubscribeSessionEvents();
-            presentationView.UnbindSession();
-            presentationView.ClearViews();
-
-            _stepTimer = 0f;
-            _conveyorEntryDelayTimer = 0f;
-            _isFastForwardingConveyor = false;
-
-            _session = _sessionFactory.Create(GetLevelDefinition());
+            _session = _sessionFactory.Create(definition);
             _session.LevelWon += OnLevelWon;
             _session.LevelFailed += OnLevelFailed;
             _session.WaitingPotPlaced += OnWaitingPotPlaced;

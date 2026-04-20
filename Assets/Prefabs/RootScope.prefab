@@ -61,6 +61,14 @@ MonoBehaviour:
   startupTargetSceneName: GameScene
   startupTutorialCompletedTargetSceneName: MainMenuScene
   levelCatalog: {fileID: 11400000, guid: 19684b35e3e532842868724670d47654, type: 2}
+  remoteLevelCatalog:
+    m_AssetGUID: 5bd97d317a568d448914c2a1f9b7a818
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  updateAddressableCatalogsBeforeLevelCatalogLoad: 1
+  remoteLevelCatalogPreloadTimeoutSeconds: 10
   soundCatalog: {fileID: 11400000, guid: 0b8e1a4a2f413c043aec2ca4d8c93ef4, type: 2}
   soundEffectsVolume: 1
   musicVolume: 0.1
