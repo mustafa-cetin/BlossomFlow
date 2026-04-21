@@ -170,6 +170,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1c59b1e037e53a46932b75d83f0c53f
+    m_Address: Assets/Levels/new2104262/mousehard.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d7f607b394de7d642becc5377ee11886
     m_Address: Assets/Levels/20x20/hamburger.asset
     m_ReadOnly: 0
@@ -187,6 +192,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: dd53bec88737e344c91c9839a88528c3
     m_Address: Assets/Levels/15xx15/nightforest.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e4064f65b5250e94198c82a82ab6136c
+    m_Address: Assets/Levels/new2104262/biftek.asset
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
