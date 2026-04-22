@@ -24,10 +24,15 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
         public void PointAt(Vector3 worldPosition, string text)
         {
-            PointAt(new[] { worldPosition }, text);
+            PointAt(new[] { worldPosition }, worldPosition, text);
         }
 
         public void PointAt(IReadOnlyList<Vector3> worldPositions, string text)
+        {
+            PointAt(worldPositions, null, text);
+        }
+
+        public void PointAt(IReadOnlyList<Vector3> worldPositions, Vector3? labelWorldPosition, string text)
         {
             EnsureVisuals(worldPositions?.Count ?? 0);
             if ((_hands.Count == 0 && _label == null) || worldPositions == null || worldPositions.Count == 0)
@@ -38,10 +43,8 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
             KillPulseSequences();
             HideHands();
 
-            var center = Vector3.zero;
             for (var i = 0; i < worldPositions.Count; i++)
             {
-                center += worldPositions[i];
                 if (i >= _hands.Count || _hands[i] == null)
                 {
                     continue;
@@ -51,9 +54,19 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 RestartPulse(i, worldPositions[i]);
             }
 
-            center /= worldPositions.Count;
             if (_label != null)
             {
+                var center = labelWorldPosition ?? Vector3.zero;
+                if (!labelWorldPosition.HasValue)
+                {
+                    for (var i = 0; i < worldPositions.Count; i++)
+                    {
+                        center += worldPositions[i];
+                    }
+
+                    center /= worldPositions.Count;
+                }
+
                 _label.gameObject.SetActive(true);
                 _label.transform.position = center + labelOffset;
                 _label.text = text ?? string.Empty;

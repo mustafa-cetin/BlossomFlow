@@ -11,7 +11,6 @@ using BlossomFlow.MainMenu.Domain;
 using Reflex.Core;
 using Reflex.Enums;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using Resolution = Reflex.Enums.Resolution;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -23,9 +22,7 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField] private string loadingSceneName = "LoadingScene";
     [SerializeField] private string startupTargetSceneName = "GameScene";
     [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
-    [SerializeField] private AssetReferenceT<LevelCatalogAsset> remoteLevelCatalog;
-    [SerializeField] private bool updateAddressableCatalogsBeforeLevelCatalogLoad = true;
-    [SerializeField, Min(1f)] private float remoteLevelCatalogPreloadTimeoutSeconds = 10f;
+    [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
@@ -141,23 +138,17 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterFactory(
-            _ => new AddressableLevelCatalogAssetLoader(
-                remoteLevelCatalog,
-                updateAddressableCatalogsBeforeLevelCatalogLoad),
-            new[] { typeof(ILevelCatalogAssetLoader) },
-            Lifetime.Singleton,
-            Resolution.Lazy);
-
-        builder.RegisterFactory(
-            container => new RemoteLevelCatalog(
-                container.Resolve<ILevelCatalogAssetLoader>(),
-                container.Resolve<IEventPublisher>(),
-                remoteLevelCatalogPreloadTimeoutSeconds),
+            _ => new LevelCatalog(levelCatalog),
             new[]
             {
                 typeof(ILevelCatalog),
-                typeof(IRemoteLevelCatalogPreloader)
             },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(LocalLevelCatalogPreloader),
+            new[] { typeof(IRemoteLevelCatalogPreloader) },
             Lifetime.Singleton,
             Resolution.Lazy);
 

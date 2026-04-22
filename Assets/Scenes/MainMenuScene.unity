@@ -792,126 +792,6 @@ MonoBehaviour:
   soundEffectsOffSprite: {fileID: -2056210662512102409, guid: 7f9865cf6ac20f7468e13d5a5daff8ef, type: 3}
   musicOnSprite: {fileID: 6881614851481631744, guid: 7f9865cf6ac20f7468e13d5a5daff8ef, type: 3}
   musicOffSprite: {fileID: -2056210662512102409, guid: 7f9865cf6ac20f7468e13d5a5daff8ef, type: 3}
---- !u!1 &109323111
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 109323112}
-  - component: {fileID: 109323115}
-  - component: {fileID: 109323114}
-  - component: {fileID: 109323113}
-  m_Layer: 5
-  m_Name: CoinPurchase
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &109323112
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 109323111}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1618667725}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 0}
-  m_Pivot: {x: 1, y: 0.5}
---- !u!114 &109323113
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 109323111}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
-  m_Navigation:
-    m_Mode: 3
-    m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
-  m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
-    m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
-  m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
-    m_SelectedSprite: {fileID: 0}
-    m_DisabledSprite: {fileID: 0}
-  m_AnimationTriggers:
-    m_NormalTrigger: Normal
-    m_HighlightedTrigger: Highlighted
-    m_PressedTrigger: Pressed
-    m_SelectedTrigger: Selected
-    m_DisabledTrigger: Disabled
-  m_Interactable: 1
-  m_TargetGraphic: {fileID: 109323114}
-  m_OnClick:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &109323114
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 109323111}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: -4397067417511678160, guid: 7f9865cf6ac20f7468e13d5a5daff8ef, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 1
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &109323115
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 109323111}
-  m_CullTransparentMesh: 1
 --- !u!1 &180946729
 GameObject:
   m_ObjectHideFlags: 0
@@ -1550,8 +1430,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -85, y: 1}
-  m_SizeDelta: {x: 201.3782, y: 139.3303}
+  m_AnchoredPosition: {x: -32, y: 13}
+  m_SizeDelta: {x: 111.7425, y: 30.9771}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &221037020
 MonoBehaviour:
@@ -1787,8 +1667,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 253, y: -139}
-  m_SizeDelta: {x: 496.9287, y: 171.0415}
+  m_AnchoredPosition: {x: 88, y: -52}
+  m_SizeDelta: {x: 302.4409, y: 104.0993}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &258132378
 MonoBehaviour:
@@ -2027,7 +1907,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.17788249}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 68.787}
+  m_AnchoredPosition: {x: 0, y: 110}
   m_SizeDelta: {x: -77.1777, y: -17.0117}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &307841750
@@ -2077,7 +1957,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 60.3
+  m_fontSize: 98.7
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3336,7 +3216,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -0.471}
   m_AnchorMin: {x: 0.18969657, y: 0}
   m_AnchorMax: {x: 0.72034836, y: 1}
-  m_AnchoredPosition: {x: 45, y: -1}
+  m_AnchoredPosition: {x: 37, y: 6}
   m_SizeDelta: {x: 12.3831, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &511676375
@@ -3386,7 +3266,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 138.61
+  m_fontSize: 87.5
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3469,8 +3349,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 59729753}
-  - {fileID: 226276858}
   - {fileID: 1734873329}
+  - {fileID: 226276858}
   - {fileID: 1681744106}
   - {fileID: 220569299}
   - {fileID: 1481830707}
@@ -6452,8 +6332,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.4213125, y: 0.10274074}
   m_AnchorMax: {x: 0.57814586, y: 0.22133335}
-  m_AnchoredPosition: {x: 0.5, y: -20}
-  m_SizeDelta: {x: 14.882385, y: -33.9843}
+  m_AnchoredPosition: {x: 0.5199585, y: -12.705994}
+  m_SizeDelta: {x: 171.6842, y: 12.7064}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1112381565
 MonoBehaviour:
@@ -6550,7 +6430,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.MainMenu.Presentation.MainMenuPlayButtonView
   labelText: {fileID: 2021543803}
-  labelFormat: Level {0}
+  labelFormat: Play Level {0}
   difficultyLabelText: {fileID: 307841750}
   buttonGraphic: {fileID: 1112381566}
   normalButtonColor: {r: 1, g: 1, b: 1, a: 1}
@@ -10196,7 +10076,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 710862741}
-  - {fileID: 109323112}
   - {fileID: 1785703144}
   m_Father: {fileID: 100773558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -13058,7 +12937,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.17788249}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -1.2374268}
+  m_AnchoredPosition: {x: 0, y: -1.2353973}
   m_SizeDelta: {x: 0, y: 2.4780006}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2021543803
@@ -13108,7 +12987,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 65.65
+  m_fontSize: 104.05
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1

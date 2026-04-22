@@ -17,16 +17,17 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
         [SerializeField] private Vector3 launchTargetOffset = new Vector3(0f, 0.18f, 0f);
         [SerializeField] private Vector3 waitingTargetOffset = new Vector3(0f, 0.42f, 0f);
         [SerializeField] private Vector3 finalLaunchTargetOffset = new Vector3(0f, 0.18f, 0f);
+        [SerializeField] private int maxSimultaneousLaunchHands = 3;
 
         private IFirstLevelTutorialProgressService _progressService;
         private FirstLevelTutorialView _view;
         private LevelPresentationView _presentationView;
         private LevelSession _session;
         private TutorialStep _step;
-        private int _guidedLaunchColumn = -1;
-        private int _guidedWaitingSlot = -1;
         private int _launchTapCount;
-        private readonly List<int> _guidedFinalLaunchColumns = new();
+        private int _remainingFinalLaunchTapCount;
+        private readonly List<int> _guidedLaunchColumns = new();
+        private readonly List<int> _guidedWaitingSlots = new();
 
         public void Initialize(LevelPresentationView presentationView, IFirstLevelTutorialProgressService progressService)
         {
@@ -55,6 +56,7 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 return;
             }
 
+            _progressService.MarkCompleted();
             _session.WaitingPotPlaced += OnWaitingPotPlaced;
             _session.WaitingPotRecalled += OnWaitingPotRecalled;
             ShowLaunchPrompt();
@@ -76,8 +78,9 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
             {
                 TutorialStep.AwaitingFirstLaunchTap => IsGuidedLaunchColumn(target),
                 TutorialStep.AwaitingQueueLaunchTap => IsGuidedLaunchColumn(target),
-                TutorialStep.AwaitingWaitingTap => target.Is(LevelClickTargetKind.WaitingSlot, _guidedWaitingSlot),
-                TutorialStep.AwaitingFinalLaunchTaps => IsGuidedFinalLaunchColumn(target),
+                TutorialStep.WaitingForPotToPark => true,
+                TutorialStep.AwaitingWaitingTap => true,
+                TutorialStep.AwaitingFinalLaunchTaps => true,
                 _ => false
             };
         }
@@ -123,14 +126,17 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
             if (_step == TutorialStep.AwaitingFinalLaunchTaps && IsGuidedFinalLaunchColumn(target))
             {
-                RemoveGuidedFinalLaunchColumns(target.Index);
-                if (_guidedFinalLaunchColumns.Count == 0)
+                _remainingFinalLaunchTapCount--;
+                if (_remainingFinalLaunchTapCount <= 0)
                 {
                     CompleteTutorial();
                     return;
                 }
 
-                ShowFinalLaunchPrompt();
+                if (!ShowFinalLaunchPrompt())
+                {
+                    CompleteTutorial();
+                }
             }
         }
 
@@ -143,10 +149,10 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
             }
 
             _session = null;
-            _guidedLaunchColumn = -1;
-            _guidedWaitingSlot = -1;
             _launchTapCount = 0;
-            _guidedFinalLaunchColumns.Clear();
+            _remainingFinalLaunchTapCount = 0;
+            _guidedLaunchColumns.Clear();
+            _guidedWaitingSlots.Clear();
             Hide();
         }
 
@@ -157,10 +163,40 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
         private void ShowLaunchPrompt()
         {
-            _guidedLaunchColumn = FindFirstLaunchableColumn();
-            if (_guidedLaunchColumn < 0 ||
-                _presentationView == null ||
-                !_presentationView.TryGetLaunchColumnAnchor(_guidedLaunchColumn, out var position))
+            _guidedLaunchColumns.Clear();
+
+            if (_presentationView == null)
+            {
+                if (_launchTapCount > 0)
+                {
+                    _step = TutorialStep.WaitingForPotToPark;
+                    HideVisual();
+                    return;
+                }
+
+                CompleteTutorial();
+                return;
+            }
+
+            var positions = new List<Vector3>();
+            for (var i = 0; i < _session.LaunchColumns.Count; i++)
+            {
+                if (!_session.CanLaunchFromColumn(i) ||
+                    !_presentationView.TryGetLaunchColumnAnchor(i, out var position))
+                {
+                    continue;
+                }
+
+                _guidedLaunchColumns.Add(i);
+                positions.Add(position + launchTargetOffset);
+
+                if (_guidedLaunchColumns.Count >= maxSimultaneousLaunchHands)
+                {
+                    break;
+                }
+            }
+
+            if (_guidedLaunchColumns.Count == 0)
             {
                 if (_launchTapCount > 0)
                 {
@@ -178,7 +214,7 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 : TutorialStep.AwaitingQueueLaunchTap;
 
             var prompt = _launchTapCount == 0 ? launchPrompt : queueLaunchPrompt;
-            _view.PointAt(position + launchTargetOffset, prompt);
+            _view.PointAt(positions, prompt);
         }
 
         private System.Collections.IEnumerator PointAtQueueLaunchNextFrame()
@@ -207,6 +243,9 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 return false;
             }
 
+            _guidedWaitingSlots.Clear();
+            var firstOccupiedSlot = -1;
+
             for (var i = 0; i < _session.WaitingSlots.Slots.Count; i++)
             {
                 var slot = _session.WaitingSlots.Slots[i];
@@ -215,36 +254,26 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                     continue;
                 }
 
-                ShowWaitingPrompt(slot.Index);
-                return true;
+                _guidedWaitingSlots.Add(slot.Index);
+                if (firstOccupiedSlot < 0)
+                {
+                    firstOccupiedSlot = slot.Index;
+                }
             }
 
-            return false;
+            if (firstOccupiedSlot < 0)
+            {
+                return false;
+            }
+
+            ShowWaitingPrompt(firstOccupiedSlot);
+            return true;
         }
 
         private void ShowWaitingPrompt(int slotIndex)
         {
-            _guidedWaitingSlot = slotIndex;
             _step = TutorialStep.AwaitingWaitingTap;
             StartCoroutine(PointAtWaitingSlotNextFrame(slotIndex));
-        }
-
-        private int FindFirstLaunchableColumn()
-        {
-            if (_session == null)
-            {
-                return -1;
-            }
-
-            for (var i = 0; i < _session.LaunchColumns.Count; i++)
-            {
-                if (_session.CanLaunchFromColumn(i))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
         }
 
         private void OnWaitingPotPlaced(LevelSession session, PotModel pot, int slotIndex)
@@ -260,6 +289,11 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 return;
             }
 
+            if (!_guidedWaitingSlots.Contains(slotIndex))
+            {
+                _guidedWaitingSlots.Add(slotIndex);
+            }
+
             ShowWaitingPrompt(slotIndex);
         }
 
@@ -267,19 +301,42 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
         {
             yield return null;
 
-            if (_step != TutorialStep.AwaitingWaitingTap ||
-                _presentationView == null ||
-                !_presentationView.TryGetWaitingPotAnchor(slotIndex, out var position))
+            if (_step != TutorialStep.AwaitingWaitingTap || _presentationView == null)
             {
                 yield break;
             }
 
-            _view.PointAt(position + waitingTargetOffset, waitingPrompt);
+            var positions = new List<Vector3>();
+            Vector3? labelAnchor = null;
+
+            for (var i = 0; i < _guidedWaitingSlots.Count; i++)
+            {
+                var guidedSlot = _guidedWaitingSlots[i];
+                if (!_presentationView.TryGetWaitingPotAnchor(guidedSlot, out var position))
+                {
+                    continue;
+                }
+
+                positions.Add(position + waitingTargetOffset);
+                if (guidedSlot == slotIndex)
+                {
+                    labelAnchor = position + waitingTargetOffset;
+                }
+            }
+
+            AppendLaunchGuidancePositions(positions, launchTargetOffset);
+
+            if (positions.Count == 0)
+            {
+                yield break;
+            }
+
+            _view.PointAt(positions, labelAnchor, waitingPrompt);
         }
 
         private void OnWaitingPotRecalled(LevelSession session, PotModel pot, int slotIndex)
         {
-            if (_step != TutorialStep.AwaitingWaitingTap || slotIndex != _guidedWaitingSlot)
+            if (_step != TutorialStep.AwaitingWaitingTap || !_guidedWaitingSlots.Remove(slotIndex))
             {
                 return;
             }
@@ -305,7 +362,6 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
         private bool ShowFinalLaunchPrompt()
         {
-            _guidedFinalLaunchColumns.Clear();
             var positions = new List<Vector3>();
 
             if (_session == null || _presentationView == null)
@@ -313,26 +369,15 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
                 return false;
             }
 
-            for (var i = 0; i < _session.LaunchColumns.Count; i++)
-            {
-                if (!_session.CanLaunchFromColumn(i) ||
-                    !_presentationView.TryGetLaunchColumnAnchor(i, out var position))
-                {
-                    continue;
-                }
-
-                _guidedFinalLaunchColumns.Add(i);
-                positions.Add(position + finalLaunchTargetOffset);
-
-                if (_guidedFinalLaunchColumns.Count == 2)
-                {
-                    break;
-                }
-            }
-
-            if (_guidedFinalLaunchColumns.Count == 0)
+            AppendLaunchGuidancePositions(positions, finalLaunchTargetOffset);
+            if (positions.Count == 0)
             {
                 return false;
+            }
+
+            if (_step != TutorialStep.AwaitingFinalLaunchTaps)
+            {
+                _remainingFinalLaunchTapCount = 2;
             }
 
             _step = TutorialStep.AwaitingFinalLaunchTaps;
@@ -344,21 +389,21 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
         {
             return target != null &&
                 target.Kind == LevelClickTargetKind.LaunchColumn &&
-                ContainsEquivalentGuidedFinalLaunchColumn(target.Index);
+                IsValidLaunchColumnIndex(target.Index);
         }
 
         private bool IsGuidedLaunchColumn(LevelClickTarget target)
         {
             return target != null &&
                 target.Kind == LevelClickTargetKind.LaunchColumn &&
-                AreEquivalentLaunchColumns(target.Index, _guidedLaunchColumn);
+                ContainsEquivalentGuidedLaunchColumn(target.Index);
         }
 
-        private bool ContainsEquivalentGuidedFinalLaunchColumn(int columnIndex)
+        private bool ContainsEquivalentGuidedLaunchColumn(int columnIndex)
         {
-            for (var i = 0; i < _guidedFinalLaunchColumns.Count; i++)
+            for (var i = 0; i < _guidedLaunchColumns.Count; i++)
             {
-                if (AreEquivalentLaunchColumns(columnIndex, _guidedFinalLaunchColumns[i]))
+                if (AreEquivalentLaunchColumns(columnIndex, _guidedLaunchColumns[i]))
                 {
                     return true;
                 }
@@ -367,14 +412,22 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
             return false;
         }
 
-        private void RemoveGuidedFinalLaunchColumns(int clickedColumnIndex)
+        private void AppendLaunchGuidancePositions(List<Vector3> positions, Vector3 offset)
         {
-            for (var i = _guidedFinalLaunchColumns.Count - 1; i >= 0; i--)
+            if (_session == null || _presentationView == null)
             {
-                if (AreEquivalentLaunchColumns(clickedColumnIndex, _guidedFinalLaunchColumns[i]))
+                return;
+            }
+
+            for (var i = 0; i < _session.LaunchColumns.Count; i++)
+            {
+                if (!_session.CanLaunchFromColumn(i) ||
+                    !_presentationView.TryGetLaunchColumnAnchor(i, out var position))
                 {
-                    _guidedFinalLaunchColumns.RemoveAt(i);
+                    continue;
                 }
+
+                positions.Add(position + offset);
             }
         }
 

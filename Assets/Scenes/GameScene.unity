@@ -4792,9 +4792,10 @@ MonoBehaviour:
   waitingPrompt: Click the pot on the waiting slot
   finalLaunchPrompt: Click the remaining pots
   nextLaunchPromptDelaySeconds: 0.5
-  launchTargetOffset: {x: 0, y: 0.18, z: 0}
+  launchTargetOffset: {x: 0, y: 0.36, z: 0}
   waitingTargetOffset: {x: 0, y: 0.42, z: 0}
   finalLaunchTargetOffset: {x: 0, y: 0.18, z: 0}
+  maxSimultaneousLaunchHands: 3
 --- !u!114 &2060034851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4810,7 +4811,7 @@ MonoBehaviour:
   handPrefab: {fileID: 1442900358018363127, guid: 83338c0131ba6a34db00f7613600d09c, type: 3}
   textPrefab: {fileID: 6165689045170757359, guid: 5c88183abe8e71a47b68f10fbc98c098, type: 3}
   worldCanvas: {fileID: 1173647850}
-  handOffset: {x: 0.28, y: -0.24, z: -1}
+  handOffset: {x: 0.28, y: 0.14, z: -1}
   labelOffset: {x: 0, y: 0.56, z: -1}
   pulseDistance: 0.18
   pulseSeconds: 0.55

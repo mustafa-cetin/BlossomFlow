@@ -95,6 +95,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ed15d90c1bbc7044996f20ba699d71d8
+    m_Address: Assets/Casual Game Sounds U6/real/DM-CGS-29.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: eebd2dfe40c25c8418a6479b71eeeedf
     m_Address: Assets/Sprites/kizimsaksiyidusurmus.png
     m_ReadOnly: 0
