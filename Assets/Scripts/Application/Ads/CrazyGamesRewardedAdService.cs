@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Platform.CrazyGames;
 using CrazyGames;
 using UnityEngine;
 
@@ -6,9 +7,16 @@ namespace BlossomFlow.Application.Ads
 {
     public sealed class CrazyGamesRewardedAdService : IRewardedAdService
     {
+        private readonly CrazyGamesSdkConfiguration _configuration;
+
+        public CrazyGamesRewardedAdService(CrazyGamesSdkConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         public void ShowRewardedAd(Action onRewarded, Action onFailed)
         {
-            if (!CrazySDK.IsAvailable)
+            if (_configuration == null || !_configuration.IsEnabled || !CrazySDK.IsAvailable)
             {
                 onFailed?.Invoke();
                 return;

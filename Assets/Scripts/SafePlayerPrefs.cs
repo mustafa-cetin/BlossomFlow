@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Platform.CrazyGames;
 using CrazyGames;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ public static class SafePlayerPrefs
     {
         get
         {
+            if (!CrazyGamesSdkRuntime.IsEnabled)
+                return false;
+
             if (CrazySDK.IsAvailable && !CrazySDK.IsInitialized)
                 throw new InvalidOperationException("CrazySDK is available but not initialized.");
             return CrazySDK.IsAvailable;

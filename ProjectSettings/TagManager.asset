@@ -38,6 +38,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: background
+    uniqueID: 227646211
+    locked: 0
   - name: conveyor
     uniqueID: 2124406361
     locked: 0

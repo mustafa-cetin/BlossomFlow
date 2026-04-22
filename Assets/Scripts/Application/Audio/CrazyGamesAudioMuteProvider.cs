@@ -1,4 +1,5 @@
 using System;
+using BlossomFlow.Application.Platform.CrazyGames;
 using CrazyGames;
 using UnityEngine;
 
@@ -6,12 +7,14 @@ namespace BlossomFlow.Application.Audio
 {
     public sealed class CrazyGamesAudioMuteProvider : IExternalAudioMuteProvider, IDisposable
     {
+        private readonly CrazyGamesSdkConfiguration _configuration;
         private bool _isSettingsListenerRegistered;
 
         public event Action Changed;
 
-        public CrazyGamesAudioMuteProvider()
+        public CrazyGamesAudioMuteProvider(CrazyGamesSdkConfiguration configuration)
         {
+            _configuration = configuration;
             Initialize();
         }
 
@@ -30,7 +33,10 @@ namespace BlossomFlow.Application.Audio
 
         private void Initialize()
         {
-            if (!CrazySDK.IsAvailable || CrazySDK.IsShutDown)
+            if (_configuration == null ||
+                !_configuration.IsEnabled ||
+                !CrazySDK.IsAvailable ||
+                CrazySDK.IsShutDown)
             {
                 return;
             }

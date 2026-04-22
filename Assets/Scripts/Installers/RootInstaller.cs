@@ -4,6 +4,7 @@ using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
+using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Sprites;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.MainMenu.Domain;
@@ -28,11 +29,18 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
+    [SerializeField] private bool enableCrazyGamesSdk = true;
     [SerializeField] private bool playBackgroundMusicOnStartup = true;
     [SerializeField] private MusicTrackId startupMusicTrack = MusicTrackId.Background;
 
     public void InstallBindings(ContainerBuilder builder)
     {
+        CrazyGamesSdkRuntime.Configure(enableCrazyGamesSdk);
+
+        builder.RegisterValue(
+            new CrazyGamesSdkConfiguration(enableCrazyGamesSdk),
+            new[] { typeof(CrazyGamesSdkConfiguration) });
+
         builder.RegisterType(
             typeof(EventBus),
             new[]
@@ -79,6 +87,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterType(
             typeof(CrazyGamesAudioMuteProvider),
             new[] { typeof(IExternalAudioMuteProvider) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(CrazyGamesGameplaySessionReporter),
+            new[] { typeof(IGameplayPlatformSessionReporter) },
             Lifetime.Singleton,
             Resolution.Lazy);
 

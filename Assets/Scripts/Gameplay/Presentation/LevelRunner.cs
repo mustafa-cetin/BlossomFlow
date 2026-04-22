@@ -4,11 +4,11 @@ using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
+using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
 using BlossomFlow.Gameplay.Presentation.Tutorial;
-using CrazyGames;
 using Reflex.Attributes;
 using UnityEngine;
 
@@ -43,6 +43,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private IAnalyticsEventService _analyticsEventService;
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
+        private IGameplayPlatformSessionReporter _gameplaySessionReporter;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -53,7 +54,6 @@ namespace BlossomFlow.Gameplay.Presentation
         private float _stepTimer;
         private float _conveyorEntryDelayTimer;
         private bool _isFastForwardingConveyor;
-        private bool _isGameplayReportedActive;
         private bool _isCurrentLevelResultTracked;
         private float _levelStartedAtSeconds;
         private int _currentLevelAttemptNumber;
@@ -73,7 +73,8 @@ namespace BlossomFlow.Gameplay.Presentation
             IEventSubscriber eventSubscriber,
             IAnalyticsEventService analyticsEventService,
             ICurrentLevelDefinitionProvider currentLevelProvider,
-            IFirstLevelTutorialProgressService firstLevelTutorialProgress)
+            IFirstLevelTutorialProgressService firstLevelTutorialProgress,
+            IGameplayPlatformSessionReporter gameplaySessionReporter)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
@@ -81,6 +82,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _analyticsEventService = analyticsEventService;
             _currentLevelProvider = currentLevelProvider;
             _firstLevelTutorialProgress = firstLevelTutorialProgress;
+            _gameplaySessionReporter = gameplaySessionReporter;
         }
 
         private void Awake()
@@ -672,33 +674,17 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void NotifyGameplayStartIfPlaying()
         {
-            if (_session == null || _session.State != LevelPlayState.Playing || _isGameplayReportedActive)
+            if (_session == null || _session.State != LevelPlayState.Playing)
             {
                 return;
             }
 
-            if (!CrazySDK.IsAvailable || !CrazySDK.IsInitialized)
-            {
-                return;
-            }
-
-            CrazySDK.Game.GameplayStart();
-            _isGameplayReportedActive = true;
+            _gameplaySessionReporter?.NotifyGameplayStart();
         }
 
         private void NotifyGameplayStop()
         {
-            if (!_isGameplayReportedActive)
-            {
-                return;
-            }
-
-            if (CrazySDK.IsAvailable && CrazySDK.IsInitialized)
-            {
-                CrazySDK.Game.GameplayStop();
-            }
-
-            _isGameplayReportedActive = false;
+            _gameplaySessionReporter?.NotifyGameplayStop();
         }
 
         private void UnsubscribeSessionEvents()

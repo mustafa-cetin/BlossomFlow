@@ -60,7 +60,6 @@ MonoBehaviour:
   loadingSceneName: LoadingScene
   startupTargetSceneName: GameScene
   startupTutorialCompletedTargetSceneName: MainMenuScene
-  levelCatalog: {fileID: 11400000, guid: 19684b35e3e532842868724670d47654, type: 2}
   remoteLevelCatalog:
     m_AssetGUID: 5bd97d317a568d448914c2a1f9b7a818
     m_SubObjectName: 
@@ -72,5 +71,6 @@ MonoBehaviour:
   soundCatalog: {fileID: 11400000, guid: 0b8e1a4a2f413c043aec2ca4d8c93ef4, type: 2}
   soundEffectsVolume: 1
   musicVolume: 0.1
+  enableCrazyGamesSdk: 0
   playBackgroundMusicOnStartup: 1
   startupMusicTrack: 0
