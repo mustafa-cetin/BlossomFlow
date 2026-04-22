@@ -336,18 +336,18 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void TryLaunchColumn(int columnIndex)
         {
-            if (_session == null || !_session.CanLaunchFromColumn(columnIndex))
+            if (_session == null || !TryResolveLaunchColumn(columnIndex, out var launchColumnIndex))
             {
                 return;
             }
 
-            if (!CanEnterConveyor(_session.GetLaunchGroupSize(columnIndex)))
+            if (!CanEnterConveyor(_session.GetLaunchGroupSize(launchColumnIndex)))
             {
                 PublishConveyorEntryBlockedIfFull();
                 return;
             }
 
-            var pots = _session.LaunchGroupFromColumn(columnIndex, out var sourceColumnIndexes);
+            var pots = _session.LaunchGroupFromColumn(launchColumnIndex, out var sourceColumnIndexes);
             StartConveyorEntryDelay();
             PublishSound(SoundCueId.GameplayTap);
             PublishSound(SoundCueId.PotLaunch);
@@ -355,6 +355,55 @@ namespace BlossomFlow.Gameplay.Presentation
             {
                 presentationView.ShowLaunchedPot(pots[i], sourceColumnIndexes[i]);
             }
+        }
+
+        private bool TryResolveLaunchColumn(int requestedColumnIndex, out int resolvedColumnIndex)
+        {
+            resolvedColumnIndex = -1;
+            if (_session == null ||
+                requestedColumnIndex < 0 ||
+                requestedColumnIndex >= _session.LaunchColumns.Count)
+            {
+                return false;
+            }
+
+            if (_session.CanLaunchFromColumn(requestedColumnIndex))
+            {
+                resolvedColumnIndex = requestedColumnIndex;
+                return true;
+            }
+
+            var requestedColumn = _session.LaunchColumns[requestedColumnIndex];
+            if (!requestedColumn.CanLaunch)
+            {
+                return false;
+            }
+
+            var requestedPot = requestedColumn.PeekTop();
+            if (requestedPot == null || !requestedPot.IsLinked)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _session.LaunchColumns.Count; i++)
+            {
+                var candidateColumn = _session.LaunchColumns[i];
+                if (!candidateColumn.CanLaunch || !_session.CanLaunchFromColumn(i))
+                {
+                    continue;
+                }
+
+                var candidatePot = candidateColumn.PeekTop();
+                if (candidatePot != null &&
+                    candidatePot.IsLinked &&
+                    candidatePot.LinkedPairId == requestedPot.LinkedPairId)
+                {
+                    resolvedColumnIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void TryRecallWaitingPot(int slotIndex)

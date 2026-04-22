@@ -74,8 +74,8 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
             return _step switch
             {
-                TutorialStep.AwaitingFirstLaunchTap => target.Is(LevelClickTargetKind.LaunchColumn, _guidedLaunchColumn),
-                TutorialStep.AwaitingQueueLaunchTap => target.Is(LevelClickTargetKind.LaunchColumn, _guidedLaunchColumn),
+                TutorialStep.AwaitingFirstLaunchTap => IsGuidedLaunchColumn(target),
+                TutorialStep.AwaitingQueueLaunchTap => IsGuidedLaunchColumn(target),
                 TutorialStep.AwaitingWaitingTap => target.Is(LevelClickTargetKind.WaitingSlot, _guidedWaitingSlot),
                 TutorialStep.AwaitingFinalLaunchTaps => IsGuidedFinalLaunchColumn(target),
                 _ => false
@@ -91,7 +91,7 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
             if (_step == TutorialStep.AwaitingFirstLaunchTap)
             {
-                if (!target.Is(LevelClickTargetKind.LaunchColumn, _guidedLaunchColumn))
+                if (!IsGuidedLaunchColumn(target))
                 {
                     return;
                 }
@@ -105,7 +105,7 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
             if (_step == TutorialStep.AwaitingQueueLaunchTap)
             {
-                if (!target.Is(LevelClickTargetKind.LaunchColumn, _guidedLaunchColumn))
+                if (!IsGuidedLaunchColumn(target))
                 {
                     return;
                 }
@@ -123,7 +123,7 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
 
             if (_step == TutorialStep.AwaitingFinalLaunchTaps && IsGuidedFinalLaunchColumn(target))
             {
-                _guidedFinalLaunchColumns.Remove(target.Index);
+                RemoveGuidedFinalLaunchColumns(target.Index);
                 if (_guidedFinalLaunchColumns.Count == 0)
                 {
                     CompleteTutorial();
@@ -344,7 +344,71 @@ namespace BlossomFlow.Gameplay.Presentation.Tutorial
         {
             return target != null &&
                 target.Kind == LevelClickTargetKind.LaunchColumn &&
-                _guidedFinalLaunchColumns.Contains(target.Index);
+                ContainsEquivalentGuidedFinalLaunchColumn(target.Index);
+        }
+
+        private bool IsGuidedLaunchColumn(LevelClickTarget target)
+        {
+            return target != null &&
+                target.Kind == LevelClickTargetKind.LaunchColumn &&
+                AreEquivalentLaunchColumns(target.Index, _guidedLaunchColumn);
+        }
+
+        private bool ContainsEquivalentGuidedFinalLaunchColumn(int columnIndex)
+        {
+            for (var i = 0; i < _guidedFinalLaunchColumns.Count; i++)
+            {
+                if (AreEquivalentLaunchColumns(columnIndex, _guidedFinalLaunchColumns[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RemoveGuidedFinalLaunchColumns(int clickedColumnIndex)
+        {
+            for (var i = _guidedFinalLaunchColumns.Count - 1; i >= 0; i--)
+            {
+                if (AreEquivalentLaunchColumns(clickedColumnIndex, _guidedFinalLaunchColumns[i]))
+                {
+                    _guidedFinalLaunchColumns.RemoveAt(i);
+                }
+            }
+        }
+
+        private bool AreEquivalentLaunchColumns(int firstColumnIndex, int secondColumnIndex)
+        {
+            if (firstColumnIndex == secondColumnIndex)
+            {
+                return firstColumnIndex >= 0;
+            }
+
+            if (_session == null ||
+                !IsValidLaunchColumnIndex(firstColumnIndex) ||
+                !IsValidLaunchColumnIndex(secondColumnIndex) ||
+                !_session.CanLaunchFromColumn(firstColumnIndex) ||
+                !_session.CanLaunchFromColumn(secondColumnIndex))
+            {
+                return false;
+            }
+
+            var firstPot = _session.LaunchColumns[firstColumnIndex].PeekTop();
+            var secondPot = _session.LaunchColumns[secondColumnIndex].PeekTop();
+            return firstPot != null &&
+                secondPot != null &&
+                firstPot.IsLinked &&
+                secondPot.IsLinked &&
+                firstPot.LinkedPairId == secondPot.LinkedPairId;
+        }
+
+        private bool IsValidLaunchColumnIndex(int columnIndex)
+        {
+            return _session != null &&
+                columnIndex >= 0 &&
+                columnIndex < _session.LaunchColumns.Count &&
+                _session.LaunchColumns[columnIndex].CanLaunch;
         }
 
         private void CompleteTutorial()

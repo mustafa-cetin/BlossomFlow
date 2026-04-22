@@ -404,7 +404,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConfigurePotView(view, pot);
                 SetSortingOrder(view, 20 - queueIndex);
 
-                if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
+                if (queueIndex == 0)
                 {
                     var capturedColumn = columnIndex;
                     BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn), LevelClickTargetKind.LaunchColumn, capturedColumn);
@@ -456,7 +456,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 ConfigurePotView(view, pot);
                 SetSortingOrder(view, 20 - queueIndex);
 
-                if (queueIndex == 0 && _session.CanLaunchFromColumn(columnIndex))
+                if (queueIndex == 0)
                 {
                     var capturedColumn = columnIndex;
                     BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn), LevelClickTargetKind.LaunchColumn, capturedColumn);
@@ -1175,9 +1175,18 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void BindClick(GameObject view, Action clicked, LevelClickTargetKind kind, int index)
         {
-            if (view.GetComponent<Collider2D>() == null)
+            var boxCollider = view.GetComponent<BoxCollider2D>();
+            if (boxCollider == null)
             {
-                view.AddComponent<BoxCollider2D>();
+                boxCollider = view.AddComponent<BoxCollider2D>();
+            }
+
+            var spriteRenderer = GetSpriteRenderer(view);
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+            {
+                var spriteBounds = spriteRenderer.sprite.bounds;
+                boxCollider.size = spriteBounds.size * 1.15f;
+                boxCollider.offset = spriteBounds.center;
             }
 
             var colliders = view.GetComponents<Collider2D>();
