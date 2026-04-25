@@ -1,7 +1,6 @@
 using System;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
-using BlossomFlow.Application.SceneLoading;
 using BlossomFlow.Application.Sprites;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
@@ -41,7 +40,6 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("Cost")]
         [SerializeField] private int keepPlayingGoldCost = 900;
         [SerializeField] private bool hideOnAwake = true;
-        [SerializeField] private string mainMenuSceneName = "MainMenuScene";
 
         [Header("Animation")]
         [SerializeField] private float artworkPopScale = 1.12f;
@@ -54,7 +52,6 @@ namespace BlossomFlow.Gameplay.Presentation
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
-        private ISceneTransitionService _sceneTransitionService;
         private IAddressableSpriteLoader _spriteLoader;
         private IDisposable _failureScreenRequestedSubscription;
         private IDisposable _keepPlayingStartedSubscription;
@@ -73,13 +70,11 @@ namespace BlossomFlow.Gameplay.Presentation
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
             IMainMenuPlayerProgressService progressService,
-            ISceneTransitionService sceneTransitionService,
             IAddressableSpriteLoader spriteLoader)
         {
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
-            _sceneTransitionService = sceneTransitionService;
             _spriteLoader = spriteLoader;
 
             if (isActiveAndEnabled)
@@ -182,7 +177,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            ReturnToMainMenu();
+            TryRestartLevel();
         }
 
         private void TryKeepPlaying()
@@ -305,17 +300,6 @@ namespace BlossomFlow.Gameplay.Presentation
                 FailureScreenState.RetryOnly => retrySpriteReference,
                 _ => keepPlayingSpriteReference
             };
-        }
-
-        private void ReturnToMainMenu()
-        {
-            if (_sceneTransitionService == null)
-            {
-                Debug.LogWarning("Scene transition service is not available.");
-                return;
-            }
-
-            _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
         }
 
         private void ApplyArtworkSpriteReference(AssetReferenceT<Sprite> spriteReference)

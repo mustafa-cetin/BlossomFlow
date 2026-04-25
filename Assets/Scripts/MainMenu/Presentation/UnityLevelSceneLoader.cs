@@ -25,7 +25,7 @@ namespace BlossomFlow.MainMenu.Presentation
                 return;
             }
 
-            _sceneTransitionService.LoadSceneThroughLoading(_levelSceneName);
+            _sceneTransitionService.LoadScene(_levelSceneName);
         }
     }
 }

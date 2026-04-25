@@ -1,6 +1,7 @@
 using Reflex.Core;
 using Reflex.Enums;
 using UnityEngine;
+using BlossomFlow.Gameplay.Application.Levels;
 using BlossomFlow.Gameplay.Domain.Boosters;
 using BlossomFlow.Gameplay.Domain.Levels;
 using Resolution = Reflex.Enums.Resolution;
@@ -24,6 +25,12 @@ public class GameInstaller : MonoBehaviour, IInstaller
         builder.RegisterType(
             typeof(ShuffleBoosterService),
             new[] { typeof(IShuffleBoosterService) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(LevelAdvanceService),
+            new[] { typeof(ILevelAdvanceService) },
             Lifetime.Scoped,
             Resolution.Lazy);
     }

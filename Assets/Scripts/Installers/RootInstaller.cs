@@ -20,9 +20,8 @@ using BlossomFlow.Application.Debugging;
 
 public class RootInstaller : MonoBehaviour, IInstaller
 {
-    [SerializeField] private string loadingSceneName = "LoadingScene";
     [SerializeField] private string startupTargetSceneName = "GameScene";
-    [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
+    [SerializeField] private string startupTutorialCompletedTargetSceneName = "GameScene";
     [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
@@ -124,17 +123,24 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Eager);
 
+        builder.RegisterType(
+            typeof(UnitySceneLoader),
+            new[] { typeof(ISceneLoader) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
         builder.RegisterFactory(
-            container => new SceneTransitionService(
-                loadingSceneName,
+            container => new SceneTransitionService(container.Resolve<ISceneLoader>()),
+            new[] { typeof(ISceneTransitionService) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            container => new LoadingSceneTargetProvider(
                 startupTargetSceneName,
                 startupTutorialCompletedTargetSceneName,
                 container.Resolve<IFirstLevelTutorialProgressService>()),
-            new[]
-            {
-                typeof(ISceneTransitionService),
-                typeof(ILoadingSceneTargetProvider)
-            },
+            new[] { typeof(ILoadingSceneTargetProvider) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -153,8 +159,10 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Lazy);
 
-        builder.RegisterType(
-            typeof(LevelSelectionService),
+        builder.RegisterFactory(
+            container => new LevelSelectionService(
+                container.Resolve<ILevelCatalog>(),
+                container.Resolve<IMainMenuPlayerProgressService>()),
             new[]
             {
                 typeof(ILevelSelectionWriter),

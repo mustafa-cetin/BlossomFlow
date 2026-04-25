@@ -6,6 +6,7 @@ using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
 using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Tutorial;
+using BlossomFlow.Gameplay.Application.Levels;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Boosters;
 using BlossomFlow.Gameplay.Domain.Levels;
@@ -47,6 +48,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private IGameplayPlatformSessionReporter _gameplaySessionReporter;
         private IShuffleBoosterService _shuffleBoosterService;
         private IDisposable _restartRequestedSubscription;
+        private IDisposable _levelAdvanceRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
         private IDisposable _shuffleBoosterRequestedSubscription;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -108,6 +110,7 @@ namespace BlossomFlow.Gameplay.Presentation
             presentationView.WaitingPotRecallRequested += TryRecallWaitingPot;
             firstLevelTutorial.Initialize(presentationView, _firstLevelTutorialProgress);
             _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
+            _levelAdvanceRequestedSubscription = _eventSubscriber.Subscribe<LevelAdvanceRequested>(OnLevelAdvanceRequested);
             _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
             _shuffleBoosterRequestedSubscription = _eventSubscriber.Subscribe<ShuffleBoosterRequested>(_ => TryUseShuffleBooster());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -136,6 +139,8 @@ namespace BlossomFlow.Gameplay.Presentation
             UnsubscribeSessionEvents();
             _restartRequestedSubscription?.Dispose();
             _restartRequestedSubscription = null;
+            _levelAdvanceRequestedSubscription?.Dispose();
+            _levelAdvanceRequestedSubscription = null;
             _keepPlayingRequestedSubscription?.Dispose();
             _keepPlayingRequestedSubscription = null;
             _shuffleBoosterRequestedSubscription?.Dispose();
@@ -706,6 +711,17 @@ namespace BlossomFlow.Gameplay.Presentation
 
             TrackLevelRestart();
             _eventPublisher.Publish(new LevelRestarted());
+            StartLevelSession();
+        }
+
+        private void OnLevelAdvanceRequested(LevelAdvanceRequested advanceRequested)
+        {
+            if (_sessionFactory == null)
+            {
+                return;
+            }
+
+            _eventPublisher.Publish(new LevelAdvanced(advanceRequested.LevelNumber));
             StartLevelSession();
         }
 

@@ -1,5 +1,6 @@
 using System;
 using BlossomFlow.Gameplay.Domain.Levels;
+using BlossomFlow.MainMenu.Domain;
 
 namespace BlossomFlow.Application.Levels
 {
@@ -8,9 +9,10 @@ namespace BlossomFlow.Application.Levels
         private readonly ILevelCatalog _levelCatalog;
         private int _currentLevelNumber = 1;
 
-        public LevelSelectionService(ILevelCatalog levelCatalog)
+        public LevelSelectionService(ILevelCatalog levelCatalog, IMainMenuPlayerProgressService progressService)
         {
             _levelCatalog = levelCatalog ?? throw new ArgumentNullException(nameof(levelCatalog));
+            _currentLevelNumber = Math.Max(1, progressService?.Current.LevelNumber ?? _currentLevelNumber);
         }
 
         public int CurrentLevelNumber => _currentLevelNumber;
