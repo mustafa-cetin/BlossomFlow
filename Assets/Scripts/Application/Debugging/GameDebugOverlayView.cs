@@ -2,6 +2,7 @@
 using System;
 using Reflex.Attributes;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace BlossomFlow.Application.Debugging
 {
@@ -15,6 +16,7 @@ namespace BlossomFlow.Application.Debugging
         private readonly int[] _quickSeedAmounts = { -10, -1, 1, 10, 100 };
 
         private IGameDebugStateService _debugState;
+        private InputAction _toggleOverlayAction;
         private Rect _windowRect = new Rect(20f, 20f, WindowWidth, WindowHeight);
         private bool _isVisible;
         private string _levelInput = "1";
@@ -30,15 +32,42 @@ namespace BlossomFlow.Application.Debugging
             _debugState = debugState;
         }
 
-        private void Update()
+        private void Awake()
         {
-            if (Input.GetKeyDown(KeyCode.F10) || Input.GetKeyDown(KeyCode.BackQuote))
+            _toggleOverlayAction = new InputAction("ToggleDebugOverlay", InputActionType.Button);
+            _toggleOverlayAction.AddBinding("<Keyboard>/f10");
+            _toggleOverlayAction.AddBinding("<Keyboard>/backquote");
+        }
+
+        private void OnEnable()
+        {
+            _toggleOverlayAction.performed += OnToggleOverlayPerformed;
+            _toggleOverlayAction.Enable();
+        }
+
+        private void OnDisable()
+        {
+            if (_toggleOverlayAction == null)
             {
-                _isVisible = !_isVisible;
-                if (_isVisible)
-                {
-                    SyncInputsFromState();
-                }
+                return;
+            }
+
+            _toggleOverlayAction.performed -= OnToggleOverlayPerformed;
+            _toggleOverlayAction.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            _toggleOverlayAction?.Dispose();
+            _toggleOverlayAction = null;
+        }
+
+        private void OnToggleOverlayPerformed(InputAction.CallbackContext context)
+        {
+            _isVisible = !_isVisible;
+            if (_isVisible)
+            {
+                SyncInputsFromState();
             }
         }
 

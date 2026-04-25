@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BlossomFlow.Gameplay.Domain.Boosters;
 
 namespace BlossomFlow.Gameplay.Domain
 {
@@ -102,6 +103,70 @@ namespace BlossomFlow.Gameplay.Domain
             }
 
             return TryGetLinkedLaunchGroupColumnIndexes(pot, out _);
+        }
+
+        public bool TryShuffleLaunchQueues(IRandomNumberGenerator random)
+        {
+            EnsurePlaying();
+            if (random == null)
+            {
+                throw new ArgumentNullException(nameof(random));
+            }
+
+            var shuffledPots = new List<PotModel>();
+            for (var i = 0; i < _launchColumns.Length; i++)
+            {
+                _launchColumns[i].AppendUnlinkedPots(shuffledPots);
+            }
+
+            if (shuffledPots.Count <= 1)
+            {
+                return false;
+            }
+
+            var originalPots = new List<PotModel>(shuffledPots);
+            ShuffleUntilChanged(shuffledPots, originalPots, random);
+
+            var shuffledIndex = 0;
+            for (var i = 0; i < _launchColumns.Length; i++)
+            {
+                _launchColumns[i].ReplaceUnlinkedPots(shuffledPots, ref shuffledIndex);
+            }
+
+            return true;
+        }
+
+        private static void ShuffleUntilChanged<T>(IList<T> values, IReadOnlyList<T> originalValues, IRandomNumberGenerator random)
+        {
+            const int maxAttempts = 4;
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Shuffle(values, random);
+                if (!HasSameOrder(values, originalValues))
+                {
+                    return;
+                }
+            }
+
+            (values[0], values[1]) = (values[1], values[0]);
+        }
+
+        private static bool HasSameOrder<T>(IList<T> values, IReadOnlyList<T> otherValues)
+        {
+            if (values == null || otherValues == null || values.Count != otherValues.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                if (!EqualityComparer<T>.Default.Equals(values[i], otherValues[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int GetLaunchGroupSize(int columnIndex)
@@ -701,6 +766,15 @@ namespace BlossomFlow.Gameplay.Domain
             }
 
             return true;
+        }
+
+        private static void Shuffle<T>(IList<T> values, IRandomNumberGenerator random)
+        {
+            for (var i = values.Count - 1; i > 0; i--)
+            {
+                var swapIndex = random.Next(0, i + 1);
+                (values[i], values[swapIndex]) = (values[swapIndex], values[i]);
+            }
         }
 
         private void EvaluateWinCondition()

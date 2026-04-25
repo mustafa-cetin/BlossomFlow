@@ -7,6 +7,7 @@ using BlossomFlow.Application.Levels;
 using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.Gameplay.Domain;
+using BlossomFlow.Gameplay.Domain.Boosters;
 using BlossomFlow.Gameplay.Domain.Levels;
 using BlossomFlow.Gameplay.Presentation.Tutorial;
 using Reflex.Attributes;
@@ -44,8 +45,10 @@ namespace BlossomFlow.Gameplay.Presentation
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IGameplayPlatformSessionReporter _gameplaySessionReporter;
+        private IShuffleBoosterService _shuffleBoosterService;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
+        private IDisposable _shuffleBoosterRequestedSubscription;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private IDisposable _debugLevelReloadRequestedSubscription;
 #endif
@@ -74,7 +77,8 @@ namespace BlossomFlow.Gameplay.Presentation
             IAnalyticsEventService analyticsEventService,
             ICurrentLevelDefinitionProvider currentLevelProvider,
             IFirstLevelTutorialProgressService firstLevelTutorialProgress,
-            IGameplayPlatformSessionReporter gameplaySessionReporter)
+            IGameplayPlatformSessionReporter gameplaySessionReporter,
+            IShuffleBoosterService shuffleBoosterService)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
@@ -83,6 +87,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _currentLevelProvider = currentLevelProvider;
             _firstLevelTutorialProgress = firstLevelTutorialProgress;
             _gameplaySessionReporter = gameplaySessionReporter;
+            _shuffleBoosterService = shuffleBoosterService;
         }
 
         private void Awake()
@@ -104,6 +109,7 @@ namespace BlossomFlow.Gameplay.Presentation
             firstLevelTutorial.Initialize(presentationView, _firstLevelTutorialProgress);
             _restartRequestedSubscription = _eventSubscriber.Subscribe<LevelRestartRequested>(_ => RestartLevel());
             _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
+            _shuffleBoosterRequestedSubscription = _eventSubscriber.Subscribe<ShuffleBoosterRequested>(_ => TryUseShuffleBooster());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLevelReloadRequestedSubscription = _eventSubscriber.Subscribe<GameDebugLevelReloadRequested>(OnDebugLevelReloadRequested);
 #endif
@@ -132,6 +138,8 @@ namespace BlossomFlow.Gameplay.Presentation
             _restartRequestedSubscription = null;
             _keepPlayingRequestedSubscription?.Dispose();
             _keepPlayingRequestedSubscription = null;
+            _shuffleBoosterRequestedSubscription?.Dispose();
+            _shuffleBoosterRequestedSubscription = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLevelReloadRequestedSubscription?.Dispose();
             _debugLevelReloadRequestedSubscription = null;
@@ -208,6 +216,7 @@ namespace BlossomFlow.Gameplay.Presentation
             NotifyGameplayStop();
             TrackLevelQuitIfPlaying();
             UnsubscribeSessionEvents();
+            pointerInput?.RequirePointerReleaseBeforeNextClick();
             _session = null;
             _levelLoadRequest?.Dispose();
             _levelLoadRequest = null;
@@ -282,6 +291,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _session.WaitingPotRecalled += OnWaitingPotRecalled;
             _session.Conveyor.PotEntered += OnConveyorPotCountChanged;
             _session.Conveyor.PotRemoved += OnConveyorPotCountChanged;
+            _shuffleBoosterService?.ResetForLevel();
 
             presentationView.BindSession(_session);
             _session.Start();
@@ -290,6 +300,7 @@ namespace BlossomFlow.Gameplay.Presentation
             presentationView.BuildInitialViews();
             firstLevelTutorial.BindSession(_session, _currentLevelProvider?.CurrentLevelNumber ?? 1);
             PublishConveyorPotCount();
+            PublishShuffleBoosterUsesChanged();
         }
 
         private void OnClickTargetRequested(LevelClickTarget target)
@@ -712,6 +723,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
+            pointerInput?.RequirePointerReleaseBeforeNextClick();
             _stepTimer = 0f;
             _conveyorEntryDelayTimer = 0f;
             _isFastForwardingConveyor = false;
@@ -719,6 +731,39 @@ namespace BlossomFlow.Gameplay.Presentation
             TrackLevel("KeepPlaying");
             NotifyGameplayStartIfPlaying();
             _eventPublisher.Publish(new LevelKeepPlayingStarted());
+        }
+
+        private void TryUseShuffleBooster()
+        {
+            if (_session == null || _shuffleBoosterService == null)
+            {
+                PublishShuffleBoosterUnavailable();
+                return;
+            }
+
+            if (!_shuffleBoosterService.TryUse(_session))
+            {
+                PublishShuffleBoosterUnavailable();
+                return;
+            }
+
+            presentationView.PlayShuffleLaunchQueueAnimation();
+            PublishSound(SoundCueId.GameplayTap);
+            _eventPublisher?.Publish(new ShuffleBoosterUsed(_shuffleBoosterService.RemainingUses));
+            PublishShuffleBoosterUsesChanged();
+        }
+
+        private void PublishShuffleBoosterUnavailable()
+        {
+            var remainingUses = _shuffleBoosterService?.RemainingUses ?? 0;
+            _eventPublisher?.Publish(new ShuffleBoosterUnavailable(remainingUses));
+            PublishShuffleBoosterUsesChanged();
+        }
+
+        private void PublishShuffleBoosterUsesChanged()
+        {
+            var remainingUses = _shuffleBoosterService?.RemainingUses ?? 0;
+            _eventPublisher?.Publish(new ShuffleBoosterUsesChanged(remainingUses));
         }
 
         private void NotifyGameplayStartIfPlaying()

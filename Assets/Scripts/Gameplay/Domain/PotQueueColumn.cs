@@ -42,5 +42,53 @@ namespace BlossomFlow.Gameplay.Domain
         {
             return CanLaunch && ReferenceEquals(_pots.Peek(), pot);
         }
+
+        public void AppendUnlinkedPots(ICollection<PotModel> unlinkedPots)
+        {
+            if (unlinkedPots == null)
+            {
+                throw new ArgumentNullException(nameof(unlinkedPots));
+            }
+
+            var pots = _pots.ToArray();
+            for (var i = 0; i < pots.Length; i++)
+            {
+                if (!pots[i].IsLinked)
+                {
+                    unlinkedPots.Add(pots[i]);
+                }
+            }
+        }
+
+        public void ReplaceUnlinkedPots(IReadOnlyList<PotModel> replacementPots, ref int replacementIndex)
+        {
+            if (replacementPots == null)
+            {
+                throw new ArgumentNullException(nameof(replacementPots));
+            }
+
+            var pots = _pots.ToArray();
+            for (var i = 0; i < pots.Length; i++)
+            {
+                if (pots[i].IsLinked)
+                {
+                    continue;
+                }
+
+                if (replacementIndex < 0 || replacementIndex >= replacementPots.Count)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(replacementIndex), "Replacement pot index is outside the shuffled pot list.");
+                }
+
+                pots[i] = replacementPots[replacementIndex];
+                replacementIndex++;
+            }
+
+            _pots.Clear();
+            for (var i = 0; i < pots.Length; i++)
+            {
+                _pots.Enqueue(pots[i]);
+            }
+        }
     }
 }

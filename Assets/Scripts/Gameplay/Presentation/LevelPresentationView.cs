@@ -58,6 +58,7 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private float conveyorMoveSeconds = 0.45f;
         [SerializeField] private float launchMoveSeconds = 0.38f;
         [SerializeField] private float waitingMoveSeconds = 0.35f;
+        [SerializeField] private float shuffleMoveSeconds = 0.32f;
         [SerializeField] private float flowerFlySeconds = 0.22f;
         [SerializeField] private float potDisappearSeconds = 0.24f;
         [SerializeField] private float flowerFlyArcHeight = 0.35f;
@@ -65,6 +66,7 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private float waitingPotPulseSeconds = 0.55f;
         [SerializeField] private Ease launchMoveEase = Ease.OutCubic;
         [SerializeField] private Ease waitingMoveEase = Ease.OutCubic;
+        [SerializeField] private Ease shuffleMoveEase = Ease.InOutCubic;
         [SerializeField] private Ease waitingPotPulseEase = Ease.InOutSine;
         [SerializeField] private Ease flowerFlyEase = Ease.InCubic;
         [SerializeField] private Ease potDisappearEase = Ease.InBack;
@@ -84,6 +86,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private readonly HashSet<PotModel> _trackedPotCounters = new();
         private readonly Dictionary<int, GameObject> _waitingSlotViews = new();
         private readonly Dictionary<int, GameObject> _linkedPotViews = new();
+        private readonly Dictionary<PotModel, GameObject> _queuedPotViews = new();
 
         private LevelSession _session;
         private Sprite _fallbackSprite;
@@ -208,6 +211,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _pendingFlowerTargets.Clear();
             _collectedFlowerCounts.Clear();
             _waitingSlotViews.Clear();
+            _queuedPotViews.Clear();
         }
 
         public void ShowWinResolution()
@@ -248,6 +252,88 @@ namespace BlossomFlow.Gameplay.Presentation
             BuildWaitingSlotViews();
         }
 
+        public void RefreshLaunchColumnViews()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            BuildLaunchColumnViews();
+        }
+
+        public void PlayShuffleLaunchQueueAnimation()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            var previousQueuedPotViews = new Dictionary<PotModel, GameObject>(_queuedPotViews);
+            var activeQueuedPotViews = new Dictionary<PotModel, GameObject>();
+            var activeViews = new HashSet<GameObject>();
+            _launchColumnViews.Clear();
+
+            for (var columnIndex = 0; columnIndex < _session.LaunchColumns.Count; columnIndex++)
+            {
+                var column = _session.LaunchColumns[columnIndex];
+                if (!column.CanLaunch)
+                {
+                    continue;
+                }
+
+                var views = new List<GameObject>();
+                var pots = column.Pots;
+                for (var queueIndex = 0; queueIndex < pots.Count; queueIndex++)
+                {
+                    var pot = pots[queueIndex];
+                    if (!previousQueuedPotViews.TryGetValue(pot, out var view) || view == null)
+                    {
+                        view = CreateView(potPrefab, launchColumnRoot, $"LaunchPot_{columnIndex}_{queueIndex}");
+                        view.transform.position = LaunchPosition(columnIndex, queueIndex);
+                    }
+
+                    view.name = $"LaunchPot_{columnIndex}_{queueIndex}";
+                    view.transform.SetParent(launchColumnRoot, true);
+                    ConfigurePotView(view, pot);
+                    SetSortingOrder(view, 20 - queueIndex);
+
+                    if (queueIndex == 0)
+                    {
+                        var capturedColumn = columnIndex;
+                        BindClick(view, () => LaunchColumnRequested?.Invoke(capturedColumn), LevelClickTargetKind.LaunchColumn, capturedColumn);
+                    }
+                    else
+                    {
+                        DisableClick(view);
+                    }
+
+                    AnimateLaunchQueueMove(view, LaunchPosition(columnIndex, queueIndex), GetPotVisualSize(queueIndex), shuffleMoveSeconds, shuffleMoveEase);
+                    views.Add(view);
+                    activeViews.Add(view);
+                    activeQueuedPotViews[pot] = view;
+                }
+
+                _launchColumnViews[columnIndex] = views;
+            }
+
+            foreach (var pair in previousQueuedPotViews)
+            {
+                if (pair.Value != null && !activeViews.Contains(pair.Value))
+                {
+                    DestroyLaunchColumnView(pair.Value);
+                }
+            }
+
+            _queuedPotViews.Clear();
+            foreach (var pair in activeQueuedPotViews)
+            {
+                _queuedPotViews[pair.Key] = pair.Value;
+            }
+
+            RefreshLinkedPotViews();
+        }
+
         private void OnDestroy()
         {
             UnbindSession();
@@ -271,6 +357,7 @@ namespace BlossomFlow.Gameplay.Presentation
             launchMoveSeconds = Mathf.Max(0f, launchMoveSeconds);
             waitingMoveSeconds = Mathf.Max(0f, waitingMoveSeconds);
             flowerFlySeconds = Mathf.Max(0f, flowerFlySeconds);
+            shuffleMoveSeconds = Mathf.Max(0f, shuffleMoveSeconds);
             potDisappearSeconds = Mathf.Max(0f, potDisappearSeconds);
             flowerFlyArcHeight = Mathf.Max(0f, flowerFlyArcHeight);
             waitingPotPulseScale = Mathf.Max(1f, waitingPotPulseScale);
@@ -402,6 +489,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 view.transform.position = LaunchPosition(columnIndex, queueIndex);
                 ApplyVisualSize(view, queueIndex == 0 ? potVisualSize : potVisualSize * BackQueuedPotScale);
                 ConfigurePotView(view, pot);
+                RegisterQueuedPotView(pot, view);
                 SetSortingOrder(view, 20 - queueIndex);
 
                 if (queueIndex == 0)
@@ -454,6 +542,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 view.name = $"LaunchPot_{columnIndex}_{queueIndex}";
                 view.transform.SetParent(launchColumnRoot, true);
                 ConfigurePotView(view, pot);
+                RegisterQueuedPotView(pot, view);
                 SetSortingOrder(view, 20 - queueIndex);
 
                 if (queueIndex == 0)
@@ -677,6 +766,40 @@ namespace BlossomFlow.Gameplay.Presentation
 
             SetColor(view, ToUnityColor(pot.Color));
             UpdatePotCounter(view, pot);
+        }
+
+        private void RegisterQueuedPotView(PotModel pot, GameObject view)
+        {
+            if (pot == null || view == null)
+            {
+                return;
+            }
+
+            UnregisterQueuedPotView(view);
+            _queuedPotViews[pot] = view;
+        }
+
+        private void UnregisterQueuedPotView(GameObject view)
+        {
+            if (view == null || _queuedPotViews.Count == 0)
+            {
+                return;
+            }
+
+            var potToRemove = default(PotModel);
+            foreach (var pair in _queuedPotViews)
+            {
+                if (pair.Value == view)
+                {
+                    potToRemove = pair.Key;
+                    break;
+                }
+            }
+
+            if (potToRemove != null)
+            {
+                _queuedPotViews.Remove(potToRemove);
+            }
         }
 
         private void UpdatePotCounter(GameObject view, PotModel pot)
@@ -1347,6 +1470,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             view.transform.DOKill();
+            UnregisterQueuedPotView(view);
             Destroy(view);
         }
 

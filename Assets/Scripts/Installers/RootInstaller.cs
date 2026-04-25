@@ -5,6 +5,7 @@ using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Platform.CrazyGames;
+using BlossomFlow.Application.Performance;
 using BlossomFlow.Application.Sprites;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.MainMenu.Domain;
@@ -109,7 +110,7 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Eager);
 
         builder.RegisterType(
-            typeof(ByteBrewAnalyticsEventService),
+            typeof(NullAnalyticsEventService),
             new[] { typeof(IAnalyticsEventService) },
             Lifetime.Singleton,
             Resolution.Lazy);
@@ -181,8 +182,8 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterType(
-            typeof(ByteBrewStartupServiceInitializer),
-            new[] { typeof(ByteBrewStartupServiceInitializer) },
+            typeof(MobileNativeRefreshRateConfigurator),
+            new[] { typeof(IFrameRateConfigurator) },
             Lifetime.Singleton,
             Resolution.Lazy);
 

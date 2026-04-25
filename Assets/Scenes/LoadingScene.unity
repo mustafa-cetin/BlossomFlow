@@ -290,7 +290,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 1.1636047, y: 74.46571}
+  m_AnchoredPosition: {x: 1.1635742, y: 74.4657}
   m_SizeDelta: {x: -114.0255, y: -251.3217}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &224231221
@@ -427,7 +427,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.6198}
+  m_AnchoredPosition: {x: 0, y: -0.61979675}
   m_SizeDelta: {x: -42.1458, y: -23.5521}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &286365495
@@ -1002,63 +1002,6 @@ MonoBehaviour:
     again.
   retryingMessage: Trying to connect again...
   hideOnAwake: 1
---- !u!1001 &1566499047
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558853, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4145998726488558854, guid: 1aefd01200632424cb017cf723f73750, type: 3}
-      propertyPath: m_Name
-      value: ByteBrew
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 1aefd01200632424cb017cf723f73750, type: 3}
 --- !u!1 &1734941248
 GameObject:
   m_ObjectHideFlags: 0
@@ -1353,7 +1296,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -16.759827}
+  m_AnchoredPosition: {x: 0, y: -16.759766}
   m_SizeDelta: {x: 534.5073, y: 534.5073}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1905002042
@@ -1508,4 +1451,3 @@ SceneRoots:
   - {fileID: 1734941250}
   - {fileID: 2028839754}
   - {fileID: 1778056925}
-  - {fileID: 1566499047}

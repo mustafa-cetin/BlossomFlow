@@ -1,30 +1,28 @@
 using System.Collections;
 using BlossomFlow.Application.Levels;
+using BlossomFlow.Application.Performance;
 
 namespace BlossomFlow.Application.SceneLoading
 {
     public sealed class StartupServiceInitializer : IStartupServiceInitializer
     {
-        private readonly ByteBrewStartupServiceInitializer _byteBrewInitializer;
         private readonly CrazyGamesStartupServiceInitializer _crazyGamesInitializer;
         private readonly IRemoteLevelCatalogPreloader _levelCatalogPreloader;
+        private readonly IFrameRateConfigurator _frameRateConfigurator;
 
         public StartupServiceInitializer(
-            ByteBrewStartupServiceInitializer byteBrewInitializer,
             CrazyGamesStartupServiceInitializer crazyGamesInitializer,
-            IRemoteLevelCatalogPreloader levelCatalogPreloader)
+            IRemoteLevelCatalogPreloader levelCatalogPreloader,
+            IFrameRateConfigurator frameRateConfigurator)
         {
-            _byteBrewInitializer = byteBrewInitializer;
             _crazyGamesInitializer = crazyGamesInitializer;
             _levelCatalogPreloader = levelCatalogPreloader;
+            _frameRateConfigurator = frameRateConfigurator;
         }
 
         public IEnumerator InitializeIfNeeded()
         {
-            if (_byteBrewInitializer != null)
-            {
-                yield return _byteBrewInitializer.InitializeIfNeeded();
-            }
+            _frameRateConfigurator?.Apply();
 
             if (_crazyGamesInitializer != null)
             {
