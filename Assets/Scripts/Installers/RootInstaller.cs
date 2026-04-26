@@ -6,7 +6,6 @@ using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Performance;
-using BlossomFlow.Application.Sprites;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Core;
@@ -58,12 +57,6 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterFactory(
             _ => soundCatalog != null ? (IMusicCatalog)soundCatalog : new NullSoundCatalog(),
             new[] { typeof(IMusicCatalog) },
-            Lifetime.Singleton,
-            Resolution.Lazy);
-
-        builder.RegisterType(
-            typeof(AddressableSpriteLoader),
-            new[] { typeof(IAddressableSpriteLoader) },
             Lifetime.Singleton,
             Resolution.Lazy);
 

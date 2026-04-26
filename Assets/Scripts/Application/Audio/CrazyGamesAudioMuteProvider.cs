@@ -35,6 +35,7 @@ namespace BlossomFlow.Application.Audio
         {
             if (_configuration == null ||
                 !_configuration.IsEnabled ||
+                !CrazyGamesSdkRuntime.IsEnabled ||
                 !CrazySDK.IsAvailable ||
                 CrazySDK.IsShutDown)
             {

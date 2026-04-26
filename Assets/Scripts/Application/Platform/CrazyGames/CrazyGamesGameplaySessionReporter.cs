@@ -17,6 +17,7 @@ namespace BlossomFlow.Application.Platform.CrazyGames
             if (_isGameplayReportedActive ||
                 _configuration == null ||
                 !_configuration.IsEnabled ||
+                !CrazyGamesSdkRuntime.IsEnabled ||
                 !CrazySDK.IsAvailable ||
                 !CrazySDK.IsInitialized)
             {
@@ -36,6 +37,7 @@ namespace BlossomFlow.Application.Platform.CrazyGames
 
             if (_configuration != null &&
                 _configuration.IsEnabled &&
+                CrazyGamesSdkRuntime.IsEnabled &&
                 CrazySDK.IsAvailable &&
                 CrazySDK.IsInitialized)
             {

@@ -1,8 +1,4 @@
-using System;
-using BlossomFlow.Application.Sprites;
-using Reflex.Attributes;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 
 namespace BlossomFlow.Presentation
@@ -12,32 +8,17 @@ namespace BlossomFlow.Presentation
     public sealed class AddressableImageView : MonoBehaviour
     {
         [SerializeField] private Image targetImage;
-        [SerializeField] private AssetReferenceT<Sprite> spriteReference;
+        [SerializeField] private Sprite sprite;
         [SerializeField] private bool preserveNativeSize;
         [SerializeField] private bool clearSpriteOnDisable = true;
 
-        private IAddressableSpriteLoader _spriteLoader;
-        private IDisposable _activeLoad;
-        private int _loadVersion;
-
-        [Inject]
-        private void Construct(IAddressableSpriteLoader spriteLoader)
+        public void SetSprite(Sprite nextSprite)
         {
-            _spriteLoader = spriteLoader;
+            sprite = nextSprite;
 
             if (isActiveAndEnabled)
             {
-                LoadSprite();
-            }
-        }
-
-        public void SetSpriteReference(AssetReferenceT<Sprite> nextSpriteReference)
-        {
-            spriteReference = nextSpriteReference;
-
-            if (isActiveAndEnabled)
-            {
-                LoadSprite();
+                ApplySprite();
             }
         }
 
@@ -51,13 +32,11 @@ namespace BlossomFlow.Presentation
 
         private void OnEnable()
         {
-            LoadSprite();
+            ApplySprite();
         }
 
         private void OnDisable()
         {
-            ReleaseActiveLoad();
-
             if (clearSpriteOnDisable && targetImage != null)
             {
                 targetImage.sprite = null;
@@ -65,44 +44,20 @@ namespace BlossomFlow.Presentation
             }
         }
 
-        private void OnDestroy()
+        private void ApplySprite()
         {
-            ReleaseActiveLoad();
-        }
-
-        private void LoadSprite()
-        {
-            if (_spriteLoader == null || targetImage == null)
+            if (targetImage == null)
             {
                 return;
             }
 
-            ReleaseActiveLoad();
-            var requestVersion = ++_loadVersion;
-            targetImage.enabled = false;
+            targetImage.sprite = sprite;
+            targetImage.enabled = sprite != null;
 
-            _activeLoad = _spriteLoader.Load(spriteReference, sprite =>
+            if (sprite != null && preserveNativeSize)
             {
-                if (requestVersion != _loadVersion || targetImage == null)
-                {
-                    return;
-                }
-
-                targetImage.sprite = sprite;
-                targetImage.enabled = sprite != null;
-
-                if (sprite != null && preserveNativeSize)
-                {
-                    targetImage.SetNativeSize();
-                }
-            });
-        }
-
-        private void ReleaseActiveLoad()
-        {
-            _loadVersion++;
-            _activeLoad?.Dispose();
-            _activeLoad = null;
+                targetImage.SetNativeSize();
+            }
         }
     }
 }

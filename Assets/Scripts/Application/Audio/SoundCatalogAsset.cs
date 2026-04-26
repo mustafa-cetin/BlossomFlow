@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace BlossomFlow.Application.Audio
 {
@@ -13,63 +12,58 @@ namespace BlossomFlow.Application.Audio
         [Header("Music")]
         [SerializeField] private MusicTrackBinding[] musicTracks = Array.Empty<MusicTrackBinding>();
 
-        public bool TryGetClipReference(SoundCueId cueId, out AssetReferenceT<AudioClip> clipReference)
+        public bool TryGetClip(SoundCueId cueId, out AudioClip clip)
         {
             for (var i = 0; i < cues.Length; i++)
             {
-                if (cues[i].CueId != cueId || !IsValidReference(cues[i].ClipReference))
+                if (cues[i].CueId != cueId || cues[i].Clip == null)
                 {
                     continue;
                 }
 
-                clipReference = cues[i].ClipReference;
+                clip = cues[i].Clip;
                 return true;
             }
 
-            clipReference = null;
+            clip = null;
             return false;
         }
 
-        public bool TryGetClipReference(MusicTrackId trackId, out AssetReferenceT<AudioClip> clipReference)
+        public bool TryGetClip(MusicTrackId trackId, out AudioClip clip)
         {
             for (var i = 0; i < musicTracks.Length; i++)
             {
-                if (musicTracks[i].TrackId != trackId || !IsValidReference(musicTracks[i].ClipReference))
+                if (musicTracks[i].TrackId != trackId || musicTracks[i].Clip == null)
                 {
                     continue;
                 }
 
-                clipReference = musicTracks[i].ClipReference;
+                clip = musicTracks[i].Clip;
                 return true;
             }
 
-            clipReference = null;
+            clip = null;
             return false;
-        }
-
-        private static bool IsValidReference(AssetReferenceT<AudioClip> clipReference)
-        {
-            return clipReference != null && clipReference.RuntimeKeyIsValid();
         }
 
         [Serializable]
         private sealed class SoundCueBinding
         {
             [SerializeField] private SoundCueId cueId;
-            [SerializeField] private AssetReferenceT<AudioClip> clipReference;
+            [SerializeField] private AudioClip clip;
 
             public SoundCueId CueId => cueId;
-            public AssetReferenceT<AudioClip> ClipReference => clipReference;
+            public AudioClip Clip => clip;
         }
 
         [Serializable]
         private sealed class MusicTrackBinding
         {
             [SerializeField] private MusicTrackId trackId;
-            [SerializeField] private AssetReferenceT<AudioClip> clipReference;
+            [SerializeField] private AudioClip clip;
 
             public MusicTrackId TrackId => trackId;
-            public AssetReferenceT<AudioClip> ClipReference => clipReference;
+            public AudioClip Clip => clip;
         }
     }
 }

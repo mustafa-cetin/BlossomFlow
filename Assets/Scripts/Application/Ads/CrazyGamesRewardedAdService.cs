@@ -16,7 +16,10 @@ namespace BlossomFlow.Application.Ads
 
         public void ShowRewardedAd(Action onRewarded, Action onFailed)
         {
-            if (_configuration == null || !_configuration.IsEnabled || !CrazySDK.IsAvailable)
+            if (_configuration == null ||
+                !_configuration.IsEnabled ||
+                !CrazyGamesSdkRuntime.IsEnabled ||
+                !CrazySDK.IsAvailable)
             {
                 onFailed?.Invoke();
                 return;

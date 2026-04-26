@@ -3642,13 +3642,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
   targetImage: {fileID: 599598442}
-  spriteReference:
-    m_AssetGUID: 4f338006fcaf02f41ba32f4e7490d01d
-    m_SubObjectName: mainmenuartwork_0
-    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 1
+  sprite: {fileID: 5079798517673629522, guid: 4f338006fcaf02f41ba32f4e7490d01d, type: 3}
   preserveNativeSize: 0
   clearSpriteOnDisable: 1
 --- !u!1001 &622060895
@@ -6864,13 +6858,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Presentation.AddressableImageView
   targetImage: {fileID: 0}
-  spriteReference:
-    m_AssetGUID: bdbfeb151a4278b4ba20b175f1688b72
-    m_SubObjectName: logo_0
-    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 1
+  sprite: {fileID: -4320295261928297051, guid: bdbfeb151a4278b4ba20b175f1688b72, type: 3}
   preserveNativeSize: 0
   clearSpriteOnDisable: 1
 --- !u!1001 &1223727990

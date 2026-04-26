@@ -2215,24 +2215,9 @@ MonoBehaviour:
   artworkImage: {fileID: 769697555}
   primaryButton: {fileID: 1184595918}
   closeButton: {fileID: 0}
-  keepPlayingSpriteReference:
-    m_AssetGUID: 4efcc44f79fca1d4c8ed5a1052c89ba5
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 0
-  confirmQuitSpriteReference:
-    m_AssetGUID: b611255a8d318984aa26277f89124de5
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 0
-  retrySpriteReference:
-    m_AssetGUID: eebd2dfe40c25c8418a6479b71eeeedf
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 0
+  keepPlayingSprite: {fileID: 21300000, guid: 4efcc44f79fca1d4c8ed5a1052c89ba5, type: 3}
+  confirmQuitSprite: {fileID: 7677707037994875169, guid: b611255a8d318984aa26277f89124de5, type: 3}
+  retrySprite: {fileID: -1697048040685015222, guid: eebd2dfe40c25c8418a6479b71eeeedf, type: 3}
   keepPlayingMessage: Keep Playing
   confirmQuitMessage: Are you sure?
   retryMessage: Try Again?
@@ -4237,6 +4222,7 @@ GameObject:
   - component: {fileID: 1886154674}
   - component: {fileID: 1886154676}
   - component: {fileID: 1886154675}
+  - component: {fileID: 1886154677}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -4303,6 +4289,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1886154673}
   m_CullTransparentMesh: 1
+--- !u!114 &1886154677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886154673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c13f66971eeb8fb44aff48b77d4900b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlossomFlow.Gameplay.Presentation.GoldView
+  goldText: {fileID: 769844860}
+  goldFormat: '{0}'
 --- !u!1 &1904414572
 GameObject:
   m_ObjectHideFlags: 0
