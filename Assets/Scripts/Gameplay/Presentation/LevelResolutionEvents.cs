@@ -6,6 +6,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
     public readonly struct LevelFailureScreenRequested
     {
+        public LevelFailureScreenRequested(bool skipKeepPlayingOffer)
+        {
+            SkipKeepPlayingOffer = skipKeepPlayingOffer;
+        }
+
+        public bool SkipKeepPlayingOffer { get; }
     }
 
     public readonly struct LevelRestarted

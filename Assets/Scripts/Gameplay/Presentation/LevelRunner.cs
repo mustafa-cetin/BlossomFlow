@@ -11,6 +11,7 @@ using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Boosters;
 using BlossomFlow.Gameplay.Domain.Levels;
 using BlossomFlow.Gameplay.Presentation.Tutorial;
+using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using UnityEngine;
 
@@ -47,6 +48,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IGameplayPlatformSessionReporter _gameplaySessionReporter;
         private IShuffleBoosterService _shuffleBoosterService;
+        private IMainMenuPlayerProgressService _progressService;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _levelAdvanceRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
@@ -80,7 +82,8 @@ namespace BlossomFlow.Gameplay.Presentation
             ICurrentLevelDefinitionProvider currentLevelProvider,
             IFirstLevelTutorialProgressService firstLevelTutorialProgress,
             IGameplayPlatformSessionReporter gameplaySessionReporter,
-            IShuffleBoosterService shuffleBoosterService)
+            IShuffleBoosterService shuffleBoosterService,
+            IMainMenuPlayerProgressService progressService)
         {
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
@@ -90,6 +93,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _firstLevelTutorialProgress = firstLevelTutorialProgress;
             _gameplaySessionReporter = gameplaySessionReporter;
             _shuffleBoosterService = shuffleBoosterService;
+            _progressService = progressService;
         }
 
         private void Awake()
@@ -117,7 +121,10 @@ namespace BlossomFlow.Gameplay.Presentation
             _debugLevelReloadRequestedSubscription = _eventSubscriber.Subscribe<GameDebugLevelReloadRequested>(OnDebugLevelReloadRequested);
 #endif
 
-            StartLevelSession();
+            if (!TryShowNoLivesScreen())
+            {
+                StartLevelSession();
+            }
         }
 
         private void OnDestroy()
@@ -242,6 +249,17 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             StartLoadedLevelSession(loadVersion, GetFallbackLevelDefinition());
+        }
+
+        private bool TryShowNoLivesScreen()
+        {
+            if (_progressService == null || _progressService.Current.CurrentLives > 0)
+            {
+                return false;
+            }
+
+            _eventPublisher.Publish(new LevelFailureScreenRequested(true));
+            return true;
         }
 
         private void StartLoadedLevelSession(int loadVersion, LevelDefinition definition)
