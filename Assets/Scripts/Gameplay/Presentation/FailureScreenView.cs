@@ -62,6 +62,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private Vector3 _artworkBaseScale = Vector3.one;
         private Sequence _artworkSequence;
         private float _countdownRefreshTimer;
+        private bool _lifeConsumedForCurrentFailure;
 
         [Inject]
         private void Construct(
@@ -153,6 +154,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void ShowKeepPlayingOffer(LevelFailureScreenRequested failureScreenRequested)
         {
+            _lifeConsumedForCurrentFailure = false;
+            if (!failureScreenRequested.SkipKeepPlayingOffer)
+            {
+                _lifeConsumedForCurrentFailure = TryConsumeFailureLife();
+            }
+
             _state = !failureScreenRequested.SkipKeepPlayingOffer && CanAffordKeepPlaying()
                 ? FailureScreenState.KeepPlayingOffer
                 : FailureScreenState.RetryOnly;
@@ -162,6 +169,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void Hide()
         {
+            _lifeConsumedForCurrentFailure = false;
             SetVisible(false);
         }
 
@@ -210,6 +218,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
+            RefundFailureLifeIfNeeded();
             _eventPublisher.Publish(new LevelKeepPlayingRequested());
         }
 
@@ -220,7 +229,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            if (!_progressService.TryConsumeLife())
+            if (_progressService.Current.CurrentLives <= 0)
             {
                 Refresh();
                 return;
@@ -446,6 +455,22 @@ namespace BlossomFlow.Gameplay.Presentation
         private bool CanAffordKeepPlaying()
         {
             return _progressService != null && _progressService.Current.Gold >= keepPlayingGoldCost;
+        }
+
+        private bool TryConsumeFailureLife()
+        {
+            return _progressService != null && _progressService.TryConsumeLife();
+        }
+
+        private void RefundFailureLifeIfNeeded()
+        {
+            if (!_lifeConsumedForCurrentFailure || _progressService == null)
+            {
+                return;
+            }
+
+            _progressService.AddLife(1);
+            _lifeConsumedForCurrentFailure = false;
         }
 
         private void SubscribeToEvents()

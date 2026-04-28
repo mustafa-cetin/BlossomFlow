@@ -103,6 +103,30 @@ namespace BlossomFlow.MainMenu.Domain
                 _current.NextLifeCountdown));
         }
 
+        public void AddLife(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            EnsureLoaded();
+            RefreshLifeRecovery(true);
+
+            if (_current.CurrentLives >= _current.MaxLives)
+            {
+                return;
+            }
+
+            SetProgress(new MainMenuPlayerProgress(
+                _current.LevelNumber,
+                Math.Min(_current.MaxLives, _current.CurrentLives + amount),
+                _current.MaxLives,
+                _current.Gold,
+                _current.MagicalSeed,
+                _current.NextLifeCountdown));
+        }
+
         public bool TrySpendGold(int amount)
         {
             if (amount <= 0)

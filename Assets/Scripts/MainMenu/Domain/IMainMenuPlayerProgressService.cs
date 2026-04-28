@@ -7,6 +7,7 @@ namespace BlossomFlow.MainMenu.Domain
         void AdvanceLevel();
         void AddGoldAndAdvanceLevel(int goldAmount);
         void AddMagicalSeed(int amount);
+        void AddLife(int amount);
         bool TrySpendGold(int amount);
         bool TrySpendMagicalSeed(int amount);
         bool TryConsumeLife();
