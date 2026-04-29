@@ -16,6 +16,7 @@ namespace BlossomFlow.Gameplay.Domain.Levels
     public sealed class LevelDefinition
     {
         public const int DefaultLaunchColumnCount = 3;
+        public const int MinLaunchColumnCount = 1;
         public const int DefaultWaitingSlotCount = 5;
         public const int DefaultConveyorMaxPots = ConveyorBelt.DefaultMaxPots;
 
@@ -208,9 +209,9 @@ namespace BlossomFlow.Gameplay.Domain.Levels
                 throw new ArgumentNullException(nameof(LaunchColumns));
             }
 
-            if (LaunchColumns.Length != DefaultLaunchColumnCount)
+            if (LaunchColumns.Length < MinLaunchColumnCount)
             {
-                throw new ArgumentException($"Level data must define exactly {DefaultLaunchColumnCount} selectable pot columns.");
+                throw new ArgumentException($"Level data must define at least {MinLaunchColumnCount} selectable pot column.");
             }
 
             for (var columnIndex = 0; columnIndex < LaunchColumns.Length; columnIndex++)

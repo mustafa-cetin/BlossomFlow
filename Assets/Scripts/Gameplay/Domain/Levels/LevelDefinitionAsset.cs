@@ -33,18 +33,9 @@ namespace BlossomFlow.Gameplay.Domain.Levels
         {
             definition ??= new LevelDefinition();
             definition.LaunchColumns ??= new PotQueueColumnDefinition[LevelDefinition.DefaultLaunchColumnCount];
-
-            if (definition.LaunchColumns.Length != LevelDefinition.DefaultLaunchColumnCount)
+            if (definition.LaunchColumns.Length < LevelDefinition.MinLaunchColumnCount)
             {
-                var resizedColumns = new PotQueueColumnDefinition[LevelDefinition.DefaultLaunchColumnCount];
-                for (var i = 0; i < resizedColumns.Length; i++)
-                {
-                    resizedColumns[i] = i < definition.LaunchColumns.Length
-                        ? definition.LaunchColumns[i]
-                        : new PotQueueColumnDefinition();
-                }
-
-                definition.LaunchColumns = resizedColumns;
+                definition.LaunchColumns = new PotQueueColumnDefinition[LevelDefinition.DefaultLaunchColumnCount];
             }
 
             for (var i = 0; i < definition.LaunchColumns.Length; i++)
