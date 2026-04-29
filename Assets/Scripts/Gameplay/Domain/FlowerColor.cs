@@ -7,6 +7,10 @@ namespace BlossomFlow.Gameplay.Domain
         Blue,
         Pink,
         Purple,
-        White
+        White,
+        Orange,
+        Black,
+        Cyan,
+        Magenta
     }
 }
