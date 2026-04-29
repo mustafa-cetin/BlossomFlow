@@ -43,7 +43,6 @@ namespace BlossomFlow.Gameplay.Presentation
         private ILevelSessionFactory _sessionFactory;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
-        private IAnalyticsEventService _analyticsEventService;
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IGameplayPlatformSessionReporter _gameplaySessionReporter;
@@ -64,11 +63,12 @@ namespace BlossomFlow.Gameplay.Presentation
         private bool _isCurrentLevelResultTracked;
         private float _levelStartedAtSeconds;
         private int _currentLevelAttemptNumber;
+        private int _currentLevelAttemptLevelNumber;
+        private int _currentLevelKeepPlayingCount;
         private int _lastStartedLevelNumber;
         private int _levelLoadVersion;
 
         private const float MinimumStepSeconds = 0.01f;
-        private const string LevelAnalyticsEventName = "Level";
         private const string CampaignLevelType = "Campaign";
 
         public LevelSession CurrentSession => _session;
@@ -78,7 +78,6 @@ namespace BlossomFlow.Gameplay.Presentation
             ILevelSessionFactory sessionFactory,
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
-            IAnalyticsEventService analyticsEventService,
             ICurrentLevelDefinitionProvider currentLevelProvider,
             IFirstLevelTutorialProgressService firstLevelTutorialProgress,
             IGameplayPlatformSessionReporter gameplaySessionReporter,
@@ -88,7 +87,6 @@ namespace BlossomFlow.Gameplay.Presentation
             _sessionFactory = sessionFactory;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
-            _analyticsEventService = analyticsEventService;
             _currentLevelProvider = currentLevelProvider;
             _firstLevelTutorialProgress = firstLevelTutorialProgress;
             _gameplaySessionReporter = gameplaySessionReporter;
@@ -593,7 +591,14 @@ namespace BlossomFlow.Gameplay.Presentation
         private void TrackLevelStarted()
         {
             _lastStartedLevelNumber = GetCurrentLevelNumber();
+            if (_currentLevelAttemptLevelNumber != _lastStartedLevelNumber)
+            {
+                _currentLevelAttemptLevelNumber = _lastStartedLevelNumber;
+                _currentLevelAttemptNumber = 0;
+            }
+
             _currentLevelAttemptNumber++;
+            _currentLevelKeepPlayingCount = 0;
             _levelStartedAtSeconds = Time.realtimeSinceStartup;
             _isCurrentLevelResultTracked = false;
             TrackLevel("Start");
@@ -632,28 +637,44 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void TrackLevel(string status, string failReason = null)
         {
-            if (_analyticsEventService == null)
+            if (_eventPublisher == null)
             {
                 return;
             }
 
+            var trackedLevelNumber = GetTrackedLevelNumber();
+            var playerLevel = trackedLevelNumber;
+            var goldBalance = 0;
+            var magicalSeedBalance = 0;
+            if (_progressService != null)
+            {
+                var currentProgress = _progressService.Current;
+                playerLevel = currentProgress.LevelNumber;
+                goldBalance = currentProgress.Gold;
+                magicalSeedBalance = currentProgress.MagicalSeed;
+            }
+
             var parameters = new AnalyticsEventParameters()
-                .Add("LevelID", GetTrackedLevelNumber())
-                .Add("LevelType", CampaignLevelType)
-                .Add("Status", status)
-                .Add("AttemptNumber", _currentLevelAttemptNumber);
+                .Add(LevelAnalyticsParameterNames.LevelID, trackedLevelNumber)
+                .Add(LevelAnalyticsParameterNames.LevelType, CampaignLevelType)
+                .Add(LevelAnalyticsParameterNames.PlayerLevel, playerLevel)
+                .Add(LevelAnalyticsParameterNames.CurrencyBalanceGold, goldBalance)
+                .Add(LevelAnalyticsParameterNames.CurrencyBalanceMagicalSeed, magicalSeedBalance)
+                .Add(LevelAnalyticsParameterNames.Status, status)
+                .Add(LevelAnalyticsParameterNames.AttemptNumber, _currentLevelAttemptNumber)
+                .Add(LevelAnalyticsParameterNames.KeepPlayingCount, _currentLevelKeepPlayingCount);
 
             if (!string.Equals(status, "Start", StringComparison.Ordinal))
             {
-                parameters.Add("DurationSeconds", GetCurrentLevelDurationSeconds());
+                parameters.Add(LevelAnalyticsParameterNames.DurationSeconds, GetCurrentLevelDurationSeconds());
             }
 
             if (!string.IsNullOrEmpty(failReason))
             {
-                parameters.Add("FailReason", failReason);
+                parameters.Add(LevelAnalyticsParameterNames.FailReason, failReason);
             }
 
-            _analyticsEventService.TrackCustomEvent(LevelAnalyticsEventName, parameters.Build());
+            _eventPublisher.Publish(new AnalyticsEventRequested(AnalyticsCustomEventNames.Level, parameters.Build()));
         }
 
         private int GetTrackedLevelNumber()
@@ -762,6 +783,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _conveyorEntryDelayTimer = 0f;
             _isFastForwardingConveyor = false;
             PublishConveyorPotCount();
+            _currentLevelKeepPlayingCount++;
             TrackLevel("KeepPlaying");
             NotifyGameplayStartIfPlaying();
             _eventPublisher.Publish(new LevelKeepPlayingStarted());

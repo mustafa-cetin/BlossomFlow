@@ -64,5 +64,6 @@ MonoBehaviour:
   soundEffectsVolume: 1
   musicVolume: 0.1
   enableCrazyGamesSdk: 1
+  enableByteBrewAnalytics: 0
   playBackgroundMusicOnStartup: 1
   startupMusicTrack: 0

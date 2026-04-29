@@ -26,6 +26,7 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
     [SerializeField] private bool enableCrazyGamesSdk = true;
+    [SerializeField] private bool enableByteBrewAnalytics = true;
     [SerializeField] private bool playBackgroundMusicOnStartup = true;
     [SerializeField] private MusicTrackId startupMusicTrack = MusicTrackId.Background;
 
@@ -36,6 +37,10 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterValue(
             new CrazyGamesSdkConfiguration(enableCrazyGamesSdk),
             new[] { typeof(CrazyGamesSdkConfiguration) });
+
+        builder.RegisterValue(
+            new ByteBrewAnalyticsConfiguration(enableByteBrewAnalytics),
+            new[] { typeof(ByteBrewAnalyticsConfiguration) });
 
         builder.RegisterType(
             typeof(EventBus),
@@ -82,6 +87,20 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         builder.RegisterType(
             typeof(CrazyGamesGameplaySessionReporter),
+            new[] { typeof(CrazyGamesGameplaySessionReporter) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(AnalyticsGameplaySessionReporter),
+            new[] { typeof(AnalyticsGameplaySessionReporter) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            container => new CompositeGameplaySessionReporter(
+                container.Resolve<CrazyGamesGameplaySessionReporter>(),
+                container.Resolve<AnalyticsGameplaySessionReporter>()),
             new[] { typeof(IGameplayPlatformSessionReporter) },
             Lifetime.Singleton,
             Resolution.Lazy);
@@ -102,8 +121,24 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Eager);
 
         builder.RegisterType(
-            typeof(NullAnalyticsEventService),
-            new[] { typeof(IAnalyticsEventService) },
+            typeof(ByteBrewAnalyticsEventService),
+            new[]
+            {
+                typeof(ByteBrewAnalyticsEventService),
+                typeof(IAnalyticsEventService)
+            },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(AnalyticsEventDispatcher),
+            new[] { typeof(AnalyticsEventDispatcher) },
+            Lifetime.Singleton,
+            Resolution.Eager);
+
+        builder.RegisterType(
+            typeof(PlayerRetentionAnalyticsReporter),
+            new[] { typeof(PlayerRetentionAnalyticsReporter) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -179,6 +214,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterType(
             typeof(CrazyGamesStartupServiceInitializer),
             new[] { typeof(CrazyGamesStartupServiceInitializer) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(ByteBrewStartupServiceInitializer),
+            new[] { typeof(ByteBrewStartupServiceInitializer) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
