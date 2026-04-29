@@ -11,7 +11,7 @@ namespace BlossomFlow.Editor
     public sealed class LevelPreparationWindow : EditorWindow
     {
         private const int MinGridSize = 1;
-        private const int MaxGridSize = 20;
+        private const int MaxGridSize = 40;
         private const float CellSize = 28f;
 
         private enum CellBrush
@@ -41,12 +41,7 @@ namespace BlossomFlow.Editor
         private int _randomQueueSeed;
         private string _randomQueueMessage = "Build random queues from the current flower grid.";
         private MessageType _randomQueueMessageType = MessageType.Info;
-        private readonly List<PotDefinition>[] _launchColumns =
-        {
-            new(),
-            new(),
-            new()
-        };
+        private readonly List<List<PotDefinition>> _launchColumns = new();
         private Vector2 _scroll;
         private string _validationMessage = "No level loaded.";
         private MessageType _validationType = MessageType.Info;
@@ -178,6 +173,9 @@ namespace BlossomFlow.Editor
                 EditorGUI.BeginChangeCheck();
                 var newWidth = EditorGUILayout.IntSlider("Grid Width", _width, MinGridSize, MaxGridSize);
                 var newHeight = EditorGUILayout.IntSlider("Grid Height", _height, MinGridSize, MaxGridSize);
+                var newLaunchColumnCount = Mathf.Max(
+                    LevelDefinition.MinLaunchColumnCount,
+                    EditorGUILayout.IntField("Pot Queue Slots", _launchColumns.Count));
                 _waitingSlotCount = Mathf.Max(1, EditorGUILayout.IntField("Waiting Slots", _waitingSlotCount));
                 _conveyorMaxPots = Mathf.Max(1, EditorGUILayout.IntField("Conveyor Max Pots", _conveyorMaxPots));
                 _difficulty = (LevelDifficulty)EditorGUILayout.EnumPopup("Difficulty", _difficulty);
@@ -185,6 +183,7 @@ namespace BlossomFlow.Editor
                 if (EditorGUI.EndChangeCheck())
                 {
                     ResizeGrid(newWidth, newHeight);
+                    ResizeLaunchColumns(newLaunchColumnCount);
                     ValidateWorkingLevel();
                 }
             }
@@ -346,7 +345,7 @@ namespace BlossomFlow.Editor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    for (var columnIndex = 0; columnIndex < LevelDefinition.DefaultLaunchColumnCount; columnIndex++)
+                    for (var columnIndex = 0; columnIndex < _launchColumns.Count; columnIndex++)
                     {
                         DrawLaunchColumn(columnIndex);
                     }
@@ -456,7 +455,11 @@ namespace BlossomFlow.Editor
                 }
             }
 
-            for (var i = 0; i < _launchColumns.Length; i++)
+            ResizeLaunchColumns(Mathf.Max(
+                LevelDefinition.MinLaunchColumnCount,
+                definition.LaunchColumns?.Length ?? LevelDefinition.DefaultLaunchColumnCount));
+
+            for (var i = 0; i < _launchColumns.Count; i++)
             {
                 _launchColumns[i].Clear();
                 if (definition.LaunchColumns != null && i < definition.LaunchColumns.Length && definition.LaunchColumns[i]?.Pots != null)
@@ -475,6 +478,7 @@ namespace BlossomFlow.Editor
             _conveyorMaxPots = LevelDefinition.DefaultConveyorMaxPots;
             _difficulty = LevelDifficulty.Normal;
             _flowers = new FlowerColor?[_width, _height];
+            ResizeLaunchColumns(LevelDefinition.DefaultLaunchColumnCount);
 
             foreach (var column in _launchColumns)
             {
@@ -598,9 +602,29 @@ namespace BlossomFlow.Editor
 
         private void EnsureWorkingGrid()
         {
+            if (_launchColumns.Count < LevelDefinition.MinLaunchColumnCount)
+            {
+                ResizeLaunchColumns(LevelDefinition.DefaultLaunchColumnCount);
+            }
+
             if (_flowers == null || _flowers.GetLength(0) != _width || _flowers.GetLength(1) != _height)
             {
                 ResizeGrid(_width, _height);
+            }
+        }
+
+        private void ResizeLaunchColumns(int newColumnCount)
+        {
+            newColumnCount = Mathf.Max(LevelDefinition.MinLaunchColumnCount, newColumnCount);
+
+            while (_launchColumns.Count < newColumnCount)
+            {
+                _launchColumns.Add(new List<PotDefinition>());
+            }
+
+            while (_launchColumns.Count > newColumnCount)
+            {
+                _launchColumns.RemoveAt(_launchColumns.Count - 1);
             }
         }
 
@@ -647,7 +671,9 @@ namespace BlossomFlow.Editor
                 }
                 else
                 {
-                    for (var i = 0; i < _launchColumns.Length; i++)
+                    ResizeLaunchColumns(imported.LaunchColumns.Count);
+
+                    for (var i = 0; i < _launchColumns.Count; i++)
                     {
                         _launchColumns[i].AddRange(imported.LaunchColumns[i]);
                     }
@@ -684,7 +710,7 @@ namespace BlossomFlow.Editor
             var gridRows = new List<List<FlowerColor?>>();
             var launchColumns = Enumerable.Range(0, LevelDefinition.DefaultLaunchColumnCount)
                 .Select(_ => new List<PotDefinition>())
-                .ToArray();
+                .ToList();
             var hasQueues = false;
             var section = ImportSection.Header;
 
@@ -796,7 +822,7 @@ namespace BlossomFlow.Editor
             lines.Add(string.Empty);
             lines.Add("queues:");
 
-            for (var i = 0; i < _launchColumns.Length; i++)
+            for (var i = 0; i < _launchColumns.Count; i++)
             {
                 var pots = _launchColumns[i]
                     .Select(FormatPotImportToken);
@@ -823,7 +849,7 @@ namespace BlossomFlow.Editor
                 }
 
                 _launchColumns[columnIndex].Add(new PotDefinition(color, count));
-                columnIndex = (columnIndex + 1) % _launchColumns.Length;
+                columnIndex = (columnIndex + 1) % _launchColumns.Count;
             }
 
             ValidateWorkingLevel();
@@ -842,7 +868,7 @@ namespace BlossomFlow.Editor
                     throw new ArgumentException("Grid has no flowers. Paint or import flowers before building queues.");
                 }
 
-                var totalPots = _randomQueuePotsPerColumn * _launchColumns.Length;
+                var totalPots = _randomQueuePotsPerColumn * _launchColumns.Count;
                 var totalFlowers = counts.Sum(pair => pair.Value);
 
                 if (totalPots < counts.Count)
@@ -866,7 +892,7 @@ namespace BlossomFlow.Editor
                 }
 
                 var potIndex = 0;
-                for (var columnIndex = 0; columnIndex < _launchColumns.Length; columnIndex++)
+                for (var columnIndex = 0; columnIndex < _launchColumns.Count; columnIndex++)
                 {
                     for (var i = 0; i < _randomQueuePotsPerColumn; i++)
                     {
@@ -876,7 +902,7 @@ namespace BlossomFlow.Editor
                 }
 
                 ValidateWorkingLevel();
-                _randomQueueMessage = $"Built {_launchColumns.Length} queues with {_randomQueuePotsPerColumn} pots each.";
+                _randomQueueMessage = $"Built {_launchColumns.Count} queues with {_randomQueuePotsPerColumn} pots each.";
                 _randomQueueMessageType = MessageType.Info;
             }
             catch (Exception exception)
@@ -1135,7 +1161,7 @@ namespace BlossomFlow.Editor
             return line.Select(character => character.ToString()).ToArray();
         }
 
-        private static void ParseQueueLine(string line, int lineNumber, List<PotDefinition>[] launchColumns)
+        private static void ParseQueueLine(string line, int lineNumber, List<List<PotDefinition>> launchColumns)
         {
             var separatorIndex = line.IndexOf(':');
             if (separatorIndex < 0)
@@ -1145,6 +1171,11 @@ namespace BlossomFlow.Editor
 
             var columnLabel = line.Substring(0, separatorIndex).Trim();
             var columnIndex = ParseQueueColumnIndex(columnLabel, lineNumber);
+            while (launchColumns.Count <= columnIndex)
+            {
+                launchColumns.Add(new List<PotDefinition>());
+            }
+
             var potText = line.Substring(separatorIndex + 1).Trim();
             launchColumns[columnIndex].Clear();
 
@@ -1165,9 +1196,9 @@ namespace BlossomFlow.Editor
             var digits = new string(columnLabel.Where(char.IsDigit).ToArray());
             if (!int.TryParse(digits, out var columnNumber) ||
                 columnNumber < 1 ||
-                columnNumber > LevelDefinition.DefaultLaunchColumnCount)
+                columnNumber < LevelDefinition.MinLaunchColumnCount)
             {
-                throw new ArgumentException($"Line {lineNumber}: queue column must be between 1 and {LevelDefinition.DefaultLaunchColumnCount}.");
+                throw new ArgumentException($"Line {lineNumber}: queue column must be at least {LevelDefinition.MinLaunchColumnCount}.");
             }
 
             return columnNumber - 1;
@@ -1373,7 +1404,7 @@ namespace BlossomFlow.Editor
                 int conveyorMaxPots,
                 LevelDifficulty difficulty,
                 FlowerColor?[,] flowers,
-                List<PotDefinition>[] launchColumns,
+                List<List<PotDefinition>> launchColumns,
                 bool hasQueues)
             {
                 Width = width;
@@ -1392,7 +1423,7 @@ namespace BlossomFlow.Editor
             public int ConveyorMaxPots { get; }
             public LevelDifficulty Difficulty { get; }
             public FlowerColor?[,] Flowers { get; }
-            public List<PotDefinition>[] LaunchColumns { get; }
+            public List<List<PotDefinition>> LaunchColumns { get; }
             public bool HasQueues { get; }
         }
     }
