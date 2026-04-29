@@ -906,7 +906,7 @@ namespace BlossomFlow.Editor
                 }
 
                 ValidateWorkingLevel();
-                _randomQueueMessage = $"Built {_launchColumns.Count} queues with {_randomQueuePotsPerColumn} pots each.{roundingMessage}";
+                _randomQueueMessage = $"Built {_launchColumns.Length} queues with {_randomQueuePotsPerColumn} pots each.{roundingMessage}";
                 _randomQueueMessageType = MessageType.Info;
             }
             catch (Exception exception)
