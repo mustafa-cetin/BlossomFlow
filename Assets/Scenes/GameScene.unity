@@ -5017,6 +5017,14 @@ MonoBehaviour:
     sprite: {fileID: -2093324750932669864, guid: 40140dfd2bc95c74eaf413859dd2d09d, type: 3}
   - color: 5
     sprite: {fileID: 4966732595609684114, guid: 5a73a2f5b34f9274782db31e8e9fca59, type: 3}
+  - color: 6
+    sprite: {fileID: -6410442598547967069, guid: cfbe9a0e63c2dc14f95b7fd157472eb2, type: 3}
+  - color: 7
+    sprite: {fileID: 2063826154672905881, guid: c5d6e709bcbe8414283b7d334aefe046, type: 3}
+  - color: 8
+    sprite: {fileID: -241673516757495250, guid: fee26169d1a06794089a118295b674e1, type: 3}
+  - color: 9
+    sprite: {fileID: 3767131854301540394, guid: c99509dc9fe637b4ebc2f09f58cdbcd8, type: 3}
   flowerOrigin: {x: -2.33, y: -1.12}
   launchOrigin: {x: -1.31, y: -3.1}
   waitingOrigin: {x: -4.59, y: 3.76}

@@ -32,7 +32,11 @@ namespace BlossomFlow.Gameplay.Presentation
             new FlowerSpriteBinding(FlowerColor.Blue),
             new FlowerSpriteBinding(FlowerColor.Pink),
             new FlowerSpriteBinding(FlowerColor.Purple),
-            new FlowerSpriteBinding(FlowerColor.White)
+            new FlowerSpriteBinding(FlowerColor.White),
+            new FlowerSpriteBinding(FlowerColor.Orange),
+            new FlowerSpriteBinding(FlowerColor.Black),
+            new FlowerSpriteBinding(FlowerColor.Cyan),
+            new FlowerSpriteBinding(FlowerColor.Magenta)
         };
 
         [Header("Layout")]
@@ -2081,6 +2085,10 @@ namespace BlossomFlow.Gameplay.Presentation
                 FlowerColor.Pink => new Color(1f, 0.35f, 0.65f),
                 FlowerColor.Purple => new Color(0.55f, 0.25f, 0.9f),
                 FlowerColor.White => Color.white,
+                FlowerColor.Orange => new Color(1f, 0.5f, 0f),
+                FlowerColor.Black => Color.darkGray,
+                FlowerColor.Cyan => Color.cyan,
+                FlowerColor.Magenta => Color.magenta,
                 _ => Color.white
             };
         }

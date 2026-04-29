@@ -22,7 +22,11 @@ namespace BlossomFlow.Editor
             Blue,
             Pink,
             Purple,
-            White
+            White,
+            Orange,
+            Black,
+            Cyan,
+            Magenta
         }
 
         private LevelDefinitionAsset _asset;
@@ -37,6 +41,7 @@ namespace BlossomFlow.Editor
         private string _importMessage = "Paste level text, then import it into the working level.";
         private MessageType _importMessageType = MessageType.Info;
         private int _randomQueuePotsPerColumn = 4;
+        private bool _roundRandomQueueCountsToTens;
         private bool _useRandomQueueSeed;
         private int _randomQueueSeed;
         private string _randomQueueMessage = "Build random queues from the current flower grid.";
@@ -321,6 +326,7 @@ namespace BlossomFlow.Editor
                     MessageType.None);
 
                 _randomQueuePotsPerColumn = Mathf.Max(1, EditorGUILayout.IntField("Pots Per Queue", _randomQueuePotsPerColumn));
+                _roundRandomQueueCountsToTens = EditorGUILayout.Toggle("Counts End In 0", _roundRandomQueueCountsToTens);
                 _useRandomQueueSeed = EditorGUILayout.Toggle("Use Seed", _useRandomQueueSeed);
 
                 using (new EditorGUI.DisabledScope(!_useRandomQueueSeed))
@@ -856,8 +862,32 @@ namespace BlossomFlow.Editor
                 }
 
                 var random = _useRandomQueueSeed ? new System.Random(_randomQueueSeed) : new System.Random();
-                var potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
-                var pots = BuildRandomPots(counts, potColorCounts, random);
+                var roundingMessage = string.Empty;
+                Dictionary<FlowerColor, int> potColorCounts;
+                List<PotDefinition> pots;
+
+                if (_roundRandomQueueCountsToTens)
+                {
+                    try
+                    {
+                        potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random, 10);
+                        pots = BuildRandomPots(counts, potColorCounts, random, 10);
+                        roundingMessage = " Pot counts were rounded to 10.";
+                    }
+                    catch (ArgumentException exception)
+                    {
+                        random = _useRandomQueueSeed ? new System.Random(_randomQueueSeed) : random;
+                        potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
+                        pots = BuildRandomPots(counts, potColorCounts, random);
+                        roundingMessage = $" Rounded counts were not possible ({exception.Message}); built normal random counts.";
+                    }
+                }
+                else
+                {
+                    potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
+                    pots = BuildRandomPots(counts, potColorCounts, random);
+                }
+
                 Shuffle(pots, random);
 
                 foreach (var column in _launchColumns)
@@ -876,7 +906,7 @@ namespace BlossomFlow.Editor
                 }
 
                 ValidateWorkingLevel();
-                _randomQueueMessage = $"Built {_launchColumns.Length} queues with {_randomQueuePotsPerColumn} pots each.";
+                _randomQueueMessage = $"Built {_launchColumns.Count} queues with {_randomQueuePotsPerColumn} pots each.{roundingMessage}";
                 _randomQueueMessageType = MessageType.Info;
             }
             catch (Exception exception)
@@ -932,15 +962,29 @@ namespace BlossomFlow.Editor
         private static Dictionary<FlowerColor, int> AllocateRandomPotCountsByColor(
             IReadOnlyDictionary<FlowerColor, int> flowerCounts,
             int totalPots,
-            System.Random random)
+            System.Random random,
+            int minimumCapacityPerPot = 1)
         {
+            if (minimumCapacityPerPot <= 0)
+            {
+                throw new ArgumentException("Minimum capacity per pot must be positive.");
+            }
+
+            foreach (var pair in flowerCounts)
+            {
+                if (pair.Value < minimumCapacityPerPot || pair.Value % minimumCapacityPerPot != 0)
+                {
+                    throw new ArgumentException($"each used color needs a flower count that is a multiple of {minimumCapacityPerPot}");
+                }
+            }
+
             var potCounts = flowerCounts.ToDictionary(pair => pair.Key, _ => 1);
             var remainingPots = totalPots - potCounts.Count;
 
             while (remainingPots > 0)
             {
                 var eligibleColors = flowerCounts
-                    .Where(pair => potCounts[pair.Key] < pair.Value)
+                    .Where(pair => (potCounts[pair.Key] + 1) * minimumCapacityPerPot <= pair.Value)
                     .Select(pair => pair.Key)
                     .ToList();
 
@@ -960,32 +1004,42 @@ namespace BlossomFlow.Editor
         private static List<PotDefinition> BuildRandomPots(
             IReadOnlyDictionary<FlowerColor, int> flowerCounts,
             IReadOnlyDictionary<FlowerColor, int> potColorCounts,
-            System.Random random)
+            System.Random random,
+            int capacityUnit = 1)
         {
             var pots = new List<PotDefinition>();
             foreach (var pair in flowerCounts)
             {
-                var capacities = SplitCapacityRandomly(pair.Value, potColorCounts[pair.Key], random);
+                var capacities = SplitCapacityRandomly(pair.Value, potColorCounts[pair.Key], random, capacityUnit);
                 pots.AddRange(capacities.Select(capacity => new PotDefinition(pair.Key, capacity)));
             }
 
             return pots;
         }
 
-        private static List<int> SplitCapacityRandomly(int totalCapacity, int potCount, System.Random random)
+        private static List<int> SplitCapacityRandomly(
+            int totalCapacity,
+            int potCount,
+            System.Random random,
+            int capacityUnit = 1)
         {
-            if (potCount <= 0 || totalCapacity < potCount)
+            if (capacityUnit <= 0)
+            {
+                throw new ArgumentException("Capacity unit must be positive.");
+            }
+
+            if (potCount <= 0 || totalCapacity < potCount * capacityUnit || totalCapacity % capacityUnit != 0)
             {
                 throw new ArgumentException("Invalid pot split requested.");
             }
 
-            var capacities = Enumerable.Repeat(1, potCount).ToList();
-            var remainingCapacity = totalCapacity - potCount;
+            var capacities = Enumerable.Repeat(capacityUnit, potCount).ToList();
+            var remainingCapacity = totalCapacity - (potCount * capacityUnit);
 
             while (remainingCapacity > 0)
             {
-                capacities[random.Next(capacities.Count)]++;
-                remainingCapacity--;
+                capacities[random.Next(capacities.Count)] += capacityUnit;
+                remainingCapacity -= capacityUnit;
             }
 
             Shuffle(capacities, random);
@@ -1261,6 +1315,18 @@ namespace BlossomFlow.Editor
                 case "w":
                 case "white":
                     return FlowerColor.White;
+                case "o":
+                case "orange":
+                    return FlowerColor.Orange;
+                case "k":
+                case "black":
+                    return FlowerColor.Black;
+                case "c":
+                case "cyan":
+                    return FlowerColor.Cyan;
+                case "m":
+                case "magenta":
+                    return FlowerColor.Magenta;
                 default:
                     throw new ArgumentException($"Line {lineNumber}: unknown color token '{token}'.");
             }
@@ -1315,6 +1381,10 @@ namespace BlossomFlow.Editor
                 FlowerColor.Pink => "P",
                 FlowerColor.Purple => "U",
                 FlowerColor.White => "W",
+                FlowerColor.Orange => "O",
+                FlowerColor.Black => "K",
+                FlowerColor.Cyan => "C",
+                FlowerColor.Magenta => "M",
                 _ => "."
             };
         }
@@ -1329,6 +1399,10 @@ namespace BlossomFlow.Editor
                 CellBrush.Pink => FlowerColor.Pink,
                 CellBrush.Purple => FlowerColor.Purple,
                 CellBrush.White => FlowerColor.White,
+                CellBrush.Orange => FlowerColor.Orange,
+                CellBrush.Black => FlowerColor.Black,
+                CellBrush.Cyan => FlowerColor.Cyan,
+                CellBrush.Magenta => FlowerColor.Magenta,
                 _ => null
             };
         }
@@ -1348,13 +1422,17 @@ namespace BlossomFlow.Editor
                 FlowerColor.Pink => new Color(1f, 0.46f, 0.68f),
                 FlowerColor.Purple => new Color(0.58f, 0.36f, 0.9f),
                 FlowerColor.White => new Color(0.9f, 0.9f, 0.9f),
+                FlowerColor.Orange => new Color(1f, 0.55f, 0.12f),
+                FlowerColor.Black => new Color(0.08f, 0.08f, 0.08f),
+                FlowerColor.Cyan => new Color(0.1f, 0.8f, 0.9f),
+                FlowerColor.Magenta => new Color(0.9f, 0.15f, 0.85f),
                 _ => Color.white
             };
         }
 
         private static string CellLabel(FlowerColor? color)
         {
-            return color.HasValue ? color.Value.ToString().Substring(0, 1) : "-";
+            return color.HasValue ? FlowerColorToImportToken(color.Value) : "-";
         }
 
         private enum ImportSection
