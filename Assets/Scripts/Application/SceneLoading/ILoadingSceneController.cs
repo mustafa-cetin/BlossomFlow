@@ -1,10 +1,11 @@
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace BlossomFlow.Application.SceneLoading
 {
     public interface ILoadingSceneController
     {
-        IEnumerator LoadPendingTargetAsync(Action<float> reportProgress);
+        UniTask LoadPendingTargetAsync(Action<float> reportProgress, CancellationToken cancellationToken);
     }
 }

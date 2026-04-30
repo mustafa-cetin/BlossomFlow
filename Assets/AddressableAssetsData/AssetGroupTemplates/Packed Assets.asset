@@ -1,23 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a3c5d64ac83548c09dd1678b9f6f1cd, type: 3}
-  m_Name: Packed Assets
-  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroupTemplate
-  m_SchemaObjects:
-  - {fileID: 207553050855394390}
-  - {fileID: 5706636323866213221}
-  m_Description: Pack assets into asset bundles.
-  m_Settings: {fileID: 11400000, guid: 0bf3ed2c847ebac49a24d8b785d22680, type: 2}
---- !u!114 &207553050855394390
+--- !u!114 &-5997665136705017645
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,7 +46,7 @@ MonoBehaviour:
   m_SelectedPathPairIndex: 0
   m_BundleNaming: 0
   m_AssetLoadMode: 0
---- !u!114 &5706636323866213221
+--- !u!114 &-2028890660244372498
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -77,3 +60,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.GroupSchemas.ContentUpdateGroupSchema
   m_Group: {fileID: 0}
   m_StaticContent: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a3c5d64ac83548c09dd1678b9f6f1cd, type: 3}
+  m_Name: Packed Assets
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroupTemplate
+  m_SchemaObjects:
+  - {fileID: -5997665136705017645}
+  - {fileID: -2028890660244372498}
+  m_Description: Pack assets into asset bundles.
+  m_Settings: {fileID: 11400000, guid: 0bf3ed2c847ebac49a24d8b785d22680, type: 2}

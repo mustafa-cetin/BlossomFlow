@@ -19,8 +19,8 @@ using BlossomFlow.Application.Debugging;
 
 public class RootInstaller : MonoBehaviour, IInstaller
 {
-    [SerializeField] private string startupTargetSceneName = "GameScene";
-    [SerializeField] private string startupTutorialCompletedTargetSceneName = "GameScene";
+    [SerializeField] private string startupTargetSceneName = "Assets/Scenes/GameScene.unity";
+    [SerializeField] private string startupTutorialCompletedTargetSceneName = "Assets/Scenes/GameScene.unity";
     [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;

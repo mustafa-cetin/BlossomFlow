@@ -711,7 +711,7 @@ PlayerSettings:
     Server: 
     Standalone: DOTWEEN
     VisionOS: DOTWEEN
-    WebGL: DOTWEEN
+    WebGL: DOTWEEN;ADDRESSABLE_AVAILABLE
     Windows Store Apps: DOTWEEN
     XboxOne: DOTWEEN
     iPhone: DOTWEEN

@@ -1,7 +1,8 @@
 using System;
-using System.Collections;
+using System.Threading;
 using BlossomFlow.Application.Events;
 using BlossomFlow.MainMenu.Domain;
+using Cysharp.Threading.Tasks;
 using Reflex.Attributes;
 using TMPro;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private IMainMenuPlayerProgressService _progressService;
         private IEventSubscriber _eventSubscriber;
         private IDisposable _progressChangedSubscription;
-        private Coroutine _countdownRefreshRoutine;
+        private CancellationTokenSource _countdownRefreshCancellation;
 
         [Inject]
         private void Construct(
@@ -150,31 +151,39 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void StartCountdownRefreshRoutine()
         {
-            if (_countdownRefreshRoutine != null || !isActiveAndEnabled)
+            if (_countdownRefreshCancellation != null || !isActiveAndEnabled)
             {
                 return;
             }
 
-            _countdownRefreshRoutine = StartCoroutine(CountdownRefreshRoutine());
+            _countdownRefreshCancellation = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            CountdownRefreshAsync(_countdownRefreshCancellation.Token).Forget(Debug.LogException);
         }
 
         private void StopCountdownRefreshRoutine()
         {
-            if (_countdownRefreshRoutine == null)
+            if (_countdownRefreshCancellation == null)
             {
                 return;
             }
 
-            StopCoroutine(_countdownRefreshRoutine);
-            _countdownRefreshRoutine = null;
+            _countdownRefreshCancellation.Cancel();
+            _countdownRefreshCancellation.Dispose();
+            _countdownRefreshCancellation = null;
         }
 
-        private IEnumerator CountdownRefreshRoutine()
+        private async UniTask CountdownRefreshAsync(CancellationToken cancellationToken)
         {
-            while (true)
+            try
             {
-                yield return new WaitForSeconds(1f);
-                Refresh();
+                while (true)
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(1f), cancellationToken: cancellationToken);
+                    Refresh();
+                }
+            }
+            catch (OperationCanceledException)
+            {
             }
         }
 
