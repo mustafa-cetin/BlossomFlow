@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
+using BlossomFlow.Gameplay.Domain.Levels.Generation;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,6 +24,7 @@ namespace BlossomFlow.Editor
             Pink,
             Purple,
             White,
+            Green,
             Orange,
             Black,
             Cyan,
@@ -46,6 +48,15 @@ namespace BlossomFlow.Editor
         private int _randomQueueSeed;
         private string _randomQueueMessage = "Build random queues from the current flower grid.";
         private MessageType _randomQueueMessageType = MessageType.Info;
+        private int _proceduralFillPercent = 100;
+        private int _proceduralColorCount = 4;
+        private int _proceduralPotsPerColumn = 4;
+        private bool _proceduralPreferCapacityMultiplesOfTen;
+        private bool _proceduralUseSeed = true;
+        private int _proceduralSeed = 1001;
+        private string _proceduralMessage = "Generate a complete flower grid and matching pot queues.";
+        private MessageType _proceduralMessageType = MessageType.Info;
+        private readonly ILevelDefinitionGenerator _proceduralLevelGenerator = new ProceduralLevelDefinitionGenerator();
         private readonly List<List<PotDefinition>> _launchColumns = new();
         private Vector2 _scroll;
         private string _validationMessage = "No level loaded.";
@@ -101,6 +112,8 @@ namespace BlossomFlow.Editor
             EditorGUILayout.Space(8f);
             DrawLevelSettings();
             EditorGUILayout.Space(8f);
+            DrawProceduralGeneration();
+            EditorGUILayout.Space(8f);
             DrawTextImport();
             EditorGUILayout.Space(8f);
             DrawPalette();
@@ -119,6 +132,48 @@ namespace BlossomFlow.Editor
             {
                 LoadAsset(selectedAsset);
                 Repaint();
+            }
+        }
+
+        private void DrawProceduralGeneration()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Procedural Generation", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "Creates a complete deterministic prototype level: balanced flower grid, exact matching pot capacity, and shuffled launch queues.",
+                    MessageType.None);
+
+                _proceduralFillPercent = EditorGUILayout.IntSlider("Grid Fill Percent", _proceduralFillPercent, 1, 100);
+                _proceduralColorCount = EditorGUILayout.IntSlider(
+                    "Color Count",
+                    _proceduralColorCount,
+                    1,
+                    Mathf.Min(Enum.GetValues(typeof(FlowerColor)).Length, _width * _height));
+                _proceduralPotsPerColumn = Mathf.Max(1, EditorGUILayout.IntField("Pots Per Queue", _proceduralPotsPerColumn));
+                _proceduralPreferCapacityMultiplesOfTen = EditorGUILayout.Toggle("Prefer Counts Ending In 0", _proceduralPreferCapacityMultiplesOfTen);
+                _proceduralUseSeed = EditorGUILayout.Toggle("Use Seed", _proceduralUseSeed);
+
+                using (new EditorGUI.DisabledScope(!_proceduralUseSeed))
+                {
+                    _proceduralSeed = EditorGUILayout.IntField("Seed", _proceduralSeed);
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Generate Working Level"))
+                    {
+                        GenerateProceduralWorkingLevel();
+                    }
+
+                    if (GUILayout.Button("Randomize Seed"))
+                    {
+                        _proceduralSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+                        GenerateProceduralWorkingLevel();
+                    }
+                }
+
+                EditorGUILayout.HelpBox(_proceduralMessage, _proceduralMessageType);
             }
         }
 
@@ -652,6 +707,40 @@ namespace BlossomFlow.Editor
             }
 
             ValidateWorkingLevel();
+        }
+
+        private void GenerateProceduralWorkingLevel()
+        {
+            try
+            {
+                var settings = new ProceduralLevelGenerationSettings
+                {
+                    Width = _width,
+                    Height = _height,
+                    FillPercent = _proceduralFillPercent,
+                    ColorCount = _proceduralColorCount,
+                    LaunchColumnCount = _launchColumns.Count,
+                    PotsPerColumn = _proceduralPotsPerColumn,
+                    WaitingSlotCount = _waitingSlotCount,
+                    ConveyorMaxPots = _conveyorMaxPots,
+                    Difficulty = _difficulty,
+                    UseSeed = _proceduralUseSeed,
+                    Seed = _proceduralSeed,
+                    PreferCapacityMultiplesOfTen = _proceduralPreferCapacityMultiplesOfTen,
+                    ConveyorPath = PreservedConveyorPath(_asset)
+                };
+
+                var definition = _proceduralLevelGenerator.Generate(settings);
+                LoadDefinition(definition);
+
+                _proceduralMessage = $"Generated {definition.Width}x{definition.Height} level with {definition.Flowers.Length} flowers and {settings.TotalPotCount} pots.";
+                _proceduralMessageType = MessageType.Info;
+            }
+            catch (Exception exception)
+            {
+                _proceduralMessage = exception.Message;
+                _proceduralMessageType = MessageType.Error;
+            }
         }
 
         private void ImportTextLevel(bool forceAutoQueues)
@@ -1346,6 +1435,9 @@ namespace BlossomFlow.Editor
                 case "w":
                 case "white":
                     return FlowerColor.White;
+                case "g":
+                case "green":
+                    return FlowerColor.Green;
                 case "o":
                 case "orange":
                     return FlowerColor.Orange;
@@ -1412,6 +1504,7 @@ namespace BlossomFlow.Editor
                 FlowerColor.Pink => "P",
                 FlowerColor.Purple => "U",
                 FlowerColor.White => "W",
+                FlowerColor.Green => "G",
                 FlowerColor.Orange => "O",
                 FlowerColor.Black => "K",
                 FlowerColor.Cyan => "C",
@@ -1430,6 +1523,7 @@ namespace BlossomFlow.Editor
                 CellBrush.Pink => FlowerColor.Pink,
                 CellBrush.Purple => FlowerColor.Purple,
                 CellBrush.White => FlowerColor.White,
+                CellBrush.Green => FlowerColor.Green,
                 CellBrush.Orange => FlowerColor.Orange,
                 CellBrush.Black => FlowerColor.Black,
                 CellBrush.Cyan => FlowerColor.Cyan,
@@ -1453,6 +1547,7 @@ namespace BlossomFlow.Editor
                 FlowerColor.Pink => new Color(1f, 0.46f, 0.68f),
                 FlowerColor.Purple => new Color(0.58f, 0.36f, 0.9f),
                 FlowerColor.White => new Color(0.9f, 0.9f, 0.9f),
+                FlowerColor.Green => new Color(0.2f, 0.75f, 0.25f),
                 FlowerColor.Orange => new Color(1f, 0.55f, 0.12f),
                 FlowerColor.Black => new Color(0.08f, 0.08f, 0.08f),
                 FlowerColor.Cyan => new Color(0.1f, 0.8f, 0.9f),
