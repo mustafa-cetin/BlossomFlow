@@ -67,3 +67,4 @@ MonoBehaviour:
   enableByteBrewAnalytics: 1
   playBackgroundMusicOnStartup: 1
   startupMusicTrack: 0
+  legacyOvershootReturnLevelNumber: 61

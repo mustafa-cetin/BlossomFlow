@@ -1,5 +1,6 @@
 using System;
 using BlossomFlow.Application.Events;
+using BlossomFlow.Application.Levels;
 
 namespace BlossomFlow.MainMenu.Domain
 {
@@ -19,14 +20,21 @@ namespace BlossomFlow.MainMenu.Domain
         private const string NextLifeReadyUtcTicksKey = "blossom_flow.progress.next_life_ready_utc_ticks";
 
         private readonly IEventPublisher _eventPublisher;
+        private readonly ILevelCatalog _levelCatalog;
+        private readonly int _legacyOvershootReturnLevelNumber;
         private MainMenuPlayerProgress _current = MainMenuPlayerProgress.Default;
         private long _nextLifeReadyUtcTicks;
         private bool _gardenUnlockSeedGranted;
         private bool _isLoaded;
 
-        public MainMenuPlayerProgressService(IEventPublisher eventPublisher)
+        public MainMenuPlayerProgressService(
+            IEventPublisher eventPublisher,
+            ILevelCatalog levelCatalog,
+            int legacyOvershootReturnLevelNumber)
         {
             _eventPublisher = eventPublisher;
+            _levelCatalog = levelCatalog;
+            _legacyOvershootReturnLevelNumber = Math.Max(1, legacyOvershootReturnLevelNumber);
         }
 
         public MainMenuPlayerProgress Current
@@ -240,16 +248,22 @@ namespace BlossomFlow.MainMenu.Domain
 
             var fallback = MainMenuPlayerProgress.Default;
             var maxLives = Math.Max(1, SafePlayerPrefs.GetInt(MaxLivesKey, fallback.MaxLives));
-            _current = new MainMenuPlayerProgress(
+            var loadedProgress = new MainMenuPlayerProgress(
                 Math.Max(1, SafePlayerPrefs.GetInt(LevelNumberKey, fallback.LevelNumber)),
                 Math.Min(maxLives, Math.Max(0, SafePlayerPrefs.GetInt(CurrentLivesKey, fallback.CurrentLives))),
                 maxLives,
                 Math.Max(0, SafePlayerPrefs.GetInt(GoldKey, fallback.Gold)),
                 Math.Max(0, SafePlayerPrefs.GetInt(MagicalSeedKey, fallback.MagicalSeed)),
                 SafePlayerPrefs.GetString(NextLifeCountdownKey, fallback.NextLifeCountdown));
+            _current = NormalizeLoadedProgress(loadedProgress);
             _nextLifeReadyUtcTicks = ReadLong(NextLifeReadyUtcTicksKey, 0L);
             _gardenUnlockSeedGranted = SafePlayerPrefs.GetInt(GardenUnlockSeedGrantedKey, 0) == 1;
             _isLoaded = true;
+            if (_current.LevelNumber != loadedProgress.LevelNumber)
+            {
+                SaveProgress(_current, _nextLifeReadyUtcTicks);
+            }
+
             ApplyGardenUnlockSeedMigration();
         }
 
@@ -340,16 +354,50 @@ namespace BlossomFlow.MainMenu.Domain
                 : $"{remaining.Minutes:00}:{remaining.Seconds:00}";
         }
 
-        private static MainMenuPlayerProgress NormalizeProgress(MainMenuPlayerProgress progress)
+        private MainMenuPlayerProgress NormalizeProgress(MainMenuPlayerProgress progress)
         {
             var maxLives = Math.Max(1, progress.MaxLives);
             return new MainMenuPlayerProgress(
-                Math.Max(1, progress.LevelNumber),
+                ClampLevelNumber(progress.LevelNumber),
                 Math.Min(maxLives, Math.Max(0, progress.CurrentLives)),
                 maxLives,
                 Math.Max(0, progress.Gold),
                 Math.Max(0, progress.MagicalSeed),
                 progress.NextLifeCountdown ?? string.Empty);
+        }
+
+        private MainMenuPlayerProgress NormalizeLoadedProgress(MainMenuPlayerProgress progress)
+        {
+            if (IsAboveCurrentCampaignCap(progress.LevelNumber))
+            {
+                return NormalizeProgress(new MainMenuPlayerProgress(
+                    Math.Min(_legacyOvershootReturnLevelNumber, GetCurrentCampaignCapLevelNumber()),
+                    progress.CurrentLives,
+                    progress.MaxLives,
+                    progress.Gold,
+                    progress.MagicalSeed,
+                    progress.NextLifeCountdown));
+            }
+
+            return NormalizeProgress(progress);
+        }
+
+        private int ClampLevelNumber(int levelNumber)
+        {
+            var minLevelNumber = 1;
+            return Math.Min(GetCurrentCampaignCapLevelNumber(), Math.Max(minLevelNumber, levelNumber));
+        }
+
+        private bool IsAboveCurrentCampaignCap(int levelNumber)
+        {
+            return levelNumber > GetCurrentCampaignCapLevelNumber();
+        }
+
+        private int GetCurrentCampaignCapLevelNumber()
+        {
+            return _levelCatalog != null && _levelCatalog.LevelCount > 0
+                ? _levelCatalog.LevelCount + 1
+                : int.MaxValue;
         }
 
         private static MainMenuPlayerProgress WithLives(MainMenuPlayerProgress progress, int lives, string countdown)

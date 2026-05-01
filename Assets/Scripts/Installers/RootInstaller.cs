@@ -29,6 +29,7 @@ public class RootInstaller : MonoBehaviour, IInstaller
     [SerializeField] private bool enableByteBrewAnalytics = true;
     [SerializeField] private bool playBackgroundMusicOnStartup = true;
     [SerializeField] private MusicTrackId startupMusicTrack = MusicTrackId.Background;
+    [SerializeField, Min(1)] private int legacyOvershootReturnLevelNumber = 51;
 
     public void InstallBindings(ContainerBuilder builder)
     {
@@ -87,21 +88,11 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         builder.RegisterType(
             typeof(CrazyGamesGameplaySessionReporter),
-            new[] { typeof(CrazyGamesGameplaySessionReporter) },
-            Lifetime.Singleton,
-            Resolution.Lazy);
-
-        builder.RegisterType(
-            typeof(AnalyticsGameplaySessionReporter),
-            new[] { typeof(AnalyticsGameplaySessionReporter) },
-            Lifetime.Singleton,
-            Resolution.Lazy);
-
-        builder.RegisterFactory(
-            container => new CompositeGameplaySessionReporter(
-                container.Resolve<CrazyGamesGameplaySessionReporter>(),
-                container.Resolve<AnalyticsGameplaySessionReporter>()),
-            new[] { typeof(IGameplayPlatformSessionReporter) },
+            new[]
+            {
+                typeof(CrazyGamesGameplaySessionReporter),
+                typeof(IGameplayPlatformSessionReporter)
+            },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -241,8 +232,11 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Lazy);
 
-        builder.RegisterType(
-            typeof(MainMenuPlayerProgressService),
+        builder.RegisterFactory(
+            container => new MainMenuPlayerProgressService(
+                container.Resolve<IEventPublisher>(),
+                container.Resolve<ILevelCatalog>(),
+                legacyOvershootReturnLevelNumber),
             new[] { typeof(IMainMenuPlayerProgressService) },
             Lifetime.Singleton,
             Resolution.Eager);

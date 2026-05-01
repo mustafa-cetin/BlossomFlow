@@ -5,7 +5,6 @@ namespace BlossomFlow.Application.Analytics
         public const string Tutorial = "Tutorial";
         public const string Level = "Level";
         public const string Item = "Item";
-        public const string Gameplay = "Gameplay";
         public const string PlayerRetention = "PlayerRetention";
     }
 }
