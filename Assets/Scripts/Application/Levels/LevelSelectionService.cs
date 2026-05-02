@@ -39,11 +39,7 @@ namespace BlossomFlow.Application.Levels
         private int ClampLevelNumber(int levelNumber)
         {
             var minLevelNumber = 1;
-            var maxLevelNumber = _levelCatalog.LevelCount > 0
-                ? _levelCatalog.LevelCount + 1
-                : int.MaxValue;
-
-            return Math.Min(maxLevelNumber, Math.Max(minLevelNumber, levelNumber));
+            return Math.Max(minLevelNumber, levelNumber);
         }
 
         private int GetCurrentDefinitionLevelNumber()

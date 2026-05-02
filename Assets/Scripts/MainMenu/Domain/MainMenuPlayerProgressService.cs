@@ -16,6 +16,7 @@ namespace BlossomFlow.MainMenu.Domain
         private const string GoldKey = "blossom_flow.progress.gold";
         private const string MagicalSeedKey = "blossom_flow.progress.magical_seed";
         private const string GardenUnlockSeedGrantedKey = "blossom_flow.progress.garden_unlock_seed_granted";
+        private const string PendingCampaignLevelNumberKey = "blossom_flow.progress.pending_campaign_level_number";
         private const string NextLifeCountdownKey = "blossom_flow.progress.next_life_countdown";
         private const string NextLifeReadyUtcTicksKey = "blossom_flow.progress.next_life_ready_utc_ticks";
 
@@ -24,6 +25,7 @@ namespace BlossomFlow.MainMenu.Domain
         private readonly int _legacyOvershootReturnLevelNumber;
         private MainMenuPlayerProgress _current = MainMenuPlayerProgress.Default;
         private long _nextLifeReadyUtcTicks;
+        private int _pendingCampaignLevelNumber;
         private bool _gardenUnlockSeedGranted;
         private bool _isLoaded;
 
@@ -215,6 +217,7 @@ namespace BlossomFlow.MainMenu.Domain
         {
             _current = NormalizeProgress(progress);
             _isLoaded = true;
+            UpdatePendingCampaignLevelForCurrentProgress();
             if (!_gardenUnlockSeedGranted &&
                 _current.LevelNumber >= GardenUnlockLevel &&
                 _current.MagicalSeed <= 0)
@@ -235,7 +238,7 @@ namespace BlossomFlow.MainMenu.Domain
 
             UpdateLifeTimerForCurrentProgress();
             UpdateCurrentLifeCountdown();
-            SaveProgress(_current, _nextLifeReadyUtcTicks);
+            SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
             _eventPublisher.Publish(new MainMenuPlayerProgressChanged(_current));
         }
 
@@ -255,13 +258,16 @@ namespace BlossomFlow.MainMenu.Domain
                 Math.Max(0, SafePlayerPrefs.GetInt(GoldKey, fallback.Gold)),
                 Math.Max(0, SafePlayerPrefs.GetInt(MagicalSeedKey, fallback.MagicalSeed)),
                 SafePlayerPrefs.GetString(NextLifeCountdownKey, fallback.NextLifeCountdown));
+            var loadedPendingCampaignLevelNumber = Math.Max(0, SafePlayerPrefs.GetInt(PendingCampaignLevelNumberKey, 0));
+            _pendingCampaignLevelNumber = loadedPendingCampaignLevelNumber;
             _current = NormalizeLoadedProgress(loadedProgress);
             _nextLifeReadyUtcTicks = ReadLong(NextLifeReadyUtcTicksKey, 0L);
             _gardenUnlockSeedGranted = SafePlayerPrefs.GetInt(GardenUnlockSeedGrantedKey, 0) == 1;
             _isLoaded = true;
-            if (_current.LevelNumber != loadedProgress.LevelNumber)
+            if (_current.LevelNumber != loadedProgress.LevelNumber ||
+                _pendingCampaignLevelNumber != loadedPendingCampaignLevelNumber)
             {
-                SaveProgress(_current, _nextLifeReadyUtcTicks);
+                SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
             }
 
             ApplyGardenUnlockSeedMigration();
@@ -275,7 +281,7 @@ namespace BlossomFlow.MainMenu.Domain
                 {
                     _nextLifeReadyUtcTicks = 0L;
                     _current = WithLives(_current, _current.MaxLives, string.Empty);
-                    SaveProgress(_current, _nextLifeReadyUtcTicks);
+                    SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
                 }
 
                 return;
@@ -285,7 +291,7 @@ namespace BlossomFlow.MainMenu.Domain
             {
                 _nextLifeReadyUtcTicks = DateTime.UtcNow.Ticks + LifeRecoveryTicks;
                 UpdateCurrentLifeCountdown();
-                SaveProgress(_current, _nextLifeReadyUtcTicks);
+                SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
                 return;
             }
 
@@ -313,7 +319,7 @@ namespace BlossomFlow.MainMenu.Domain
                 _current = WithLives(_current, nextLives, GetCurrentLifeCountdown());
             }
 
-            SaveProgress(_current, _nextLifeReadyUtcTicks);
+            SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
 
             if (publishIfChanged)
             {
@@ -368,10 +374,27 @@ namespace BlossomFlow.MainMenu.Domain
 
         private MainMenuPlayerProgress NormalizeLoadedProgress(MainMenuPlayerProgress progress)
         {
-            if (IsAboveCurrentCampaignCap(progress.LevelNumber))
+            var levelCount = GetCatalogLevelCount();
+            if (_pendingCampaignLevelNumber > 0 && levelCount >= _pendingCampaignLevelNumber)
             {
+                var pendingLevelNumber = _pendingCampaignLevelNumber;
+                _pendingCampaignLevelNumber = 0;
                 return NormalizeProgress(new MainMenuPlayerProgress(
-                    Math.Min(_legacyOvershootReturnLevelNumber, GetCurrentCampaignCapLevelNumber()),
+                    pendingLevelNumber,
+                    progress.CurrentLives,
+                    progress.MaxLives,
+                    progress.Gold,
+                    progress.MagicalSeed,
+                    progress.NextLifeCountdown));
+            }
+
+            if (_pendingCampaignLevelNumber <= 0 && levelCount > 0 && progress.LevelNumber > levelCount)
+            {
+                _pendingCampaignLevelNumber = _legacyOvershootReturnLevelNumber > levelCount
+                    ? _legacyOvershootReturnLevelNumber
+                    : 0;
+                return NormalizeProgress(new MainMenuPlayerProgress(
+                    _legacyOvershootReturnLevelNumber,
                     progress.CurrentLives,
                     progress.MaxLives,
                     progress.Gold,
@@ -385,19 +408,39 @@ namespace BlossomFlow.MainMenu.Domain
         private int ClampLevelNumber(int levelNumber)
         {
             var minLevelNumber = 1;
-            return Math.Min(GetCurrentCampaignCapLevelNumber(), Math.Max(minLevelNumber, levelNumber));
+            return Math.Max(minLevelNumber, levelNumber);
         }
 
-        private bool IsAboveCurrentCampaignCap(int levelNumber)
+        private void UpdatePendingCampaignLevelForCurrentProgress()
         {
-            return levelNumber > GetCurrentCampaignCapLevelNumber();
+            var levelCount = GetCatalogLevelCount();
+            if (levelCount <= 0)
+            {
+                return;
+            }
+
+            if (_pendingCampaignLevelNumber > 0 && levelCount >= _pendingCampaignLevelNumber)
+            {
+                _current = WithLevel(_current, _pendingCampaignLevelNumber);
+                _pendingCampaignLevelNumber = 0;
+                return;
+            }
+
+            if (_current.LevelNumber > levelCount && _pendingCampaignLevelNumber <= 0)
+            {
+                _pendingCampaignLevelNumber = levelCount + 1;
+                return;
+            }
+
+            if (_current.LevelNumber <= levelCount)
+            {
+                _pendingCampaignLevelNumber = 0;
+            }
         }
 
-        private int GetCurrentCampaignCapLevelNumber()
+        private int GetCatalogLevelCount()
         {
-            return _levelCatalog != null && _levelCatalog.LevelCount > 0
-                ? _levelCatalog.LevelCount + 1
-                : int.MaxValue;
+            return _levelCatalog != null ? _levelCatalog.LevelCount : 0;
         }
 
         private static MainMenuPlayerProgress WithLives(MainMenuPlayerProgress progress, int lives, string countdown)
@@ -409,6 +452,17 @@ namespace BlossomFlow.MainMenu.Domain
                 progress.Gold,
                 progress.MagicalSeed,
                 countdown ?? string.Empty);
+        }
+
+        private static MainMenuPlayerProgress WithLevel(MainMenuPlayerProgress progress, int levelNumber)
+        {
+            return new MainMenuPlayerProgress(
+                Math.Max(1, levelNumber),
+                progress.CurrentLives,
+                progress.MaxLives,
+                progress.Gold,
+                progress.MagicalSeed,
+                progress.NextLifeCountdown ?? string.Empty);
         }
 
         private int GetMagicalSeedAfterLevelAdvance(int nextLevelNumber)
@@ -449,7 +503,7 @@ namespace BlossomFlow.MainMenu.Domain
                     _current.NextLifeCountdown);
             }
 
-            SaveProgress(_current, _nextLifeReadyUtcTicks);
+            SaveProgress(_current, _nextLifeReadyUtcTicks, _pendingCampaignLevelNumber);
             _eventPublisher.Publish(new MainMenuPlayerProgressChanged(_current));
         }
 
@@ -459,7 +513,10 @@ namespace BlossomFlow.MainMenu.Domain
             return long.TryParse(value, out var parsedValue) ? parsedValue : defaultValue;
         }
 
-        private static void SaveProgress(MainMenuPlayerProgress progress, long nextLifeReadyUtcTicks)
+        private static void SaveProgress(
+            MainMenuPlayerProgress progress,
+            long nextLifeReadyUtcTicks,
+            int pendingCampaignLevelNumber)
         {
             SafePlayerPrefs.SetInt(LevelNumberKey, progress.LevelNumber);
             SafePlayerPrefs.SetInt(CurrentLivesKey, progress.CurrentLives);
@@ -467,6 +524,7 @@ namespace BlossomFlow.MainMenu.Domain
             SafePlayerPrefs.SetInt(GoldKey, progress.Gold);
             SafePlayerPrefs.SetInt(MagicalSeedKey, progress.MagicalSeed);
             SafePlayerPrefs.SetInt(GardenUnlockSeedGrantedKey, progress.LevelNumber >= GardenUnlockLevel || progress.MagicalSeed > 0 ? 1 : 0);
+            SafePlayerPrefs.SetInt(PendingCampaignLevelNumberKey, Math.Max(0, pendingCampaignLevelNumber));
             SafePlayerPrefs.SetString(NextLifeCountdownKey, progress.NextLifeCountdown ?? string.Empty);
             SafePlayerPrefs.SetString(NextLifeReadyUtcTicksKey, nextLifeReadyUtcTicks > 0L ? nextLifeReadyUtcTicks.ToString() : string.Empty);
             SafePlayerPrefs.Save();
