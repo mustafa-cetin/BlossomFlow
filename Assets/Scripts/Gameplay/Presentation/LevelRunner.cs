@@ -70,6 +70,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private const float MinimumStepSeconds = 0.01f;
         private const string CampaignLevelType = "Campaign";
+        private const string LevelStatusComplete = "Complete";
+        private const string LevelStatusFailed = "Failed";
+        private const string LevelStatusKeepPlaying = "KeepPlaying";
+        private const string LevelStatusQuit = "Quit";
+        private const string LevelStatusRestart = "Restart";
+        private const string LevelStatusStart = "Start";
 
         public LevelSession CurrentSession => _session;
 
@@ -127,6 +133,8 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnDestroy()
         {
+            TrackLevelQuitIfPlaying();
+
             if (presentationView != null)
             {
                 presentationView.LaunchColumnRequested -= TryLaunchColumn;
@@ -139,7 +147,6 @@ namespace BlossomFlow.Gameplay.Presentation
                 firstLevelTutorial.UnbindSession();
             }
 
-            TrackLevelQuitIfPlaying();
             NotifyGameplayStop();
             UnsubscribeSessionEvents();
             _restartRequestedSubscription?.Dispose();
@@ -224,7 +231,6 @@ namespace BlossomFlow.Gameplay.Presentation
         private void StartLevelSession()
         {
             NotifyGameplayStop();
-            TrackLevelQuitIfPlaying();
             UnsubscribeSessionEvents();
             pointerInput?.RequirePointerReleaseBeforeNextClick();
             _session = null;
@@ -565,7 +571,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             _isFastForwardingConveyor = false;
             NotifyGameplayStop();
-            TrackLevelResult("Complete");
+            TrackLevelResult(LevelStatusComplete);
             PublishSound(SoundCueId.LevelWin);
             presentationView.ShowWinResolution();
             _eventPublisher.Publish(new LevelVictoryScreenRequested());
@@ -576,7 +582,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             _isFastForwardingConveyor = false;
             NotifyGameplayStop();
-            TrackLevelResult("Failed", reason.ToString());
+            TrackLevelResult(LevelStatusFailed, reason.ToString());
             PublishSound(SoundCueId.LevelFail);
             if (failedPot != null)
             {
@@ -601,7 +607,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _currentLevelKeepPlayingCount = 0;
             _levelStartedAtSeconds = Time.realtimeSinceStartup;
             _isCurrentLevelResultTracked = false;
-            TrackLevel("Start");
+            TrackLevel(LevelStatusStart);
         }
 
         private void TrackLevelResult(string status, string failReason = null)
@@ -615,29 +621,9 @@ namespace BlossomFlow.Gameplay.Presentation
             TrackLevel(status, failReason);
         }
 
-        private void TrackLevelQuitIfPlaying()
-        {
-            if (_session == null || _session.State != LevelPlayState.Playing || _isCurrentLevelResultTracked)
-            {
-                return;
-            }
-
-            TrackLevelResult("Quit");
-        }
-
-        private void TrackLevelRestart()
-        {
-            if (_session == null || _session.State != LevelPlayState.Playing || _isCurrentLevelResultTracked)
-            {
-                return;
-            }
-
-            TrackLevelResult("Restart");
-        }
-
         private void TrackLevel(string status, string failReason = null)
         {
-            if (_eventPublisher == null)
+            if (_eventPublisher == null || !ShouldTrackLevelStatus(status))
             {
                 return;
             }
@@ -664,7 +650,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 .Add(LevelAnalyticsParameterNames.AttemptNumber, _currentLevelAttemptNumber)
                 .Add(LevelAnalyticsParameterNames.KeepPlayingCount, _currentLevelKeepPlayingCount);
 
-            if (!string.Equals(status, "Start", StringComparison.Ordinal))
+            if (!string.Equals(status, LevelStatusStart, StringComparison.Ordinal))
             {
                 parameters.Add(LevelAnalyticsParameterNames.DurationSeconds, GetCurrentLevelDurationSeconds());
             }
@@ -675,6 +661,33 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             _eventPublisher.Publish(new AnalyticsEventRequested(AnalyticsCustomEventNames.Level, parameters.Build()));
+        }
+
+        private static bool ShouldTrackLevelStatus(string status)
+        {
+            return AnalyticsEventValidator.IsValidName(status);
+        }
+
+        private void TrackLevelQuitIfPlaying()
+        {
+            if (_session == null ||
+                _session.State != LevelPlayState.Playing ||
+                _isCurrentLevelResultTracked)
+            {
+                return;
+            }
+
+            TrackLevelResult(LevelStatusQuit);
+        }
+
+        private void TrackLevelRestartIfStarted()
+        {
+            if (_session == null || _lastStartedLevelNumber <= 0)
+            {
+                return;
+            }
+
+            TrackLevel(LevelStatusRestart);
         }
 
         private int GetTrackedLevelNumber()
@@ -748,7 +761,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            TrackLevelRestart();
+            TrackLevelRestartIfStarted();
             _eventPublisher.Publish(new LevelRestarted());
             StartLevelSession();
         }
@@ -784,7 +797,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _isFastForwardingConveyor = false;
             PublishConveyorPotCount();
             _currentLevelKeepPlayingCount++;
-            TrackLevel("KeepPlaying");
+            TrackLevel(LevelStatusKeepPlaying);
             NotifyGameplayStartIfPlaying();
             _eventPublisher.Publish(new LevelKeepPlayingStarted());
         }

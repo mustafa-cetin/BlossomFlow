@@ -133,6 +133,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Lazy);
 
+        builder.RegisterType(
+            typeof(PlayerJourneyAnalyticsReporter),
+            new[] { typeof(PlayerJourneyAnalyticsReporter) },
+            Lifetime.Singleton,
+            Resolution.Eager);
+
         builder.RegisterFactory(
             container => new BackgroundMusicController(
                 container.Resolve<IMusicPlayer>(),

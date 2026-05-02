@@ -38,65 +38,49 @@ namespace BlossomFlow.Gameplay.Domain.Levels.Generation
             }
 
             var totalPots = settings.TotalPotCount;
-            var potColorCounts = AllocatePotCountsByColor(
-                flowerCounts,
-                totalPots,
-                random,
-                settings.PreferCapacityMultiplesOfTen ? 10 : 1,
-                out var usedFallback);
-
-            var capacityUnit = settings.PreferCapacityMultiplesOfTen && !usedFallback ? 10 : 1;
+            var capacityUnit = settings.PreferCapacityMultiplesOfTen
+                ? PickPreferredCapacityUnit(flowerCounts, totalPots)
+                : 1;
+            var potColorCounts = AllocatePotCountsByColor(flowerCounts, totalPots, random, capacityUnit);
             var pots = BuildPots(flowerCounts, potColorCounts, random, capacityUnit);
             ProceduralLevelRandom.Shuffle(pots, random);
 
             return SplitIntoColumns(pots, settings.LaunchColumnCount, settings.PotsPerColumn);
         }
 
-        private static Dictionary<FlowerColor, int> AllocatePotCountsByColor(
+        private static int PickPreferredCapacityUnit(
+            IReadOnlyDictionary<FlowerColor, int> flowerCounts,
+            int totalPots)
+        {
+            if (CanAllocateWithCapacityUnit(flowerCounts, totalPots, 10))
+            {
+                return 10;
+            }
+
+            return CanAllocateWithCapacityUnit(flowerCounts, totalPots, 5) ? 5 : 1;
+        }
+
+        private static bool CanAllocateWithCapacityUnit(
             IReadOnlyDictionary<FlowerColor, int> flowerCounts,
             int totalPots,
-            Random random,
-            int minimumCapacityPerPot,
-            out bool usedFallback)
+            int capacityUnit)
         {
-            usedFallback = false;
-            try
-            {
-                return AllocatePotCountsByColor(flowerCounts, totalPots, random, minimumCapacityPerPot);
-            }
-            catch (ArgumentException)
-            {
-                if (minimumCapacityPerPot == 1)
-                {
-                    throw;
-                }
-
-                usedFallback = true;
-                return AllocatePotCountsByColor(flowerCounts, totalPots, random, 1);
-            }
+            return totalPots <= flowerCounts.Sum(pair => MaximumPotCountForCapacityUnit(pair.Value, capacityUnit));
         }
 
         private static Dictionary<FlowerColor, int> AllocatePotCountsByColor(
             IReadOnlyDictionary<FlowerColor, int> flowerCounts,
             int totalPots,
             Random random,
-            int minimumCapacityPerPot)
+            int capacityUnit)
         {
-            foreach (var pair in flowerCounts)
-            {
-                if (pair.Value < minimumCapacityPerPot || pair.Value % minimumCapacityPerPot != 0)
-                {
-                    throw new ArgumentException($"Each used color needs a flower count that is a multiple of {minimumCapacityPerPot}.");
-                }
-            }
-
             var potCounts = flowerCounts.ToDictionary(pair => pair.Key, _ => 1);
             var remainingPots = totalPots - potCounts.Count;
 
             while (remainingPots > 0)
             {
                 var eligibleColors = flowerCounts
-                    .Where(pair => (potCounts[pair.Key] + 1) * minimumCapacityPerPot <= pair.Value)
+                    .Where(pair => potCounts[pair.Key] < MaximumPotCountForCapacityUnit(pair.Value, capacityUnit))
                     .Select(pair => pair.Key)
                     .ToList();
 
@@ -111,6 +95,13 @@ namespace BlossomFlow.Gameplay.Domain.Levels.Generation
             }
 
             return potCounts;
+        }
+
+        private static int MaximumPotCountForCapacityUnit(int totalCapacity, int capacityUnit)
+        {
+            return capacityUnit <= 1
+                ? totalCapacity
+                : Math.Max(1, (totalCapacity + capacityUnit - 1) / capacityUnit);
         }
 
         private static List<PotDefinition> BuildPots(
@@ -135,17 +126,69 @@ namespace BlossomFlow.Gameplay.Domain.Levels.Generation
             Random random,
             int capacityUnit)
         {
-            if (potCount <= 0 || totalCapacity < potCount * capacityUnit || totalCapacity % capacityUnit != 0)
+            if (potCount <= 0 || totalCapacity < potCount)
             {
                 throw new ArgumentException("Invalid pot split requested.");
             }
 
-            var capacities = Enumerable.Repeat(capacityUnit, potCount).ToList();
-            var remainingCapacity = totalCapacity - potCount * capacityUnit;
-            while (remainingCapacity > 0)
+            if (capacityUnit <= 1)
             {
-                capacities[random.Next(capacities.Count)] += capacityUnit;
-                remainingCapacity -= capacityUnit;
+                var capacitiesN = Enumerable.Repeat(1, potCount).ToList();
+                var remainingCapacity = totalCapacity - potCount;
+                while (remainingCapacity > 0)
+                {
+                    capacitiesN[random.Next(capacitiesN.Count)]++;
+                    remainingCapacity--;
+                }
+
+                ProceduralLevelRandom.Shuffle(capacitiesN, random);
+                return capacitiesN;
+            }
+
+            if (potCount > MaximumPotCountForCapacityUnit(totalCapacity, capacityUnit))
+            {
+                throw new ArgumentException("Invalid preferred pot split requested.");
+            }
+
+            var capacities = new List<int>();
+            var remainder = totalCapacity % capacityUnit;
+            var fullUnits = totalCapacity / capacityUnit;
+
+            if (remainder > 0)
+            {
+                capacities.Add(remainder);
+            }
+
+            capacities.AddRange(Enumerable.Repeat(capacityUnit, fullUnits));
+
+            while (capacities.Count > potCount)
+            {
+                var mergeableIndexes = capacities
+                    .Select((capacity, index) => (capacity, index))
+                    .Where(pair => pair.capacity % capacityUnit == 0)
+                    .Select(pair => pair.index)
+                    .ToList();
+
+                int fromIndex;
+                int toIndex;
+                if (mergeableIndexes.Count >= 2)
+                {
+                    fromIndex = mergeableIndexes[random.Next(mergeableIndexes.Count)];
+                    var targetChoices = mergeableIndexes.Where(index => index != fromIndex).ToList();
+                    toIndex = targetChoices[random.Next(targetChoices.Count)];
+                }
+                else
+                {
+                    fromIndex = random.Next(capacities.Count);
+                    toIndex = random.Next(capacities.Count - 1);
+                    if (toIndex >= fromIndex)
+                    {
+                        toIndex++;
+                    }
+                }
+
+                capacities[toIndex] += capacities[fromIndex];
+                capacities.RemoveAt(fromIndex);
             }
 
             ProceduralLevelRandom.Shuffle(capacities, random);

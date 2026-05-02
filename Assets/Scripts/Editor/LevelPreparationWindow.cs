@@ -151,7 +151,7 @@ namespace BlossomFlow.Editor
                     1,
                     Mathf.Min(Enum.GetValues(typeof(FlowerColor)).Length, _width * _height));
                 _proceduralPotsPerColumn = Mathf.Max(1, EditorGUILayout.IntField("Pots Per Queue", _proceduralPotsPerColumn));
-                _proceduralPreferCapacityMultiplesOfTen = EditorGUILayout.Toggle("Prefer Counts Ending In 0", _proceduralPreferCapacityMultiplesOfTen);
+                _proceduralPreferCapacityMultiplesOfTen = EditorGUILayout.Toggle("Prefer 10/5 Capacities", _proceduralPreferCapacityMultiplesOfTen);
                 _proceduralUseSeed = EditorGUILayout.Toggle("Use Seed", _proceduralUseSeed);
 
                 using (new EditorGUI.DisabledScope(!_proceduralUseSeed))
@@ -380,7 +380,7 @@ namespace BlossomFlow.Editor
                     MessageType.None);
 
                 _randomQueuePotsPerColumn = Mathf.Max(1, EditorGUILayout.IntField("Pots Per Queue", _randomQueuePotsPerColumn));
-                _roundRandomQueueCountsToTens = EditorGUILayout.Toggle("Counts End In 0", _roundRandomQueueCountsToTens);
+                _roundRandomQueueCountsToTens = EditorGUILayout.Toggle("Prefer 10/5 Capacities", _roundRandomQueueCountsToTens);
                 _useRandomQueueSeed = EditorGUILayout.Toggle("Use Seed", _useRandomQueueSeed);
 
                 using (new EditorGUI.DisabledScope(!_useRandomQueueSeed))
@@ -978,29 +978,17 @@ namespace BlossomFlow.Editor
 
                 var random = _useRandomQueueSeed ? new System.Random(_randomQueueSeed) : new System.Random();
                 var roundingMessage = string.Empty;
-                Dictionary<FlowerColor, int> potColorCounts;
-                List<PotDefinition> pots;
+                var capacityUnit = _roundRandomQueueCountsToTens
+                    ? PickPreferredCapacityUnit(counts, totalPots)
+                    : 1;
+                var potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random, capacityUnit);
+                var pots = BuildRandomPots(counts, potColorCounts, random, capacityUnit);
 
                 if (_roundRandomQueueCountsToTens)
                 {
-                    try
-                    {
-                        potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random, 10);
-                        pots = BuildRandomPots(counts, potColorCounts, random, 10);
-                        roundingMessage = " Pot counts were rounded to 10.";
-                    }
-                    catch (ArgumentException exception)
-                    {
-                        random = _useRandomQueueSeed ? new System.Random(_randomQueueSeed) : random;
-                        potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
-                        pots = BuildRandomPots(counts, potColorCounts, random);
-                        roundingMessage = $" Rounded counts were not possible ({exception.Message}); built normal random counts.";
-                    }
-                }
-                else
-                {
-                    potColorCounts = AllocateRandomPotCountsByColor(counts, totalPots, random);
-                    pots = BuildRandomPots(counts, potColorCounts, random);
+                    roundingMessage = capacityUnit > 1
+                        ? $" Preferred capacity unit: {capacityUnit}."
+                        : " Could not keep most capacities at 10 or 5 with this many pots; built normal random counts.";
                 }
 
                 Shuffle(pots, random);
@@ -1078,19 +1066,11 @@ namespace BlossomFlow.Editor
             IReadOnlyDictionary<FlowerColor, int> flowerCounts,
             int totalPots,
             System.Random random,
-            int minimumCapacityPerPot = 1)
+            int capacityUnit = 1)
         {
-            if (minimumCapacityPerPot <= 0)
+            if (capacityUnit <= 0)
             {
-                throw new ArgumentException("Minimum capacity per pot must be positive.");
-            }
-
-            foreach (var pair in flowerCounts)
-            {
-                if (pair.Value < minimumCapacityPerPot || pair.Value % minimumCapacityPerPot != 0)
-                {
-                    throw new ArgumentException($"each used color needs a flower count that is a multiple of {minimumCapacityPerPot}");
-                }
+                throw new ArgumentException("Capacity unit must be positive.");
             }
 
             var potCounts = flowerCounts.ToDictionary(pair => pair.Key, _ => 1);
@@ -1099,7 +1079,7 @@ namespace BlossomFlow.Editor
             while (remainingPots > 0)
             {
                 var eligibleColors = flowerCounts
-                    .Where(pair => (potCounts[pair.Key] + 1) * minimumCapacityPerPot <= pair.Value)
+                    .Where(pair => potCounts[pair.Key] < MaximumPotCountForCapacityUnit(pair.Value, capacityUnit))
                     .Select(pair => pair.Key)
                     .ToList();
 
@@ -1114,6 +1094,33 @@ namespace BlossomFlow.Editor
             }
 
             return potCounts;
+        }
+
+        private static int PickPreferredCapacityUnit(
+            IReadOnlyDictionary<FlowerColor, int> flowerCounts,
+            int totalPots)
+        {
+            if (CanAllocateWithCapacityUnit(flowerCounts, totalPots, 10))
+            {
+                return 10;
+            }
+
+            return CanAllocateWithCapacityUnit(flowerCounts, totalPots, 5) ? 5 : 1;
+        }
+
+        private static bool CanAllocateWithCapacityUnit(
+            IReadOnlyDictionary<FlowerColor, int> flowerCounts,
+            int totalPots,
+            int capacityUnit)
+        {
+            return totalPots <= flowerCounts.Sum(pair => MaximumPotCountForCapacityUnit(pair.Value, capacityUnit));
+        }
+
+        private static int MaximumPotCountForCapacityUnit(int totalCapacity, int capacityUnit)
+        {
+            return capacityUnit <= 1
+                ? totalCapacity
+                : Mathf.Max(1, (totalCapacity + capacityUnit - 1) / capacityUnit);
         }
 
         private static List<PotDefinition> BuildRandomPots(
@@ -1143,22 +1150,74 @@ namespace BlossomFlow.Editor
                 throw new ArgumentException("Capacity unit must be positive.");
             }
 
-            if (potCount <= 0 || totalCapacity < potCount * capacityUnit || totalCapacity % capacityUnit != 0)
+            if (potCount <= 0 || totalCapacity < potCount)
             {
                 throw new ArgumentException("Invalid pot split requested.");
             }
 
-            var capacities = Enumerable.Repeat(capacityUnit, potCount).ToList();
-            var remainingCapacity = totalCapacity - (potCount * capacityUnit);
-
-            while (remainingCapacity > 0)
+            if (capacityUnit <= 1)
             {
-                capacities[random.Next(capacities.Count)] += capacityUnit;
-                remainingCapacity -= capacityUnit;
+                var capacities = Enumerable.Repeat(1, potCount).ToList();
+                var remainingCapacity = totalCapacity - potCount;
+
+                while (remainingCapacity > 0)
+                {
+                    capacities[random.Next(capacities.Count)]++;
+                    remainingCapacity--;
+                }
+
+                Shuffle(capacities, random);
+                return capacities;
             }
 
-            Shuffle(capacities, random);
-            return capacities;
+            if (potCount > MaximumPotCountForCapacityUnit(totalCapacity, capacityUnit))
+            {
+                throw new ArgumentException("Invalid preferred pot split requested.");
+            }
+
+            var preferredCapacities = new List<int>();
+            var remainder = totalCapacity % capacityUnit;
+            var fullUnits = totalCapacity / capacityUnit;
+
+            if (remainder > 0)
+            {
+                preferredCapacities.Add(remainder);
+            }
+
+            preferredCapacities.AddRange(Enumerable.Repeat(capacityUnit, fullUnits));
+
+            while (preferredCapacities.Count > potCount)
+            {
+                var mergeableIndexes = preferredCapacities
+                    .Select((capacity, index) => (capacity, index))
+                    .Where(pair => pair.capacity % capacityUnit == 0)
+                    .Select(pair => pair.index)
+                    .ToList();
+
+                int fromIndex;
+                int toIndex;
+                if (mergeableIndexes.Count >= 2)
+                {
+                    fromIndex = mergeableIndexes[random.Next(mergeableIndexes.Count)];
+                    var targetChoices = mergeableIndexes.Where(index => index != fromIndex).ToList();
+                    toIndex = targetChoices[random.Next(targetChoices.Count)];
+                }
+                else
+                {
+                    fromIndex = random.Next(preferredCapacities.Count);
+                    toIndex = random.Next(preferredCapacities.Count - 1);
+                    if (toIndex >= fromIndex)
+                    {
+                        toIndex++;
+                    }
+                }
+
+                preferredCapacities[toIndex] += preferredCapacities[fromIndex];
+                preferredCapacities.RemoveAt(fromIndex);
+            }
+
+            Shuffle(preferredCapacities, random);
+            return preferredCapacities;
         }
 
         private static FlowerColor PickWeightedColor(

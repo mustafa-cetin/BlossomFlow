@@ -7,14 +7,17 @@ namespace BlossomFlow.Application.SceneLoading
     {
         private readonly ByteBrewAnalyticsEventService _analyticsEventService;
         private readonly PlayerRetentionAnalyticsReporter _retentionAnalyticsReporter;
+        private readonly PlayerJourneyAnalyticsReporter _journeyAnalyticsReporter;
         private bool _hasInitialized;
 
         public ByteBrewStartupServiceInitializer(
             ByteBrewAnalyticsEventService analyticsEventService,
-            PlayerRetentionAnalyticsReporter retentionAnalyticsReporter)
+            PlayerRetentionAnalyticsReporter retentionAnalyticsReporter,
+            PlayerJourneyAnalyticsReporter journeyAnalyticsReporter)
         {
             _analyticsEventService = analyticsEventService;
             _retentionAnalyticsReporter = retentionAnalyticsReporter;
+            _journeyAnalyticsReporter = journeyAnalyticsReporter;
         }
 
         public IEnumerator InitializeIfNeeded()
@@ -26,6 +29,7 @@ namespace BlossomFlow.Application.SceneLoading
 
             _hasInitialized = true;
             _analyticsEventService?.InitializeIfNeeded();
+            _journeyAnalyticsReporter?.ReportAppStarted();
             _retentionAnalyticsReporter?.ReportCurrentRetentionMilestone();
         }
     }
