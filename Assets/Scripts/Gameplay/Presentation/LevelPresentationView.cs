@@ -1744,19 +1744,39 @@ namespace BlossomFlow.Gameplay.Presentation
             flowerView.transform.DOKill();
             var startPosition = flowerView.transform.position;
             var count = _collectedFlowerCounts.TryGetValue(pot, out var currentCount) ? currentCount : 0;
-            var potPosition = potView.transform.position + FlowerInPotWorldOffset(count);
-            var middlePosition = Vector3.Lerp(startPosition, potPosition, 0.5f) + Vector3.up * flowerFlyArcHeight;
-            var path = new[] { middlePosition, potPosition };
+            var potOffset = FlowerInPotWorldOffset(count);
             var targetScale = flowerView.transform.localScale * 0.25f;
 
             var sequence = DOTween.Sequence()
                 .SetLink(flowerView, LinkBehaviour.KillOnDestroy);
 
-            sequence.Join(flowerView.transform.DOPath(path, flowerFlySeconds, PathType.CatmullRom)
+            sequence.Join(DOTween.To(
+                    () => 0f,
+                    progress =>
+                    {
+                        if (flowerView == null || potView == null)
+                        {
+                            return;
+                        }
+
+                        var potPosition = potView.transform.position + potOffset;
+                        var middlePosition = Vector3.Lerp(startPosition, potPosition, 0.5f) + Vector3.up * flowerFlyArcHeight;
+                        flowerView.transform.position = QuadraticBezier(startPosition, middlePosition, potPosition, progress);
+                    },
+                    1f,
+                    flowerFlySeconds)
                 .SetEase(flowerFlyEase));
             sequence.Join(flowerView.transform.DOScale(targetScale, flowerFlySeconds)
                 .SetEase(Ease.InSine));
             sequence.OnComplete(() => PlaceFlowerInsidePot(flowerView, potView, pot));
+        }
+
+        private static Vector3 QuadraticBezier(Vector3 start, Vector3 control, Vector3 end, float progress)
+        {
+            var inverseProgress = 1f - progress;
+            return inverseProgress * inverseProgress * start +
+                2f * inverseProgress * progress * control +
+                progress * progress * end;
         }
 
         private void PlaceFlowerInsidePot(GameObject flowerView, GameObject potView, PotModel pot)
@@ -1770,7 +1790,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _collectedFlowerCounts[pot] = count + 1;
 
             flowerView.transform.SetParent(potView.transform, false);
-            flowerView.transform.localPosition = ToParentLocalOffset(potView.transform, FlowerInPotWorldOffset(count)+Vector3.up*0.1f);
+            flowerView.transform.localPosition = ToParentLocalOffset(potView.transform, FlowerInPotWorldOffset(count) + Vector3.up * 0.1f);
             ApplyVisualSizeInsideParent(flowerView, potVisualSize * 0.3f);
             SetSortingOrder(flowerView, 60 + count);
 
