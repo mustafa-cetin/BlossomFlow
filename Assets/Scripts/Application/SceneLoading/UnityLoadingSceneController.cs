@@ -3,8 +3,6 @@ using System.Threading;
 using BlossomFlow.Application.Levels;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 
 namespace BlossomFlow.Application.SceneLoading
@@ -65,35 +63,26 @@ namespace BlossomFlow.Application.SceneLoading
                 loadStartProgress = StartupServicesProgress;
             }
 
-            await LoadAddressableScene(target.SceneAddress, loadStartProgress, reportProgress, cancellationToken);
+            await LoadScene(target.SceneAddress, loadStartProgress, reportProgress, cancellationToken);
         }
 
-        private async UniTask LoadAddressableScene(
-            string sceneAddress,
+        private async UniTask LoadScene(
+            string sceneName,
             float loadStartProgress,
             Action<float> reportProgress,
             CancellationToken cancellationToken)
         {
-            var loadOperation = Addressables.LoadSceneAsync(sceneAddress, LoadSceneMode.Single, false);
+            var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
-            while (!loadOperation.IsDone)
+            while (!loadOperation.isDone)
             {
-                var loadProgress = Mathf.Clamp01(loadOperation.PercentComplete);
+                var loadProgress = Mathf.Clamp01(loadOperation.progress);
                 reportProgress?.Invoke(Mathf.Lerp(loadStartProgress, 1f, loadProgress));
                 await UniTask.Yield(cancellationToken);
             }
 
-            if (loadOperation.Status == AsyncOperationStatus.Failed)
-            {
-                Debug.LogError($"Could not load addressable scene '{sceneAddress}'. {loadOperation.OperationException?.Message}");
-                _targetProvider.ClearPendingTargetScene();
-                return;
-            }
-
             reportProgress?.Invoke(1f);
             _targetProvider.ClearPendingTargetScene();
-
-            await loadOperation.Result.ActivateAsync().ToUniTask(cancellationToken: cancellationToken);
         }
 
         private async UniTask InitializeStartupServices(Action<float> reportProgress, CancellationToken cancellationToken)
