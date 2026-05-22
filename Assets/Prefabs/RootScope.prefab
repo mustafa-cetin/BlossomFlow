@@ -63,8 +63,8 @@ MonoBehaviour:
   soundCatalog: {fileID: 11400000, guid: 0b8e1a4a2f413c043aec2ca4d8c93ef4, type: 2}
   soundEffectsVolume: 1
   musicVolume: 0.1
-  enableCrazyGamesSdk: 1
-  enableByteBrewAnalytics: 1
+  enableCrazyGamesSdk: 0
+  enableByteBrewAnalytics: 0
   playBackgroundMusicOnStartup: 1
   startupMusicTrack: 0
   legacyOvershootReturnLevelNumber: 61
