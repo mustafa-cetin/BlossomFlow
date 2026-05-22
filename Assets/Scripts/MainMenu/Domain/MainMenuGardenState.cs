@@ -15,12 +15,12 @@ namespace BlossomFlow.MainMenu.Domain
 
         public bool IsPlanted(int regionIndex)
         {
-            return TryGetPlot(regionIndex, out _);
+            return TryGetPlot(regionIndex, out var plot) && plot.ReadyUtcTicks > 0L;
         }
 
         public bool IsGrowing(int regionIndex, long nowUtcTicks)
         {
-            return TryGetPlot(regionIndex, out var plot) && !plot.IsGrown(nowUtcTicks);
+            return TryGetPlot(regionIndex, out var plot) && plot.ReadyUtcTicks > 0L && !plot.IsGrown(nowUtcTicks);
         }
 
         public bool IsGrown(int regionIndex, long nowUtcTicks)
@@ -48,7 +48,7 @@ namespace BlossomFlow.MainMenu.Domain
 
             for (var i = 0; i < _plots.Length; i++)
             {
-                if (!_plots[i].IsGrown(nowUtcTicks))
+                if (_plots[i].ReadyUtcTicks > 0L && !_plots[i].IsGrown(nowUtcTicks))
                 {
                     return true;
                 }
@@ -69,22 +69,32 @@ namespace BlossomFlow.MainMenu.Domain
             return copy;
         }
 
-        public MainMenuGardenState WithPlanted(int regionIndex, long readyUtcTicks)
+        public MainMenuGardenState WithPlanted(int regionIndex, long readyUtcTicks, int plotLevel = 0)
         {
             if (regionIndex < 0 || IsPlanted(regionIndex))
             {
                 return this;
             }
 
-            var currentLength = _plots?.Length ?? 0;
-            var nextPlots = new MainMenuGardenPlotState[currentLength + 1];
-            if (currentLength > 0)
+            var effectivePlotLevel = plotLevel > 0 ? plotLevel : 1;
+            var existingIndex = FindPlotIndex(regionIndex);
+            if (existingIndex >= 0)
             {
-                Array.Copy(_plots, nextPlots, currentLength);
+                var nextPlots = new MainMenuGardenPlotState[_plots.Length];
+                Array.Copy(_plots, nextPlots, _plots.Length);
+                nextPlots[existingIndex] = new MainMenuGardenPlotState(regionIndex, readyUtcTicks, effectivePlotLevel, 0);
+                return new MainMenuGardenState(nextPlots);
             }
 
-            nextPlots[currentLength] = new MainMenuGardenPlotState(regionIndex, readyUtcTicks);
-            return new MainMenuGardenState(nextPlots);
+            var currentLength = _plots?.Length ?? 0;
+            var newPlots = new MainMenuGardenPlotState[currentLength + 1];
+            if (currentLength > 0)
+            {
+                Array.Copy(_plots, newPlots, currentLength);
+            }
+
+            newPlots[currentLength] = new MainMenuGardenPlotState(regionIndex, readyUtcTicks, effectivePlotLevel, 0);
+            return new MainMenuGardenState(newPlots);
         }
 
         public MainMenuGardenState WithGrowthReduced(long nowUtcTicks, long reductionTicks)
@@ -98,17 +108,64 @@ namespace BlossomFlow.MainMenu.Domain
             for (var i = 0; i < _plots.Length; i++)
             {
                 var plot = _plots[i];
-                if (plot.IsGrown(nowUtcTicks))
+                if (plot.ReadyUtcTicks <= 0L || plot.IsGrown(nowUtcTicks))
                 {
                     nextPlots[i] = plot;
                     continue;
                 }
 
                 var readyUtcTicks = Math.Max(nowUtcTicks, plot.ReadyUtcTicks - reductionTicks);
-                nextPlots[i] = new MainMenuGardenPlotState(plot.RegionIndex, readyUtcTicks);
+                nextPlots[i] = new MainMenuGardenPlotState(plot.RegionIndex, readyUtcTicks, plot.PlotLevel, plot.PlantId);
             }
 
             return new MainMenuGardenState(nextPlots);
+        }
+
+        public MainMenuGardenState WithHarvested(int regionIndex)
+        {
+            if (_plots == null)
+            {
+                return this;
+            }
+
+            var nextPlots = new MainMenuGardenPlotState[_plots.Length];
+            for (var i = 0; i < _plots.Length; i++)
+            {
+                if (_plots[i].RegionIndex == regionIndex)
+                {
+                    var oldPlot = _plots[i];
+                    nextPlots[i] = new MainMenuGardenPlotState(
+                        oldPlot.RegionIndex,
+                        0L,
+                        oldPlot.PlotLevel + 1,
+                        oldPlot.PlantId);
+                }
+                else
+                {
+                    nextPlots[i] = _plots[i];
+                }
+            }
+
+            return new MainMenuGardenState(nextPlots);
+        }
+
+        public int GetGrownPlotCount(long nowUtcTicks)
+        {
+            if (_plots == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var i = 0; i < _plots.Length; i++)
+            {
+                if (_plots[i].IsGrown(nowUtcTicks))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         public static MainMenuGardenState Empty => new(Array.Empty<MainMenuGardenPlotState>());
@@ -133,6 +190,24 @@ namespace BlossomFlow.MainMenu.Domain
             }
 
             return false;
+        }
+
+        private int FindPlotIndex(int regionIndex)
+        {
+            if (_plots == null)
+            {
+                return -1;
+            }
+
+            for (var i = 0; i < _plots.Length; i++)
+            {
+                if (_plots[i].RegionIndex == regionIndex)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private static MainMenuGardenPlotState[] CopyAndSortUnique(MainMenuGardenPlotState[] source)

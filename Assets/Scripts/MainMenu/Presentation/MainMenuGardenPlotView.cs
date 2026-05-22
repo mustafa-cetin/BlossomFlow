@@ -10,31 +10,37 @@ namespace BlossomFlow.MainMenu.Presentation
     public sealed class MainMenuGardenPlotView : MonoBehaviour
     {
         [SerializeField] private Button plantButton;
+        [SerializeField] private Button harvestButton;
         [SerializeField] private Image sproutImage;
         [SerializeField] private Image flowerImage;
         [SerializeField] private TMP_Text growthCountdownText;
         [SerializeField] private TMP_Text plantButtonText;
+        [SerializeField] private TMP_Text harvestButtonText;
         [SerializeField] private string plantCopy = "Ek";
+        [SerializeField] private string harvestCopy = "Topla";
         [SerializeField, Min(0f)] private float bloomTransitionSeconds = 0.35f;
         [SerializeField] private Ease bloomTransitionEase = Ease.OutCubic;
 
         private Action<int> _plantRequested;
+        private Action<int> _harvestRequested;
         private int _regionIndex;
         private bool _hasState;
         private bool _wasGrowing;
         private bool _wasGrown;
         private Sequence _bloomSequence;
 
-        public void Initialize(int regionIndex, Action<int> plantRequested)
+        public void Initialize(int regionIndex, Action<int> plantRequested, Action<int> harvestRequested = null)
         {
             _regionIndex = regionIndex;
             _plantRequested = plantRequested;
+            _harvestRequested = harvestRequested;
             ApplyCopy();
         }
 
         public void SetState(bool isPlanted, bool isGrown, string growthCountdown, bool canPlant)
         {
             var isGrowing = isPlanted && !isGrown;
+            var showHarvest = isPlanted && isGrown;
             var shouldPlayBloomTransition = _hasState && _wasGrowing && isGrown && !_wasGrown;
 
             if (shouldPlayBloomTransition)
@@ -43,12 +49,11 @@ namespace BlossomFlow.MainMenu.Presentation
             }
             else if (_bloomSequence != null && isPlanted && isGrown && _wasGrown)
             {
-                // Keep the live bloom transition running across countdown refresh ticks.
             }
             else
             {
                 KillBloomTransition();
-                ApplyPlantVisuals(isGrowing, isPlanted && isGrown);
+                ApplyPlantVisuals(isGrowing, showHarvest);
             }
 
             if (growthCountdownText != null)
@@ -63,9 +68,15 @@ namespace BlossomFlow.MainMenu.Presentation
                 plantButton.interactable = !isPlanted && canPlant;
             }
 
+            if (harvestButton != null)
+            {
+                harvestButton.gameObject.SetActive(showHarvest);
+                harvestButton.interactable = showHarvest;
+            }
+
             _hasState = true;
             _wasGrowing = isGrowing;
-            _wasGrown = isPlanted && isGrown;
+            _wasGrown = showHarvest;
         }
 
         private void Awake()
@@ -83,6 +94,11 @@ namespace BlossomFlow.MainMenu.Presentation
                 plantButton.onClick.AddListener(RequestPlant);
             }
 
+            if (harvestButton != null)
+            {
+                harvestButton.onClick.AddListener(RequestHarvest);
+            }
+
             ApplyCopy();
         }
 
@@ -94,6 +110,11 @@ namespace BlossomFlow.MainMenu.Presentation
             {
                 plantButton.onClick.RemoveListener(RequestPlant);
             }
+
+            if (harvestButton != null)
+            {
+                harvestButton.onClick.RemoveListener(RequestHarvest);
+            }
         }
 
         private void OnValidate()
@@ -104,6 +125,11 @@ namespace BlossomFlow.MainMenu.Presentation
         private void RequestPlant()
         {
             _plantRequested?.Invoke(_regionIndex);
+        }
+
+        private void RequestHarvest()
+        {
+            _harvestRequested?.Invoke(_regionIndex);
         }
 
         private void ApplyPlantVisuals(bool showSprout, bool showFlower)
@@ -179,6 +205,11 @@ namespace BlossomFlow.MainMenu.Presentation
             if (plantButtonText != null)
             {
                 plantButtonText.text = plantCopy;
+            }
+
+            if (harvestButtonText != null)
+            {
+                harvestButtonText.text = harvestCopy;
             }
         }
     }
