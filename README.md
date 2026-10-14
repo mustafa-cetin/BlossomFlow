@@ -6,7 +6,7 @@
 
 <p align="center">
   A hybrid-casual sort puzzle about pots, flowers and a greenhouse conveyor belt.<br>
-  Built with Unity 6 by <b>Hexapawa</b>.
+  Built with Unity 6 by <b>Hexapawa(Mustafa Çetin)</b>.
 </p>
 
 ---
@@ -152,6 +152,33 @@ Packages/                   Embedded nickeltin packages + manifest
 
 ## License
 
-Copyright © Hexapawa. All rights reserved.
+Copyright © 2026 Mustafa Cetin (Hexapawa).
 
-The source is published for reference and portfolio purposes. Third-party packages (Reflex, UniTask, DOTween, CrazyGames SDK, nickeltin packages) are covered by their own licenses.
+This project is **source-available** under the [PolyForm Strict License 1.0.0](LICENSE.md). It is **not** an OSI-approved open-source license.
+
+**You may**
+
+- read and study the source code
+- run the project for noncommercial purposes such as personal study, research, hobby experiments or education
+
+**You may not**
+
+- distribute the source code or any build of the game, modified or not
+- publish the game or anything built from it on **any store or platform**, including Google Play, the App Store, Steam, itch.io, CrazyGames or any web portal
+- modify the code or create new works, games or projects based on it
+- use it for any commercial purpose
+
+The *Blossom Flow* name, logo and game artwork aren't licensed for any use. For any other kind of permission, including a commercial license, contact the author through their GitHub profile.
+
+The full legal terms are in [LICENSE.md](LICENSE.md). If this summary and the license text disagree, the license text applies.
+
+### Third-party components
+
+The license above covers only the author's original code and assets. Third-party components keep their own licenses:
+
+- [Reflex](https://github.com/gustavopsantos/reflex) (`Assets/Reflex`): MIT
+- [UniTask](https://github.com/Cysharp/UniTask) (`Assets/Plugins/UniTask`): MIT
+- [DOTween](https://dotween.demigiant.com/license.php) (`Assets/Plugins/Demigiant`): DOTween license
+- nickeltin packages (`Packages/com.nickeltin.*`): their author's license
+- CrazyGames SDK (`Assets/Plugins/crazySDK.jslib`): CrazyGames terms
+- Unity packages: Unity Companion License / Unity Terms of Service
