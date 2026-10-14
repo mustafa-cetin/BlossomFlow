@@ -1,5 +1,3 @@
-using CrazyGames;
-
 namespace BlossomFlow.Application.Platform.CrazyGames
 {
     public sealed class CrazyGamesGameplaySessionReporter : IGameplayPlatformSessionReporter
@@ -14,16 +12,11 @@ namespace BlossomFlow.Application.Platform.CrazyGames
 
         public void NotifyGameplayStart()
         {
-            if (_isGameplayReportedActive ||
-                _configuration == null ||
-                !_configuration.IsEnabled ||
-                !CrazySDK.IsAvailable ||
-                !CrazySDK.IsInitialized)
+            if (_isGameplayReportedActive || _configuration == null || !_configuration.IsEnabled)
             {
                 return;
             }
 
-            CrazySDK.Game.GameplayStart();
             _isGameplayReportedActive = true;
         }
 
@@ -32,14 +25,6 @@ namespace BlossomFlow.Application.Platform.CrazyGames
             if (!_isGameplayReportedActive)
             {
                 return;
-            }
-
-            if (_configuration != null &&
-                _configuration.IsEnabled &&
-                CrazySDK.IsAvailable &&
-                CrazySDK.IsInitialized)
-            {
-                CrazySDK.Game.GameplayStop();
             }
 
             _isGameplayReportedActive = false;

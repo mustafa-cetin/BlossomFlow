@@ -74,3 +74,26 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Public repo exclusions
+# Signing keys
+*.keystore
+*.jks
+
+# Addressables remote build output
+/ServerData/
+
+# Removed SDK (settings contained API keys)
+/[Aa]ssets/ByteBrewSDK*
+
+# Licensed third-party assets (not redistributable; import from Asset Store / source)
+/[Aa]ssets/300Mind*
+/[Aa]ssets/Casual Game Sounds U6*
+/[Aa]ssets/backgroundmusic*
+
+# Personal tooling and internal design docs
+/.agents/
+skills-lock.json
+/turkishgamedesign.md
+/mainmenudesign.md
+/PROGRESS.md

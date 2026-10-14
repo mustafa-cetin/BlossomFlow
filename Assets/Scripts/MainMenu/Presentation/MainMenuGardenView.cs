@@ -19,13 +19,13 @@ namespace BlossomFlow.MainMenu.Presentation
         [SerializeField] private MainMenuGardenPlotView plotPrefab;
         [SerializeField] private GameObject lockedUntilLevelObject;
         [SerializeField] private Button waterButton;
+        [SerializeField] private Button unlockPlotButton;
         [SerializeField] private TMP_Text waterCountdownText;
         [SerializeField] private TMP_Text magicalSeedText;
+        [SerializeField] private TMP_Text unlockPlotCostText;
         [SerializeField] private string magicalSeedFormat = "Magical Seed: {0}";
-        [SerializeField, Min(0f)] private float growthHours = 24f;
-        [SerializeField, Min(0f)] private float waterReductionHours = 1f;
-        [SerializeField, Min(0f)] private float waterCooldownMinutes = 10f;
-        [SerializeField, Min(1f)] private float waterButtonPulseScale = 1.08f;
+        [SerializeField] private string unlockPlotCostFormat = "Unlock Plot: {0} Gold";
+        [SerializeField, Min(0f)] private float waterButtonPulseScale = 1.08f;
         [SerializeField, Min(0.01f)] private float waterButtonPulseSeconds = 0.45f;
         [SerializeField] private Ease waterButtonPulseEase = Ease.InOutSine;
         [SerializeField] private bool collectPlotViewsFromChildren = true;
@@ -36,6 +36,7 @@ namespace BlossomFlow.MainMenu.Presentation
         private IMainMenuPlayerProgressService _progressService;
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
+        private MainMenuGardenConfig _config;
         private IDisposable _gardenChangedSubscription;
         private IDisposable _progressChangedSubscription;
         private float _refreshTimer;
@@ -46,18 +47,21 @@ namespace BlossomFlow.MainMenu.Presentation
 
         public event Action<int> PlantSucceeded;
         public event Action WaterSucceeded;
+        public event Action<int> HarvestSucceeded;
 
         [Inject]
         private void Construct(
             IGardenService gardenService,
             IMainMenuPlayerProgressService progressService,
             IEventPublisher eventPublisher,
-            IEventSubscriber eventSubscriber)
+            IEventSubscriber eventSubscriber,
+            MainMenuGardenConfig config)
         {
             _gardenService = gardenService;
             _progressService = progressService;
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
+            _config = config;
 
             if (isActiveAndEnabled)
             {
@@ -77,6 +81,11 @@ namespace BlossomFlow.MainMenu.Presentation
             if (waterButton != null)
             {
                 waterButton.onClick.AddListener(Water);
+            }
+
+            if (unlockPlotButton != null)
+            {
+                unlockPlotButton.onClick.AddListener(UnlockPlot);
             }
 
             _refreshTimer = 0f;
@@ -109,6 +118,11 @@ namespace BlossomFlow.MainMenu.Presentation
             if (waterButton != null)
             {
                 waterButton.onClick.RemoveListener(Water);
+            }
+
+            if (unlockPlotButton != null)
+            {
+                unlockPlotButton.onClick.RemoveListener(UnlockPlot);
             }
 
             _gardenChangedSubscription?.Dispose();
@@ -155,14 +169,14 @@ namespace BlossomFlow.MainMenu.Presentation
                     continue;
                 }
 
-                plotViews[i].Initialize(i, Plant);
+                plotViews[i].Initialize(i, Plant, Harvest);
                 plotViews[i].gameObject.SetActive(i < regionCount);
             }
         }
 
         private void Refresh()
         {
-            if (_gardenService == null || _progressService == null)
+            if (_gardenService == null || _progressService == null || _config == null)
             {
                 return;
             }
@@ -172,6 +186,7 @@ namespace BlossomFlow.MainMenu.Presentation
             var canPlant = _gardenService.CanPlant;
             var progress = _progressService.Current;
             var nowTicks = DateTime.UtcNow.Ticks;
+            var unlockedPlotCount = _gardenService.UnlockedPlotCount;
 
             if (lockedUntilLevelObject != null)
             {
@@ -179,6 +194,8 @@ namespace BlossomFlow.MainMenu.Presentation
             }
 
             RefreshWaterButton(isUnlocked);
+            RefreshUnlockPlotButton(isUnlocked);
+            RefreshGrownPlotPulse(isUnlocked, nowTicks);
 
             if (magicalSeedText != null)
             {
@@ -198,13 +215,34 @@ namespace BlossomFlow.MainMenu.Presentation
                     continue;
                 }
 
+                var isPlotUnlocked = isUnlocked && i < unlockedPlotCount;
                 var isPlanted = garden.IsPlanted(i);
                 var isGrown = garden.IsGrown(i, nowTicks);
                 var countdown = isPlanted && !isGrown
                     ? FormatCountdown(garden.GetRemainingGrowthTime(i, nowTicks))
                     : string.Empty;
-                var canPlantHere = isUnlocked && canPlant && (_plantInteractionFilter == null || _plantInteractionFilter(i));
+                var canPlantHere = isPlotUnlocked && canPlant && (_plantInteractionFilter == null || _plantInteractionFilter(i));
                 plotViews[i].SetState(isPlanted, isGrown, countdown, canPlantHere);
+            }
+        }
+
+        private void RefreshGrownPlotPulse(bool isUnlocked, long nowTicks)
+        {
+            if (_gardenService == null || plotViews == null || !isUnlocked)
+            {
+                return;
+            }
+
+            var refreshCount = Mathf.Min(regionCount, plotViews.Length);
+            for (var i = 0; i < refreshCount; i++)
+            {
+                if (plotViews[i] == null)
+                {
+                    continue;
+                }
+
+                var isGrown = _gardenService.Current.IsGrown(i, nowTicks);
+                plotViews[i].gameObject.SetActive(i < regionCount);
             }
         }
 
@@ -237,7 +275,7 @@ namespace BlossomFlow.MainMenu.Presentation
                 return;
             }
 
-            if (_gardenService != null && _gardenService.TryPlant(regionIndex, GetTiming()))
+            if (_gardenService != null && _gardenService.TryPlant(regionIndex, _config.ToTiming()))
             {
                 _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
                 PlantSucceeded?.Invoke(regionIndex);
@@ -245,12 +283,37 @@ namespace BlossomFlow.MainMenu.Presentation
             }
         }
 
+        private void Harvest(int regionIndex)
+        {
+            if (_gardenService == null)
+            {
+                return;
+            }
+
+            var result = _gardenService.TryHarvest(regionIndex);
+            if (result.Success)
+            {
+                _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
+                HarvestSucceeded?.Invoke(regionIndex);
+                Refresh();
+            }
+        }
+
         private void Water()
         {
-            if (_gardenService != null && _gardenService.TryWater(GetTiming()))
+            if (_gardenService != null && _gardenService.TryWater(_config.ToTiming()))
             {
                 _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
                 WaterSucceeded?.Invoke();
+                Refresh();
+            }
+        }
+
+        private void UnlockPlot()
+        {
+            if (_gardenService != null && _gardenService.TryUnlockPlot())
+            {
+                _eventPublisher?.Publish(new SoundRequested(SoundCueId.ButtonClick));
                 Refresh();
             }
         }
@@ -319,12 +382,34 @@ namespace BlossomFlow.MainMenu.Presentation
             }
         }
 
-        private MainMenuGardenTiming GetTiming()
+        private void RefreshUnlockPlotButton(bool isUnlocked)
         {
-            return new MainMenuGardenTiming(
-                TimeSpan.FromHours(growthHours),
-                TimeSpan.FromHours(waterReductionHours),
-                TimeSpan.FromMinutes(waterCooldownMinutes));
+            if (unlockPlotButton == null)
+            {
+                return;
+            }
+
+            var canUnlock = isUnlocked && _gardenService.CanUnlockPlot;
+            unlockPlotButton.gameObject.SetActive(isUnlocked);
+            unlockPlotButton.interactable = canUnlock;
+
+            if (unlockPlotCostText != null)
+            {
+                var cost = GetNextUnlockCost();
+                unlockPlotCostText.text = string.Format(unlockPlotCostFormat, cost);
+                unlockPlotCostText.gameObject.SetActive(isUnlocked);
+            }
+        }
+
+        private int GetNextUnlockCost()
+        {
+            if (_gardenService == null || _config == null)
+            {
+                return 0;
+            }
+
+            var purchasedCount = Math.Max(0, _gardenService.UnlockedPlotCount - _config.FreePlotCount);
+            return _config.PlotUnlockGoldCost + purchasedCount * _config.PlotUnlockGoldCostIncrement;
         }
 
         private void StartWaterButtonPulse()

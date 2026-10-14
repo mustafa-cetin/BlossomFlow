@@ -1,14 +1,11 @@
 using System;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
-using BlossomFlow.Application.SceneLoading;
-using BlossomFlow.Application.Sprites;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
 using Reflex.Attributes;
 using TMPro;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 
 namespace BlossomFlow.Gameplay.Presentation
@@ -17,6 +14,8 @@ namespace BlossomFlow.Gameplay.Presentation
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class FailureScreenView : MonoBehaviour
     {
+        private const float CountdownRefreshSeconds = 1f;
+
         [Header("Content")]
         [SerializeField] private GameObject panelRoot;
         [SerializeField] private TMP_Text messageText;
@@ -27,21 +26,21 @@ namespace BlossomFlow.Gameplay.Presentation
         [SerializeField] private Button closeButton;
 
         [Header("Artwork")]
-        [SerializeField] private AssetReferenceT<Sprite> keepPlayingSpriteReference;
-        [SerializeField] private AssetReferenceT<Sprite> confirmQuitSpriteReference;
-        [SerializeField] private AssetReferenceT<Sprite> retrySpriteReference;
+        [SerializeField] private Sprite keepPlayingSprite;
+        [SerializeField] private Sprite confirmQuitSprite;
+        [SerializeField] private Sprite retrySprite;
 
         [Header("Copy")]
         [SerializeField] private string keepPlayingMessage = "Keep Playing";
         [SerializeField] private string confirmQuitMessage = "Are you sure?";
         [SerializeField] private string retryMessage = "Try Again?";
+        [SerializeField] private string waitForLifeMessage = "Wait for Lives";
         [SerializeField] private string keepPlayingButtonFormat = "Play On {0}";
         [SerializeField] private string retryButtonText = "Try Again";
 
         [Header("Cost")]
         [SerializeField] private int keepPlayingGoldCost = 900;
         [SerializeField] private bool hideOnAwake = true;
-        [SerializeField] private string mainMenuSceneName = "MainMenuScene";
 
         [Header("Animation")]
         [SerializeField] private float artworkPopScale = 1.12f;
@@ -54,33 +53,26 @@ namespace BlossomFlow.Gameplay.Presentation
         private IEventPublisher _eventPublisher;
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
-        private ISceneTransitionService _sceneTransitionService;
-        private IAddressableSpriteLoader _spriteLoader;
         private IDisposable _failureScreenRequestedSubscription;
         private IDisposable _keepPlayingStartedSubscription;
         private IDisposable _levelRestartedSubscription;
         private IDisposable _progressChangedSubscription;
-        private IDisposable _activeArtworkLoad;
         private FailureScreenState _state;
         private Sprite _currentArtworkSprite;
-        private string _currentArtworkReferenceKey;
-        private int _artworkLoadVersion;
         private Vector3 _artworkBaseScale = Vector3.one;
         private Sequence _artworkSequence;
+        private float _countdownRefreshTimer;
+        private bool _lifeConsumedForCurrentFailure;
 
         [Inject]
         private void Construct(
             IEventPublisher eventPublisher,
             IEventSubscriber eventSubscriber,
-            IMainMenuPlayerProgressService progressService,
-            ISceneTransitionService sceneTransitionService,
-            IAddressableSpriteLoader spriteLoader)
+            IMainMenuPlayerProgressService progressService)
         {
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
-            _sceneTransitionService = sceneTransitionService;
-            _spriteLoader = spriteLoader;
 
             if (isActiveAndEnabled)
             {
@@ -102,6 +94,8 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void OnEnable()
         {
+            _countdownRefreshTimer = 0f;
+
             if (primaryButton != null)
             {
                 primaryButton.onClick.AddListener(OnPrimaryClicked);
@@ -113,6 +107,23 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             SubscribeToEvents();
+            Refresh();
+        }
+
+        private void Update()
+        {
+            if (_state != FailureScreenState.RetryOnly || _progressService == null || !IsVisible())
+            {
+                return;
+            }
+
+            _countdownRefreshTimer += Time.unscaledDeltaTime;
+            if (_countdownRefreshTimer < CountdownRefreshSeconds)
+            {
+                return;
+            }
+
+            _countdownRefreshTimer = 0f;
             Refresh();
         }
 
@@ -129,7 +140,7 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             KillArtworkSequence();
-            ReleaseArtworkLoad(true);
+            ClearArtworkSprite();
             UnsubscribeFromEvents();
         }
 
@@ -141,15 +152,24 @@ namespace BlossomFlow.Gameplay.Presentation
             artworkGrowSeconds = Mathf.Max(0f, artworkGrowSeconds);
         }
 
-        private void ShowKeepPlayingOffer()
+        private void ShowKeepPlayingOffer(LevelFailureScreenRequested failureScreenRequested)
         {
-            _state = FailureScreenState.KeepPlayingOffer;
+            _lifeConsumedForCurrentFailure = false;
+            if (!failureScreenRequested.SkipKeepPlayingOffer)
+            {
+                _lifeConsumedForCurrentFailure = TryConsumeFailureLife();
+            }
+
+            _state = !failureScreenRequested.SkipKeepPlayingOffer && CanAffordKeepPlaying()
+                ? FailureScreenState.KeepPlayingOffer
+                : FailureScreenState.RetryOnly;
             SetVisible(true);
             Refresh();
         }
 
         private void Hide()
         {
+            _lifeConsumedForCurrentFailure = false;
             SetVisible(false);
         }
 
@@ -182,7 +202,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            ReturnToMainMenu();
+            TryRestartLevel();
         }
 
         private void TryKeepPlaying()
@@ -198,6 +218,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
+            RefundFailureLifeIfNeeded();
             _eventPublisher.Publish(new LevelKeepPlayingRequested());
         }
 
@@ -208,7 +229,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            if (!_progressService.TryConsumeLife())
+            if (_progressService.Current.CurrentLives <= 0)
             {
                 Refresh();
                 return;
@@ -219,6 +240,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void Refresh()
         {
+            NormalizeStateForCurrentProgress();
             ApplyStateContent();
             RefreshButtonState();
         }
@@ -242,7 +264,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             if (artworkImage != null && IsVisible())
             {
-                ApplyArtworkSpriteReference(GetArtworkSpriteReference());
+                ApplyLoadedArtworkSprite(GetArtworkSprite());
             }
 
             if (closeButton != null)
@@ -277,6 +299,11 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private string GetMessage()
         {
+            if (_state == FailureScreenState.RetryOnly && !HasLifeForRetry())
+            {
+                return waitForLifeMessage;
+            }
+
             return _state switch
             {
                 FailureScreenState.ConfirmQuit => confirmQuitMessage,
@@ -287,9 +314,23 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private string GetPrimaryButtonLabel()
         {
-            return _state == FailureScreenState.RetryOnly
-                ? retryButtonText
-                : string.Format(keepPlayingButtonFormat, keepPlayingGoldCost);
+            if (_state != FailureScreenState.RetryOnly)
+            {
+                return string.Format(keepPlayingButtonFormat, keepPlayingGoldCost);
+            }
+
+            if (_progressService == null)
+            {
+                return retryButtonText;
+            }
+
+            var progress = _progressService.Current;
+            return progress.CurrentLives > 0 ? retryButtonText : progress.NextLifeCountdown;
+        }
+
+        private bool HasLifeForRetry()
+        {
+            return _progressService == null || _progressService.Current.CurrentLives > 0;
         }
 
         private bool ShouldShowPrimaryButtonCurrencyIcon()
@@ -297,63 +338,16 @@ namespace BlossomFlow.Gameplay.Presentation
             return _state != FailureScreenState.RetryOnly;
         }
 
-        private AssetReferenceT<Sprite> GetArtworkSpriteReference()
+        private Sprite GetArtworkSprite()
         {
             return _state switch
             {
-                FailureScreenState.ConfirmQuit => confirmQuitSpriteReference,
-                FailureScreenState.RetryOnly => retrySpriteReference,
-                _ => keepPlayingSpriteReference
+                FailureScreenState.ConfirmQuit => confirmQuitSprite,
+                FailureScreenState.RetryOnly => retrySprite,
+                _ => keepPlayingSprite
             };
         }
 
-        private void ReturnToMainMenu()
-        {
-            if (_sceneTransitionService == null)
-            {
-                Debug.LogWarning("Scene transition service is not available.");
-                return;
-            }
-
-            _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
-        }
-
-        private void ApplyArtworkSpriteReference(AssetReferenceT<Sprite> spriteReference)
-        {
-            if (artworkImage == null)
-            {
-                return;
-            }
-
-            var referenceKey = GetReferenceKey(spriteReference);
-            if (_currentArtworkReferenceKey == referenceKey &&
-                (_activeArtworkLoad != null || _currentArtworkSprite != null || !IsValidReference(spriteReference)))
-            {
-                artworkImage.enabled = _currentArtworkSprite != null;
-                return;
-            }
-
-            ReleaseArtworkLoad(false);
-            _currentArtworkReferenceKey = referenceKey;
-
-            if (_spriteLoader == null || !IsValidReference(spriteReference))
-            {
-                ApplyLoadedArtworkSprite(null);
-                return;
-            }
-
-            var requestVersion = ++_artworkLoadVersion;
-            artworkImage.enabled = false;
-            _activeArtworkLoad = _spriteLoader.Load(spriteReference, sprite =>
-            {
-                if (requestVersion != _artworkLoadVersion)
-                {
-                    return;
-                }
-
-                ApplyLoadedArtworkSprite(sprite);
-            });
-        }
 
         private void ApplyLoadedArtworkSprite(Sprite sprite)
         {
@@ -374,38 +368,16 @@ namespace BlossomFlow.Gameplay.Presentation
             PlayArtworkChangedAnimation();
         }
 
-        private void ReleaseArtworkLoad(bool clearSprite)
+        private void ClearArtworkSprite()
         {
-            _artworkLoadVersion++;
-            _activeArtworkLoad?.Dispose();
-            _activeArtworkLoad = null;
-
-            if (!clearSprite || artworkImage == null)
+            if (artworkImage == null)
             {
                 return;
             }
 
             _currentArtworkSprite = null;
-            _currentArtworkReferenceKey = null;
             artworkImage.sprite = null;
             artworkImage.enabled = false;
-        }
-
-        private static bool IsValidReference(AssetReferenceT<Sprite> spriteReference)
-        {
-            return spriteReference != null && spriteReference.RuntimeKeyIsValid();
-        }
-
-        private static string GetReferenceKey(AssetReferenceT<Sprite> spriteReference)
-        {
-            if (!IsValidReference(spriteReference))
-            {
-                return string.Empty;
-            }
-
-            return !string.IsNullOrEmpty(spriteReference.AssetGUID)
-                ? spriteReference.AssetGUID
-                : spriteReference.RuntimeKey.ToString();
         }
 
         private void PlayArtworkChangedAnimation()
@@ -448,7 +420,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             if (!visible)
             {
-                ReleaseArtworkLoad(true);
+                ClearArtworkSprite();
             }
 
             if (_canvasGroup == null)
@@ -471,6 +443,36 @@ namespace BlossomFlow.Gameplay.Presentation
             return _canvasGroup == null || _canvasGroup.alpha > 0f;
         }
 
+        private void NormalizeStateForCurrentProgress()
+        {
+            if ((_state == FailureScreenState.KeepPlayingOffer || _state == FailureScreenState.ConfirmQuit) &&
+                !CanAffordKeepPlaying())
+            {
+                _state = FailureScreenState.RetryOnly;
+            }
+        }
+
+        private bool CanAffordKeepPlaying()
+        {
+            return _progressService != null && _progressService.Current.Gold >= keepPlayingGoldCost;
+        }
+
+        private bool TryConsumeFailureLife()
+        {
+            return _progressService != null && _progressService.TryConsumeLife();
+        }
+
+        private void RefundFailureLifeIfNeeded()
+        {
+            if (!_lifeConsumedForCurrentFailure || _progressService == null)
+            {
+                return;
+            }
+
+            _progressService.AddLife(1);
+            _lifeConsumedForCurrentFailure = false;
+        }
+
         private void SubscribeToEvents()
         {
             if (_eventSubscriber == null || _failureScreenRequestedSubscription != null)
@@ -478,7 +480,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            _failureScreenRequestedSubscription = _eventSubscriber.Subscribe<LevelFailureScreenRequested>(_ => ShowKeepPlayingOffer());
+            _failureScreenRequestedSubscription = _eventSubscriber.Subscribe<LevelFailureScreenRequested>(ShowKeepPlayingOffer);
             _keepPlayingStartedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingStarted>(_ => Hide());
             _levelRestartedSubscription = _eventSubscriber.Subscribe<LevelRestarted>(_ => Hide());
             _progressChangedSubscription = _eventSubscriber.Subscribe<MainMenuPlayerProgressChanged>(_ => Refresh());

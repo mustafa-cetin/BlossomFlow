@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Reflex.Attributes;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,7 +38,18 @@ namespace BlossomFlow.Application.SceneLoading
                 return;
             }
 
-            StartCoroutine(_loadingSceneController.LoadPendingTargetAsync(SetProgress));
+            LoadPendingTargetAsync(this.GetCancellationTokenOnDestroy()).Forget(Debug.LogException);
+        }
+
+        private async UniTask LoadPendingTargetAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _loadingSceneController.LoadPendingTargetAsync(SetProgress, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         private void SetProgress(float progress)

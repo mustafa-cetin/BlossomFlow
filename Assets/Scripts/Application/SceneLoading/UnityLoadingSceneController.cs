@@ -1,6 +1,7 @@
 using System;
-using System.Collections;
+using System.Threading;
 using BlossomFlow.Application.Levels;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -24,7 +25,7 @@ namespace BlossomFlow.Application.SceneLoading
             _remoteLevelCatalogPreloader = remoteLevelCatalogPreloader;
         }
 
-        public IEnumerator LoadPendingTargetAsync(Action<float> reportProgress)
+        public async UniTask LoadPendingTargetAsync(Action<float> reportProgress, CancellationToken cancellationToken)
         {
             reportProgress?.Invoke(0f);
 
@@ -33,77 +34,72 @@ namespace BlossomFlow.Application.SceneLoading
             {
                 if (targetException is InvalidOperationException)
                 {
-                    yield return InitializeStartupServices(reportProgress);
+                    await InitializeStartupServices(reportProgress, cancellationToken);
                     startupServicesInitialized = true;
 
                     if (!TryGetTarget(out target, out targetException))
                     {
                         LogTargetError(targetException);
-                        yield break;
+                        return;
                     }
                 }
                 else
                 {
                     LogTargetError(targetException);
-                    yield break;
+                    return;
                 }
             }
 
             var loadStartProgress = 0f;
             if (target.InitializeStartupServices && !startupServicesInitialized)
             {
-                yield return InitializeStartupServices(reportProgress);
-                yield return WaitForLevelCatalogReadiness();
+                await InitializeStartupServices(reportProgress, cancellationToken);
+                await WaitForLevelCatalogReadiness(cancellationToken);
                 loadStartProgress = StartupServicesProgress;
             }
             else if (startupServicesInitialized)
             {
-                yield return WaitForLevelCatalogReadiness();
+                await WaitForLevelCatalogReadiness(cancellationToken);
                 loadStartProgress = StartupServicesProgress;
             }
 
-            var loadOperation = SceneManager.LoadSceneAsync(target.SceneName);
-            if (loadOperation == null)
-            {
-                Debug.LogError($"Could not start async loading for scene '{target.SceneName}'.");
-                _targetProvider.ClearPendingTargetScene();
-                yield break;
-            }
+            await LoadScene(target.SceneAddress, loadStartProgress, reportProgress, cancellationToken);
+        }
 
-            loadOperation.allowSceneActivation = false;
+        private async UniTask LoadScene(
+            string sceneName,
+            float loadStartProgress,
+            Action<float> reportProgress,
+            CancellationToken cancellationToken)
+        {
+            var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
-            while (loadOperation.progress < 0.9f)
+            while (!loadOperation.isDone)
             {
-                var loadProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);
+                var loadProgress = Mathf.Clamp01(loadOperation.progress);
                 reportProgress?.Invoke(Mathf.Lerp(loadStartProgress, 1f, loadProgress));
-                yield return null;
+                await UniTask.Yield(cancellationToken);
             }
 
             reportProgress?.Invoke(1f);
             _targetProvider.ClearPendingTargetScene();
-            loadOperation.allowSceneActivation = true;
-
-            while (!loadOperation.isDone)
-            {
-                yield return null;
-            }
         }
 
-        private IEnumerator InitializeStartupServices(Action<float> reportProgress)
+        private async UniTask InitializeStartupServices(Action<float> reportProgress, CancellationToken cancellationToken)
         {
             if (_startupServiceInitializer != null)
             {
-                yield return _startupServiceInitializer.InitializeIfNeeded();
+                await _startupServiceInitializer.InitializeIfNeeded().ToUniTask(cancellationToken: cancellationToken);
             }
 
             reportProgress?.Invoke(StartupServicesProgress);
         }
 
-        private IEnumerator WaitForLevelCatalogReadiness()
+        private async UniTask WaitForLevelCatalogReadiness(CancellationToken cancellationToken)
         {
             if (_remoteLevelCatalogPreloader == null)
             {
-                yield break;
+                return;
             }
 
             while (!_remoteLevelCatalogPreloader.IsLoaded)
@@ -113,16 +109,16 @@ namespace BlossomFlow.Application.SceneLoading
                     Debug.LogError($"Loading paused because the level catalog is unavailable. {_remoteLevelCatalogPreloader.UnavailableReason}");
                     while (_remoteLevelCatalogPreloader.IsUnavailable)
                     {
-                        yield return null;
+                        await UniTask.Yield(cancellationToken);
                     }
                 }
 
                 if (!_remoteLevelCatalogPreloader.IsLoaded)
                 {
-                    yield return _remoteLevelCatalogPreloader.LoadIfNeeded();
+                    await _remoteLevelCatalogPreloader.LoadIfNeeded().ToUniTask(cancellationToken: cancellationToken);
                 }
 
-                yield return null;
+                await UniTask.Yield(cancellationToken);
             }
         }
 

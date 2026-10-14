@@ -2,13 +2,13 @@ namespace BlossomFlow.Application.SceneLoading
 {
     public readonly struct LoadingSceneTarget
     {
-        public LoadingSceneTarget(string sceneName, bool initializeStartupServices)
+        public LoadingSceneTarget(string sceneAddress, bool initializeStartupServices)
         {
-            SceneName = sceneName;
+            SceneAddress = sceneAddress;
             InitializeStartupServices = initializeStartupServices;
         }
 
-        public string SceneName { get; }
+        public string SceneAddress { get; }
         public bool InitializeStartupServices { get; }
     }
 }

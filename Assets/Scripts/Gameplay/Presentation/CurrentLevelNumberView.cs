@@ -1,6 +1,7 @@
 using System;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
+using BlossomFlow.Gameplay.Application.Levels;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Attributes;
 using TMPro;
@@ -20,6 +21,7 @@ namespace BlossomFlow.Gameplay.Presentation
         private ICurrentLevelDefinitionProvider _currentLevelProvider;
         private IEventSubscriber _eventSubscriber;
         private IDisposable _progressChangedSubscription;
+        private IDisposable _levelAdvancedSubscription;
 
         [Inject]
         private void Construct(
@@ -76,12 +78,15 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             _progressChangedSubscription = _eventSubscriber.Subscribe<MainMenuPlayerProgressChanged>(_ => Refresh());
+            _levelAdvancedSubscription = _eventSubscriber.Subscribe<LevelAdvanced>(_ => Refresh());
         }
 
         private void Unsubscribe()
         {
             _progressChangedSubscription?.Dispose();
             _progressChangedSubscription = null;
+            _levelAdvancedSubscription?.Dispose();
+            _levelAdvancedSubscription = null;
         }
 
         private void Refresh()
@@ -102,12 +107,12 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private int GetCurrentLevelNumber()
         {
-            if (_currentLevelProvider != null)
+            if (_progressService != null)
             {
-                return _currentLevelProvider.CurrentLevelNumber;
+                return _progressService.Current.LevelNumber;
             }
 
-            return _progressService != null ? _progressService.Current.LevelNumber : 1;
+            return _currentLevelProvider != null ? _currentLevelProvider.CurrentLevelNumber : 1;
         }
 
         private void EnsureText()

@@ -6,7 +6,6 @@ using BlossomFlow.Application.Analytics;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Platform.CrazyGames;
 using BlossomFlow.Application.Performance;
-using BlossomFlow.Application.Sprites;
 using BlossomFlow.Application.Tutorial;
 using BlossomFlow.MainMenu.Domain;
 using Reflex.Core;
@@ -20,16 +19,17 @@ using BlossomFlow.Application.Debugging;
 
 public class RootInstaller : MonoBehaviour, IInstaller
 {
-    [SerializeField] private string loadingSceneName = "LoadingScene";
-    [SerializeField] private string startupTargetSceneName = "GameScene";
-    [SerializeField] private string startupTutorialCompletedTargetSceneName = "MainMenuScene";
+    [SerializeField] private string startupTargetSceneName = "Assets/Scenes/GameScene.unity";
+    [SerializeField] private string startupTutorialCompletedTargetSceneName = "Assets/Scenes/GameScene.unity";
     [SerializeField] private LevelCatalogAsset levelCatalog;
     [SerializeField] private SoundCatalogAsset soundCatalog;
     [SerializeField, Range(0f, 1f)] private float soundEffectsVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
     [SerializeField] private bool enableCrazyGamesSdk = true;
+    [SerializeField] private bool enableByteBrewAnalytics = true;
     [SerializeField] private bool playBackgroundMusicOnStartup = true;
     [SerializeField] private MusicTrackId startupMusicTrack = MusicTrackId.Background;
+    [SerializeField, Min(1)] private int legacyOvershootReturnLevelNumber = 51;
 
     public void InstallBindings(ContainerBuilder builder)
     {
@@ -38,6 +38,10 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterValue(
             new CrazyGamesSdkConfiguration(enableCrazyGamesSdk),
             new[] { typeof(CrazyGamesSdkConfiguration) });
+
+        builder.RegisterValue(
+            new ByteBrewAnalyticsConfiguration(enableByteBrewAnalytics),
+            new[] { typeof(ByteBrewAnalyticsConfiguration) });
 
         builder.RegisterType(
             typeof(EventBus),
@@ -59,12 +63,6 @@ public class RootInstaller : MonoBehaviour, IInstaller
         builder.RegisterFactory(
             _ => soundCatalog != null ? (IMusicCatalog)soundCatalog : new NullSoundCatalog(),
             new[] { typeof(IMusicCatalog) },
-            Lifetime.Singleton,
-            Resolution.Lazy);
-
-        builder.RegisterType(
-            typeof(AddressableSpriteLoader),
-            new[] { typeof(IAddressableSpriteLoader) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -90,7 +88,11 @@ public class RootInstaller : MonoBehaviour, IInstaller
 
         builder.RegisterType(
             typeof(CrazyGamesGameplaySessionReporter),
-            new[] { typeof(IGameplayPlatformSessionReporter) },
+            new[]
+            {
+                typeof(CrazyGamesGameplaySessionReporter),
+                typeof(IGameplayPlatformSessionReporter)
+            },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -110,10 +112,32 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Eager);
 
         builder.RegisterType(
-            typeof(NullAnalyticsEventService),
-            new[] { typeof(IAnalyticsEventService) },
+            typeof(ByteBrewAnalyticsEventService),
+            new[]
+            {
+                typeof(ByteBrewAnalyticsEventService),
+                typeof(IAnalyticsEventService)
+            },
             Lifetime.Singleton,
             Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(AnalyticsEventDispatcher),
+            new[] { typeof(AnalyticsEventDispatcher) },
+            Lifetime.Singleton,
+            Resolution.Eager);
+
+        builder.RegisterType(
+            typeof(PlayerRetentionAnalyticsReporter),
+            new[] { typeof(PlayerRetentionAnalyticsReporter) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
+            typeof(PlayerJourneyAnalyticsReporter),
+            new[] { typeof(PlayerJourneyAnalyticsReporter) },
+            Lifetime.Singleton,
+            Resolution.Eager);
 
         builder.RegisterFactory(
             container => new BackgroundMusicController(
@@ -124,17 +148,24 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Eager);
 
+        builder.RegisterType(
+            typeof(UnitySceneLoader),
+            new[] { typeof(ISceneLoader) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
         builder.RegisterFactory(
-            container => new SceneTransitionService(
-                loadingSceneName,
+            container => new SceneTransitionService(container.Resolve<ISceneLoader>()),
+            new[] { typeof(ISceneTransitionService) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterFactory(
+            container => new LoadingSceneTargetProvider(
                 startupTargetSceneName,
                 startupTutorialCompletedTargetSceneName,
                 container.Resolve<IFirstLevelTutorialProgressService>()),
-            new[]
-            {
-                typeof(ISceneTransitionService),
-                typeof(ILoadingSceneTargetProvider)
-            },
+            new[] { typeof(ILoadingSceneTargetProvider) },
             Lifetime.Singleton,
             Resolution.Lazy);
 
@@ -153,8 +184,10 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Lazy);
 
-        builder.RegisterType(
-            typeof(LevelSelectionService),
+        builder.RegisterFactory(
+            container => new LevelSelectionService(
+                container.Resolve<ILevelCatalog>(),
+                container.Resolve<IMainMenuPlayerProgressService>()),
             new[]
             {
                 typeof(ILevelSelectionWriter),
@@ -182,6 +215,12 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterType(
+            typeof(ByteBrewStartupServiceInitializer),
+            new[] { typeof(ByteBrewStartupServiceInitializer) },
+            Lifetime.Singleton,
+            Resolution.Lazy);
+
+        builder.RegisterType(
             typeof(MobileNativeRefreshRateConfigurator),
             new[] { typeof(IFrameRateConfigurator) },
             Lifetime.Singleton,
@@ -199,8 +238,11 @@ public class RootInstaller : MonoBehaviour, IInstaller
             Lifetime.Singleton,
             Resolution.Lazy);
 
-        builder.RegisterType(
-            typeof(MainMenuPlayerProgressService),
+        builder.RegisterFactory(
+            container => new MainMenuPlayerProgressService(
+                container.Resolve<IEventPublisher>(),
+                container.Resolve<ILevelCatalog>(),
+                legacyOvershootReturnLevelNumber),
             new[] { typeof(IMainMenuPlayerProgressService) },
             Lifetime.Singleton,
             Resolution.Eager);

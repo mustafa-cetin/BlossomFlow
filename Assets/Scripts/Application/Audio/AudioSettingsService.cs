@@ -7,6 +7,8 @@ namespace BlossomFlow.Application.Audio
     {
         private const string SoundEffectsEnabledKey = "Audio.SoundEffects.Enabled";
         private const string MusicEnabledKey = "Audio.Music.Enabled";
+        private const string AudioDefaultsMigrationKey = "Audio.DefaultsMigration.Version";
+        private const int AudioDefaultsMigrationVersion = 1;
         private const int EnabledValue = 1;
         private const int DisabledValue = 0;
 
@@ -26,6 +28,8 @@ namespace BlossomFlow.Application.Audio
             _audioPlayer = audioPlayer;
             _musicPlayer = musicPlayer;
             _externalAudioMuteProvider = externalAudioMuteProvider;
+
+            MigrateAudioDefaults();
 
             _areSoundEffectsEnabledByPlayer = PlayerPrefs.GetInt(SoundEffectsEnabledKey, EnabledValue) == EnabledValue;
             _isMusicEnabledByPlayer = PlayerPrefs.GetInt(MusicEnabledKey, EnabledValue) == EnabledValue;
@@ -94,6 +98,19 @@ namespace BlossomFlow.Application.Audio
             ApplySoundEffectsMute();
             ApplyMusicMute();
             Changed?.Invoke();
+        }
+
+        private static void MigrateAudioDefaults()
+        {
+            if (PlayerPrefs.GetInt(AudioDefaultsMigrationKey, 0) >= AudioDefaultsMigrationVersion)
+            {
+                return;
+            }
+
+            PlayerPrefs.SetInt(SoundEffectsEnabledKey, EnabledValue);
+            PlayerPrefs.SetInt(MusicEnabledKey, EnabledValue);
+            PlayerPrefs.SetInt(AudioDefaultsMigrationKey, AudioDefaultsMigrationVersion);
+            PlayerPrefs.Save();
         }
 
         private void ApplySoundEffectsMute()

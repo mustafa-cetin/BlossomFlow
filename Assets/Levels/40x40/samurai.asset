@@ -4818,187 +4818,260 @@ MonoBehaviour:
       Color: 4
     LaunchColumns:
     - Pots:
-      - Color: 4
-        Capacity: 30
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 27
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 25
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 30
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 21
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 24
-        LinkedPairId: 0
       - Color: 7
-        Capacity: 29
+        Capacity: 17
         LinkedPairId: 0
-      - Color: 4
-        Capacity: 28
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 39
-        LinkedPairId: 0
-      - Color: 9
-        Capacity: 48
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 14
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 23
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 23
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 32
-        LinkedPairId: 0
-      - Color: 1
-        Capacity: 14
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 29
-        LinkedPairId: 0
-      - Color: 2
-        Capacity: 16
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 24
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 26
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 30
-        LinkedPairId: 0
-    - Pots:
-      - Color: 4
+      - Color: 0
         Capacity: 17
         LinkedPairId: 0
       - Color: 7
-        Capacity: 21
+        Capacity: 11
         LinkedPairId: 0
-      - Color: 4
-        Capacity: 27
-        LinkedPairId: 0
-      - Color: 7
+      - Color: 0
         Capacity: 26
         LinkedPairId: 0
       - Color: 4
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 18
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 23
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 21
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 30
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 28
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 14
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 16
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 22
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 23
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 33
+        LinkedPairId: 0
+      - Color: 9
         Capacity: 19
         LinkedPairId: 0
       - Color: 0
-        Capacity: 43
+        Capacity: 13
         LinkedPairId: 0
       - Color: 4
-        Capacity: 26
-        LinkedPairId: 0
-      - Color: 5
-        Capacity: 40
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 24
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 32
-        LinkedPairId: 0
-      - Color: 9
-        Capacity: 41
-        LinkedPairId: 0
-      - Color: 0
-        Capacity: 56
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 26
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 27
-        LinkedPairId: 0
-      - Color: 9
-        Capacity: 31
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 27
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 24
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 22
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 32
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 21
+        Capacity: 17
         LinkedPairId: 0
     - Pots:
-      - Color: 7
-        Capacity: 28
-        LinkedPairId: 0
       - Color: 4
-        Capacity: 23
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 27
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 33
-        LinkedPairId: 0
-      - Color: 4
-        Capacity: 32
-        LinkedPairId: 0
-      - Color: 2
-        Capacity: 4
-        LinkedPairId: 0
-      - Color: 7
-        Capacity: 30
-        LinkedPairId: 0
-      - Color: 7
         Capacity: 25
         LinkedPairId: 0
-      - Color: 6
-        Capacity: 4
-        LinkedPairId: 0
-      - Color: 0
-        Capacity: 48
+      - Color: 7
+        Capacity: 9
         LinkedPairId: 0
       - Color: 4
-        Capacity: 22
+        Capacity: 24
         LinkedPairId: 0
       - Color: 4
-        Capacity: 22
+        Capacity: 24
         LinkedPairId: 0
       - Color: 7
-        Capacity: 23
+        Capacity: 15
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 17
         LinkedPairId: 0
       - Color: 4
         Capacity: 29
         LinkedPairId: 0
-      - Color: 2
-        Capacity: 2
+      - Color: 7
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 18
+        LinkedPairId: 0
+      - Color: 9
+        Capacity: 30
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 19
+        LinkedPairId: 0
+      - Color: 9
+        Capacity: 26
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 15
         LinkedPairId: 0
       - Color: 8
         Capacity: 10
         LinkedPairId: 0
+      - Color: 7
+        Capacity: 15
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 30
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 24
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 22
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 15
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 15
+        LinkedPairId: 0
+    - Pots:
+      - Color: 4
+        Capacity: 25
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 13
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 22
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 15
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 24
+        LinkedPairId: 0
+      - Color: 1
+        Capacity: 8
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 18
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 2
+        Capacity: 22
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 25
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 16
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 26
+        LinkedPairId: 0
+      - Color: 9
+        Capacity: 27
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 18
+        LinkedPairId: 0
       - Color: 4
         Capacity: 17
         LinkedPairId: 0
+      - Color: 7
+        Capacity: 14
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 24
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 19
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 16
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 27
+        LinkedPairId: 0
+    - Pots:
+      - Color: 4
+        Capacity: 21
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 22
+        LinkedPairId: 0
       - Color: 0
-        Capacity: 45
+        Capacity: 11
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 16
+        LinkedPairId: 0
+      - Color: 5
+        Capacity: 23
+        LinkedPairId: 0
+      - Color: 9
+        Capacity: 18
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 22
+        LinkedPairId: 0
+      - Color: 6
+        Capacity: 4
+        LinkedPairId: 0
+      - Color: 1
+        Capacity: 6
         LinkedPairId: 0
       - Color: 4
-        Capacity: 29
+        Capacity: 13
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 14
         LinkedPairId: 0
       - Color: 4
-        Capacity: 33
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 23
+        LinkedPairId: 0
+      - Color: 5
+        Capacity: 17
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 30
+        LinkedPairId: 0
+      - Color: 4
+        Capacity: 20
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 9
+        LinkedPairId: 0
+      - Color: 7
+        Capacity: 14
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 12
+        LinkedPairId: 0
+      - Color: 0
+        Capacity: 14
         LinkedPairId: 0
     WaitingSlotCount: 5
     ConveyorMaxPots: 5

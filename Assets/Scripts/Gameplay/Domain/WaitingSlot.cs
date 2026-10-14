@@ -4,7 +4,7 @@ namespace BlossomFlow.Gameplay.Domain
 {
     public sealed class WaitingSlot
     {
-        public WaitingSlot(int index, bool isTemporary = false)
+        public WaitingSlot(int index, WaitingSlotKind kind = WaitingSlotKind.Base)
         {
             if (index < 0)
             {
@@ -12,11 +12,13 @@ namespace BlossomFlow.Gameplay.Domain
             }
 
             Index = index;
-            IsTemporary = isTemporary;
+            Kind = kind;
         }
 
         public int Index { get; }
-        public bool IsTemporary { get; }
+        public WaitingSlotKind Kind { get; }
+        public bool IsTemporary => Kind == WaitingSlotKind.Temporary;
+        public bool IsUsable => Kind != WaitingSlotKind.Temporary;
         public PotModel Pot { get; private set; }
         public bool IsOccupied => Pot != null;
 

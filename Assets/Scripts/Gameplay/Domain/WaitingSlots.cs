@@ -7,8 +7,8 @@ namespace BlossomFlow.Gameplay.Domain
     public sealed class WaitingSlots
     {
         private readonly List<WaitingSlot> _slots;
-        private readonly int _permanentCapacity;
-        private int _nextTemporarySlotIndex;
+        private readonly int _baseCapacity;
+        private int _nextSlotIndex;
 
         public event Action<WaitingSlots, WaitingSlot, PotModel> PotPlaced;
         public event Action<WaitingSlots, WaitingSlot, PotModel> PotRecalled;
@@ -22,17 +22,19 @@ namespace BlossomFlow.Gameplay.Domain
                 throw new ArgumentOutOfRangeException(nameof(capacity), "Waiting slot capacity must be greater than zero.");
             }
 
-            _permanentCapacity = capacity;
-            _nextTemporarySlotIndex = capacity;
-            _slots = Enumerable.Range(0, capacity).Select(index => new WaitingSlot(index)).ToList();
+            _baseCapacity = capacity;
+            _nextSlotIndex = capacity;
+            _slots = Enumerable.Range(0, capacity).Select(index => new WaitingSlot(index, WaitingSlotKind.Base)).ToList();
         }
 
         public IReadOnlyList<WaitingSlot> Slots => _slots;
-        public int Capacity => _permanentCapacity;
+        public int BaseCapacity => _baseCapacity;
+        public int UsableCapacity => _slots.Count(slot => slot.IsUsable);
         public int OccupiedCount => _slots.Count(slot => slot.IsOccupied);
-        public int EmptyCount => _slots.Count(slot => !slot.IsTemporary && !slot.IsOccupied);
-        public bool HasEmptySlot => _slots.Any(slot => !slot.IsTemporary && !slot.IsOccupied);
-        public bool IsFull => !HasEmptySlot;
+        public int OccupiedUsableCount => _slots.Count(slot => slot.IsUsable && slot.IsOccupied);
+        public int EmptyUsableCount => _slots.Count(slot => slot.IsUsable && !slot.IsOccupied);
+        public bool HasEmptyUsableSlot => _slots.Any(slot => slot.IsUsable && !slot.IsOccupied);
+        public bool IsUsableFull => !HasEmptyUsableSlot;
 
         public WaitingSlot GetSlot(int slotIndex)
         {
@@ -54,7 +56,7 @@ namespace BlossomFlow.Gameplay.Domain
 
         public bool TryPlace(PotModel pot, out int slotIndex)
         {
-            var slot = _slots.FirstOrDefault(candidate => !candidate.IsTemporary && !candidate.IsOccupied);
+            var slot = _slots.FirstOrDefault(candidate => candidate.IsUsable && !candidate.IsOccupied);
             if (slot == null)
             {
                 slotIndex = -1;
@@ -75,7 +77,7 @@ namespace BlossomFlow.Gameplay.Domain
             }
 
             var emptySlots = _slots
-                .Where(candidate => !candidate.IsTemporary && !candidate.IsOccupied)
+                .Where(candidate => candidate.IsUsable && !candidate.IsOccupied)
                 .Take(pots.Count)
                 .ToArray();
 
@@ -106,10 +108,10 @@ namespace BlossomFlow.Gameplay.Domain
                 return false;
             }
 
-            var removeTemporarySlot = slot.IsTemporary;
+            var removeSlot = slot.IsTemporary;
             pot = slot.Recall();
             PotRecalled?.Invoke(this, slot, pot);
-            if (removeTemporarySlot)
+            if (removeSlot)
             {
                 RemoveTemporarySlot(slot);
             }
@@ -127,12 +129,16 @@ namespace BlossomFlow.Gameplay.Domain
             return pot;
         }
 
-        public bool TryMoveToTemporarySlot(int sourceSlotIndex, out PotModel pot, out int temporarySlotIndex)
+        public bool TryMoveLastOccupiedUsableSlotToTemporarySlot(
+            out PotModel pot,
+            out int sourceSlotIndex,
+            out int temporarySlotIndex)
         {
-            var sourceSlot = GetSlot(sourceSlotIndex);
-            if (sourceSlot.IsTemporary || !sourceSlot.IsOccupied)
+            var sourceSlot = _slots.LastOrDefault(candidate => candidate.IsUsable && candidate.IsOccupied);
+            if (sourceSlot == null)
             {
                 pot = null;
+                sourceSlotIndex = -1;
                 temporarySlotIndex = -1;
                 return false;
             }
@@ -140,9 +146,18 @@ namespace BlossomFlow.Gameplay.Domain
             pot = sourceSlot.RemoveWaitingPot();
             var temporarySlot = CreateTemporarySlot();
             temporarySlot.PlaceExistingWaitingPot(pot);
+            sourceSlotIndex = sourceSlot.Index;
             temporarySlotIndex = temporarySlot.Index;
             PotPlaced?.Invoke(this, temporarySlot, pot);
             return true;
+        }
+
+        public WaitingSlot AddBoosterSlot()
+        {
+            var slot = new WaitingSlot(_nextSlotIndex, WaitingSlotKind.Booster);
+            _nextSlotIndex++;
+            _slots.Add(slot);
+            return slot;
         }
 
         public int PlaceInTemporarySlot(PotModel pot)
@@ -165,8 +180,8 @@ namespace BlossomFlow.Gameplay.Domain
 
         private WaitingSlot CreateTemporarySlot()
         {
-            var slot = new WaitingSlot(_nextTemporarySlotIndex, true);
-            _nextTemporarySlotIndex++;
+            var slot = new WaitingSlot(_nextSlotIndex, WaitingSlotKind.Temporary);
+            _nextSlotIndex++;
             _slots.Add(slot);
             TemporarySlotCreated?.Invoke(this, slot);
             return slot;
@@ -174,7 +189,7 @@ namespace BlossomFlow.Gameplay.Domain
 
         private void RemoveTemporarySlot(WaitingSlot slot)
         {
-            if (slot == null || !slot.IsTemporary)
+            if (slot == null || slot.Kind != WaitingSlotKind.Temporary)
             {
                 return;
             }

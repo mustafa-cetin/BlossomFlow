@@ -3,7 +3,7 @@ using BlossomFlow.Application.Ads;
 using BlossomFlow.Application.Audio;
 using BlossomFlow.Application.Events;
 using BlossomFlow.Application.Levels;
-using BlossomFlow.Application.SceneLoading;
+using BlossomFlow.Gameplay.Application.Levels;
 using BlossomFlow.MainMenu.Domain;
 using DG.Tweening;
 using Reflex.Attributes;
@@ -48,7 +48,6 @@ namespace BlossomFlow.Gameplay.Presentation
         [Header("State")]
         [SerializeField] private bool hideOnAwake = true;
         [SerializeField] private int victoryGoldReward = 50;
-        [SerializeField] private string mainMenuSceneName = "MainMenuScene";
 
         private CanvasGroup _canvasGroup;
         private RectTransform _titleRectTransform;
@@ -63,10 +62,11 @@ namespace BlossomFlow.Gameplay.Presentation
         private IEventSubscriber _eventSubscriber;
         private IMainMenuPlayerProgressService _progressService;
         private IRewardedAdService _rewardedAdService;
-        private ISceneTransitionService _sceneTransitionService;
         private ICurrentLevelDefinitionProvider _currentLevelDefinitionProvider;
+        private ILevelAdvanceService _levelAdvanceService;
         private IDisposable _victoryScreenRequestedSubscription;
         private IDisposable _levelRestartedSubscription;
+        private IDisposable _levelAdvancedSubscription;
         private bool _rewardClaimed;
         private bool _goldRewardClaimed;
         private bool _awaitingMagicalSeedClaim;
@@ -79,15 +79,15 @@ namespace BlossomFlow.Gameplay.Presentation
             IEventSubscriber eventSubscriber,
             IMainMenuPlayerProgressService progressService,
             IRewardedAdService rewardedAdService,
-            ISceneTransitionService sceneTransitionService,
-            ICurrentLevelDefinitionProvider currentLevelDefinitionProvider)
+            ICurrentLevelDefinitionProvider currentLevelDefinitionProvider,
+            ILevelAdvanceService levelAdvanceService)
         {
             _eventPublisher = eventPublisher;
             _eventSubscriber = eventSubscriber;
             _progressService = progressService;
             _rewardedAdService = rewardedAdService;
-            _sceneTransitionService = sceneTransitionService;
             _currentLevelDefinitionProvider = currentLevelDefinitionProvider;
+            _levelAdvanceService = levelAdvanceService;
 
             if (isActiveAndEnabled)
             {
@@ -175,7 +175,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
             if (_awaitingMagicalSeedClaim)
             {
-                GrantMagicalSeedAndReturnToMainMenu();
+                GrantMagicalSeedAndLoadNextLevel();
                 return;
             }
 
@@ -185,7 +185,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            GrantRewardAndReturnToMainMenu(victoryGoldReward);
+            GrantRewardAndLoadNextLevel(victoryGoldReward);
         }
 
         private void ClaimDoubleReward()
@@ -205,7 +205,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _rewardedAdInProgress = true;
             SetButtonsInteractable(false);
             _rewardedAdService.ShowRewardedAd(
-                () => GrantRewardAndReturnToMainMenu(victoryGoldReward * 2),
+                () => GrantRewardAndLoadNextLevel(victoryGoldReward * 2),
                 () =>
                 {
                     _rewardedAdInProgress = false;
@@ -213,7 +213,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 });
         }
 
-        private void GrantRewardAndReturnToMainMenu(int goldAmount)
+        private void GrantRewardAndLoadNextLevel(int goldAmount)
         {
             if (_rewardClaimed)
             {
@@ -224,7 +224,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _rewardedAdInProgress = false;
             SetButtonsInteractable(false);
             _progressService?.AddGoldAndAdvanceLevel(goldAmount);
-            ReturnToMainMenu();
+            AdvanceToSelectedLevel();
         }
 
         private void GrantGoldAndShowMagicalSeedReward(int goldAmount)
@@ -252,7 +252,7 @@ namespace BlossomFlow.Gameplay.Presentation
             PlayMagicalSeedRewardSwap(_currentMagicalSeedReward);
         }
 
-        private void GrantMagicalSeedAndReturnToMainMenu()
+        private void GrantMagicalSeedAndLoadNextLevel()
         {
             if (_rewardClaimed)
             {
@@ -265,7 +265,7 @@ namespace BlossomFlow.Gameplay.Presentation
             SetButtonsInteractable(false);
             _progressService?.AddMagicalSeed(_currentMagicalSeedReward);
             _progressService?.AdvanceLevel();
-            ReturnToMainMenu();
+            AdvanceToSelectedLevel();
         }
 
         private void OnValidate()
@@ -283,15 +283,19 @@ namespace BlossomFlow.Gameplay.Presentation
             }
         }
 
-        private void ReturnToMainMenu()
+        private void AdvanceToSelectedLevel()
         {
-            if (_sceneTransitionService == null)
+            if (_levelAdvanceService == null)
             {
-                Debug.LogWarning("Scene transition service is not available.");
+                Debug.LogWarning("Level advance service is not available.");
                 return;
             }
 
-            _sceneTransitionService.LoadSceneThroughLoading(mainMenuSceneName);
+            var nextLevelNumber = _progressService != null
+                ? _progressService.Current.LevelNumber
+                : Math.Max(1, (_currentLevelDefinitionProvider?.CurrentLevelNumber ?? 0) + 1);
+
+            _levelAdvanceService.AdvanceToLevel(nextLevelNumber);
         }
 
         private int GetCurrentMagicalSeedReward()
@@ -579,14 +583,17 @@ namespace BlossomFlow.Gameplay.Presentation
 
             _victoryScreenRequestedSubscription = _eventSubscriber.Subscribe<LevelVictoryScreenRequested>(_ => Show());
             _levelRestartedSubscription = _eventSubscriber.Subscribe<LevelRestarted>(_ => Hide());
+            _levelAdvancedSubscription = _eventSubscriber.Subscribe<LevelAdvanced>(_ => Hide());
         }
 
         private void UnsubscribeFromResolutionEvents()
         {
             _victoryScreenRequestedSubscription?.Dispose();
             _levelRestartedSubscription?.Dispose();
+            _levelAdvancedSubscription?.Dispose();
             _victoryScreenRequestedSubscription = null;
             _levelRestartedSubscription = null;
+            _levelAdvancedSubscription = null;
         }
 
         private void PlayButtonClickSound()

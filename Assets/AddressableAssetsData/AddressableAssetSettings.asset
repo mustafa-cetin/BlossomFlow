@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 468a46d0ae32c3544b7d98094e6448a9, type: 3}
   m_Name: AddressableAssetSettings
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetSettings
-  m_DefaultGroup: ccbae4b9daaeb14429dee7dccf23edfa
+  m_DefaultGroup: e98b111a14dc64448b0693d1f53abf50
   m_currentHash:
     serializedVersion: 2
     Hash: 00000000000000000000000000000000
   m_OptimizeCatalogSize: 0
-  m_BuildRemoteCatalog: 0
+  m_BuildRemoteCatalog: 1
   m_CatalogRequestsTimeout: 0
   m_DisableCatalogUpdateOnStart: 0
   m_InternalIdNamingMode: 0
@@ -51,53 +51,51 @@ MonoBehaviour:
   m_CheckForContentUpdateRestrictionsOption: 0
   m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
-    m_Id: d7f37e2e0c20c9a449f1ffa09c0b4f1e
+    m_Id: 889793a5626e5ae4b8f73a236cdcec68
   m_RemoteCatalogLoadPath:
-    m_Id: cb7dd292b37a60d4293aeec3602a9a68
+    m_Id: d4823fcbfa9f85a4f8570aa23a14e716
   m_ContentStateBuildPathProfileVariableName: <default settings path>
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
   m_BuildAddressablesWithPlayerBuild: 0
   m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
   m_GroupAssets:
-  - {fileID: 11400000, guid: 8ab037a3d0b1e3b42bd79c628f174283, type: 2}
+  - {fileID: 11400000, guid: 5be67e88760608344928d06b524b8758, type: 2}
   - {fileID: 11400000, guid: fb327837c72fdad4f8d06cac2c9a9c15, type: 2}
-  - {fileID: 11400000, guid: e26ab22a371423547a64c38fcc60b3bc, type: 2}
-  - {fileID: 11400000, guid: 89857d1f52933504e989123331ff02d4, type: 2}
   m_BuildSettings:
     m_LogResourceManagerExceptions: 1
     m_BundleBuildPath: Temp/com.unity.addressables/AssetBundles
   m_ProfileSettings:
     m_Profiles:
     - m_InheritedParent: 
-      m_Id: 2afffa72ac7663f438f799da732f58f9
+      m_Id: 15cf174ddd09ba340a916d0b98b43e54
       m_ProfileName: Default
       m_Values:
-      - m_Id: 158331356738db9488276a5556c9e0b0
-        m_Value: 
-      - m_Id: 376117643141e0e449add42c20c7fc23
-        m_Value: 'ServerData/[BuildTarget]'
-      - m_Id: cb7dd292b37a60d4293aeec3602a9a68
+      - m_Id: 1b9614f051e6cd040b910ebf00edb7e5
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
-      - m_Id: d7f37e2e0c20c9a449f1ffa09c0b4f1e
+      - m_Id: 498de7213d0726f419a1045b0b0b9271
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
-      - m_Id: eb51720e8076ee040bba1c4c3aaa4b47
+      - m_Id: 889793a5626e5ae4b8f73a236cdcec68
+        m_Value: 'ServerData/[BuildTarget]'
+      - m_Id: b9c693bfc802c6f48bd22ba58c9cfc10
         m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
+      - m_Id: d4823fcbfa9f85a4f8570aa23a14e716
+        m_Value: 'https://mustafa.finetasy.com/assets/ServerData/[BuildTarget]'
     m_ProfileEntryNames:
-    - m_Id: 158331356738db9488276a5556c9e0b0
-      m_Name: Remote.LoadPath
-      m_InlineUsage: 0
-    - m_Id: 376117643141e0e449add42c20c7fc23
-      m_Name: Remote.BuildPath
-      m_InlineUsage: 0
-    - m_Id: cb7dd292b37a60d4293aeec3602a9a68
+    - m_Id: 1b9614f051e6cd040b910ebf00edb7e5
       m_Name: Local.LoadPath
       m_InlineUsage: 0
-    - m_Id: d7f37e2e0c20c9a449f1ffa09c0b4f1e
+    - m_Id: 498de7213d0726f419a1045b0b0b9271
       m_Name: Local.BuildPath
       m_InlineUsage: 0
-    - m_Id: eb51720e8076ee040bba1c4c3aaa4b47
+    - m_Id: 889793a5626e5ae4b8f73a236cdcec68
+      m_Name: Remote.BuildPath
+      m_InlineUsage: 0
+    - m_Id: b9c693bfc802c6f48bd22ba58c9cfc10
       m_Name: BuildTarget
+      m_InlineUsage: 0
+    - m_Id: d4823fcbfa9f85a4f8570aa23a14e716
+      m_Name: Remote.LoadPath
       m_InlineUsage: 0
     m_ProfileVersion: 1
   m_LabelTable:
@@ -115,4 +113,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7ca65bc44db92b749a842b4a86a15d0d, type: 2}
   - {fileID: 11400000, guid: a3547d258f2066149b8d3f966fd602b7, type: 2}
   - {fileID: 11400000, guid: 5c8c26c11ca2107498e4cf205ccb0319, type: 2}
-  m_ActiveProfileId: 2afffa72ac7663f438f799da732f58f9
+  m_ActiveProfileId: 15cf174ddd09ba340a916d0b98b43e54

@@ -19,6 +19,12 @@ public class MainMenuInstaller : MonoBehaviour, IInstaller
             Lifetime.Scoped,
             Resolution.Eager);
 
+        builder.RegisterFactory(
+            _ => new MainMenuGardenConfig(),
+            new[] { typeof(MainMenuGardenConfig) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
         builder.RegisterType(
             typeof(MainMenuGardenService),
             new[] { typeof(IGardenService) },
