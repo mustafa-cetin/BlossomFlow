@@ -18,7 +18,9 @@ namespace BlossomFlow.Application.Analytics
         private const string StepKeepPlayingStarted = "KeepPlayingStarted";
         private const string StepMainMenuTabChanged = "MainMenuTabChanged";
         private const string StepShuffleBoosterUsed = "ShuffleBoosterUsed";
+        private const string StepExtraWaitingSlotBoosterUsed = "ExtraWaitingSlotBoosterUsed";
         private const string ShuffleBoosterType = "Shuffle";
+        private const string ExtraWaitingSlotBoosterType = "ExtraWaitingSlot";
 
         private readonly IEventPublisher _eventPublisher;
         private readonly IMainMenuPlayerProgressService _progressService;
@@ -28,6 +30,7 @@ namespace BlossomFlow.Application.Analytics
         private readonly IDisposable _levelFailureScreenRequestedSubscription;
         private readonly IDisposable _levelKeepPlayingStartedSubscription;
         private readonly IDisposable _shuffleBoosterUsedSubscription;
+        private readonly IDisposable _extraWaitingSlotBoosterUsedSubscription;
         private string _lastStep = string.Empty;
 
         public PlayerJourneyAnalyticsReporter(
@@ -45,6 +48,7 @@ namespace BlossomFlow.Application.Analytics
                 AnalyticsCustomEventNames.JourneyKeepPlayingStarted,
                 StepKeepPlayingStarted));
             _shuffleBoosterUsedSubscription = eventSubscriber.Subscribe<ShuffleBoosterUsed>(OnShuffleBoosterUsed);
+            _extraWaitingSlotBoosterUsedSubscription = eventSubscriber.Subscribe<ExtraWaitingSlotBoosterUsed>(OnExtraWaitingSlotBoosterUsed);
         }
 
         public void Dispose()
@@ -55,6 +59,7 @@ namespace BlossomFlow.Application.Analytics
             _levelFailureScreenRequestedSubscription?.Dispose();
             _levelKeepPlayingStartedSubscription?.Dispose();
             _shuffleBoosterUsedSubscription?.Dispose();
+            _extraWaitingSlotBoosterUsedSubscription?.Dispose();
         }
 
         public void ReportAppStarted()
@@ -119,6 +124,15 @@ namespace BlossomFlow.Application.Analytics
                 .Add(JourneyAnalyticsParameterNames.RemainingUses, boosterUsed.RemainingUses);
 
             PublishJourneyEvent(AnalyticsCustomEventNames.JourneyShuffleBoosterUsed, StepShuffleBoosterUsed, parameters.Build());
+        }
+
+        private void OnExtraWaitingSlotBoosterUsed(ExtraWaitingSlotBoosterUsed boosterUsed)
+        {
+            var parameters = CreateProgressParameters()
+                .Add(JourneyAnalyticsParameterNames.BoosterType, ExtraWaitingSlotBoosterType)
+                .Add(JourneyAnalyticsParameterNames.RemainingUses, boosterUsed.RemainingUses);
+
+            PublishJourneyEvent(AnalyticsCustomEventNames.JourneyExtraWaitingSlotBoosterUsed, StepExtraWaitingSlotBoosterUsed, parameters.Build());
         }
 
         private void PublishJourneyEvent(string eventName, string step)

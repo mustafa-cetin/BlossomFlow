@@ -15,6 +15,7 @@ namespace BlossomFlow.Gameplay.Domain
         public event Action<LevelSession, PotModel> WaitingOverflowed;
         public event Action<LevelSession, WaitingSlot> TemporaryWaitingSlotCreated;
         public event Action<LevelSession, int> TemporaryWaitingSlotRemoved;
+        public event Action<LevelSession, WaitingSlot> ExtraWaitingSlotCreated;
         public event Action<LevelSession, LevelPlayState, LevelPlayState> StateChanged;
         public event Action<LevelSession> LevelWon;
         public event Action<LevelSession, LevelFailureReason, PotModel> LevelFailed;
@@ -103,6 +104,20 @@ namespace BlossomFlow.Gameplay.Domain
             }
 
             return TryGetLinkedLaunchGroupColumnIndexes(pot, out _);
+        }
+
+        public bool TryAddExtraWaitingSlot(out int slotIndex)
+        {
+            slotIndex = -1;
+            if (State != LevelPlayState.Playing)
+            {
+                return false;
+            }
+
+            var slot = WaitingSlots.AddBoosterSlot();
+            slotIndex = slot.Index;
+            ExtraWaitingSlotCreated?.Invoke(this, slot);
+            return true;
         }
 
         public bool TryShuffleLaunchQueues(IRandomNumberGenerator random)
@@ -538,17 +553,17 @@ namespace BlossomFlow.Gameplay.Domain
                 return false;
             }
 
-            if (!WaitingSlots.HasEmptySlot)
+            if (!WaitingSlots.HasEmptyUsableSlot)
             {
-                if (!WaitingSlots.TryMoveToTemporarySlot(
-                    WaitingSlots.Capacity - 1,
+                if (!WaitingSlots.TryMoveLastOccupiedUsableSlotToTemporarySlot(
                     out var relocatedWaitingPot,
+                    out var relocatedSourceSlotIndex,
                     out var relocatedTemporarySlotIndex))
                 {
                     return false;
                 }
 
-                WaitingPotRecalled?.Invoke(this, relocatedWaitingPot, WaitingSlots.Capacity - 1);
+                WaitingPotRecalled?.Invoke(this, relocatedWaitingPot, relocatedSourceSlotIndex);
                 WaitingPotPlaced?.Invoke(this, relocatedWaitingPot, relocatedTemporarySlotIndex);
             }
 

@@ -15,5 +15,6 @@ namespace BlossomFlow.Application.Analytics
         public const string JourneyNoLivesShown = "Journey_NoLivesShown";
         public const string JourneyKeepPlayingStarted = "Journey_KeepPlayingStarted";
         public const string JourneyShuffleBoosterUsed = "Journey_ShuffleBoosterUsed";
+        public const string JourneyExtraWaitingSlotBoosterUsed = "Journey_ExtraWaitingSlotBoosterUsed";
     }
 }

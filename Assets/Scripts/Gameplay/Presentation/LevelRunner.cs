@@ -47,11 +47,13 @@ namespace BlossomFlow.Gameplay.Presentation
         private IFirstLevelTutorialProgressService _firstLevelTutorialProgress;
         private IGameplayPlatformSessionReporter _gameplaySessionReporter;
         private IShuffleBoosterService _shuffleBoosterService;
+        private IExtraWaitingSlotBoosterService _extraWaitingSlotBoosterService;
         private IMainMenuPlayerProgressService _progressService;
         private IDisposable _restartRequestedSubscription;
         private IDisposable _levelAdvanceRequestedSubscription;
         private IDisposable _keepPlayingRequestedSubscription;
         private IDisposable _shuffleBoosterRequestedSubscription;
+        private IDisposable _extraWaitingSlotBoosterRequestedSubscription;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private IDisposable _debugLevelReloadRequestedSubscription;
 #endif
@@ -88,6 +90,7 @@ namespace BlossomFlow.Gameplay.Presentation
             IFirstLevelTutorialProgressService firstLevelTutorialProgress,
             IGameplayPlatformSessionReporter gameplaySessionReporter,
             IShuffleBoosterService shuffleBoosterService,
+            IExtraWaitingSlotBoosterService extraWaitingSlotBoosterService,
             IMainMenuPlayerProgressService progressService)
         {
             _sessionFactory = sessionFactory;
@@ -97,6 +100,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _firstLevelTutorialProgress = firstLevelTutorialProgress;
             _gameplaySessionReporter = gameplaySessionReporter;
             _shuffleBoosterService = shuffleBoosterService;
+            _extraWaitingSlotBoosterService = extraWaitingSlotBoosterService;
             _progressService = progressService;
         }
 
@@ -121,6 +125,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _levelAdvanceRequestedSubscription = _eventSubscriber.Subscribe<LevelAdvanceRequested>(OnLevelAdvanceRequested);
             _keepPlayingRequestedSubscription = _eventSubscriber.Subscribe<LevelKeepPlayingRequested>(_ => TryKeepPlaying());
             _shuffleBoosterRequestedSubscription = _eventSubscriber.Subscribe<ShuffleBoosterRequested>(_ => TryUseShuffleBooster());
+            _extraWaitingSlotBoosterRequestedSubscription = _eventSubscriber.Subscribe<ExtraWaitingSlotBoosterRequested>(_ => TryUseExtraWaitingSlotBooster());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLevelReloadRequestedSubscription = _eventSubscriber.Subscribe<GameDebugLevelReloadRequested>(OnDebugLevelReloadRequested);
 #endif
@@ -157,6 +162,8 @@ namespace BlossomFlow.Gameplay.Presentation
             _keepPlayingRequestedSubscription = null;
             _shuffleBoosterRequestedSubscription?.Dispose();
             _shuffleBoosterRequestedSubscription = null;
+            _extraWaitingSlotBoosterRequestedSubscription?.Dispose();
+            _extraWaitingSlotBoosterRequestedSubscription = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLevelReloadRequestedSubscription?.Dispose();
             _debugLevelReloadRequestedSubscription = null;
@@ -319,6 +326,8 @@ namespace BlossomFlow.Gameplay.Presentation
             _session.Conveyor.PotEntered += OnConveyorPotCountChanged;
             _session.Conveyor.PotRemoved += OnConveyorPotCountChanged;
             _shuffleBoosterService?.ResetForLevel();
+            _extraWaitingSlotBoosterService?.ResetForLevel();
+            _extraWaitingSlotBoosterService?.SetUnlockedForLevel(GetCurrentLevelNumber());
 
             presentationView.BindSession(_session);
             _session.Start();
@@ -328,6 +337,7 @@ namespace BlossomFlow.Gameplay.Presentation
             firstLevelTutorial.BindSession(_session, _currentLevelProvider?.CurrentLevelNumber ?? 1);
             PublishConveyorPotCount();
             PublishShuffleBoosterUsesChanged();
+            PublishExtraWaitingSlotBoosterUsesChanged();
         }
 
         private void OnClickTargetRequested(LevelClickTarget target)
@@ -527,7 +537,7 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private bool IsWaitingAndConveyorPotCountAtWaitingCapacity()
         {
-            return _session.WaitingSlots.OccupiedCount + _session.Conveyor.Pots.Count <= _session.WaitingSlots.Capacity;
+            return _session.WaitingSlots.OccupiedCount + _session.Conveyor.Pots.Count <= _session.WaitingSlots.UsableCapacity;
         }
 
         private bool IsConveyorFastForwardActive()
@@ -833,6 +843,38 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             var remainingUses = _shuffleBoosterService?.RemainingUses ?? 0;
             _eventPublisher?.Publish(new ShuffleBoosterUsesChanged(remainingUses));
+        }
+
+        private void TryUseExtraWaitingSlotBooster()
+        {
+            if (_session == null || _extraWaitingSlotBoosterService == null)
+            {
+                PublishExtraWaitingSlotBoosterUnavailable();
+                return;
+            }
+
+            if (!_extraWaitingSlotBoosterService.TryUse(_session, out var slotIndex))
+            {
+                PublishExtraWaitingSlotBoosterUnavailable();
+                return;
+            }
+
+            PublishSound(SoundCueId.GameplayTap);
+            _eventPublisher?.Publish(new ExtraWaitingSlotBoosterUsed(_extraWaitingSlotBoosterService.RemainingUses, slotIndex));
+            PublishExtraWaitingSlotBoosterUsesChanged();
+        }
+
+        private void PublishExtraWaitingSlotBoosterUnavailable()
+        {
+            var remainingUses = _extraWaitingSlotBoosterService?.RemainingUses ?? 0;
+            _eventPublisher?.Publish(new ExtraWaitingSlotBoosterUnavailable(remainingUses));
+            PublishExtraWaitingSlotBoosterUsesChanged();
+        }
+
+        private void PublishExtraWaitingSlotBoosterUsesChanged()
+        {
+            var remainingUses = _extraWaitingSlotBoosterService?.RemainingUses ?? 0;
+            _eventPublisher?.Publish(new ExtraWaitingSlotBoosterUsesChanged(remainingUses));
         }
 
         private void NotifyGameplayStartIfPlaying()

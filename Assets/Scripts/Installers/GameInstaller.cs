@@ -29,6 +29,12 @@ public class GameInstaller : MonoBehaviour, IInstaller
             Resolution.Lazy);
 
         builder.RegisterType(
+            typeof(ExtraWaitingSlotBoosterService),
+            new[] { typeof(IExtraWaitingSlotBoosterService) },
+            Lifetime.Scoped,
+            Resolution.Lazy);
+
+        builder.RegisterType(
             typeof(LevelAdvanceService),
             new[] { typeof(ILevelAdvanceService) },
             Lifetime.Scoped,

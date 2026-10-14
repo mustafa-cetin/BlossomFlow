@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BlossomFlow.Gameplay.Domain;
 using BlossomFlow.Gameplay.Domain.Levels;
 using DG.Tweening;
@@ -176,6 +177,7 @@ namespace BlossomFlow.Gameplay.Presentation
             _session.WaitingPotRecalled += OnWaitingPotRecalled;
             _session.TemporaryWaitingSlotCreated += OnTemporaryWaitingSlotCreated;
             _session.TemporaryWaitingSlotRemoved += OnTemporaryWaitingSlotRemoved;
+            _session.ExtraWaitingSlotCreated += OnExtraWaitingSlotCreated;
             _session.Conveyor.PotRemoved += OnConveyorPotRemoved;
         }
 
@@ -188,6 +190,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 _session.WaitingPotRecalled -= OnWaitingPotRecalled;
                 _session.TemporaryWaitingSlotCreated -= OnTemporaryWaitingSlotCreated;
                 _session.TemporaryWaitingSlotRemoved -= OnTemporaryWaitingSlotRemoved;
+                _session.ExtraWaitingSlotCreated -= OnExtraWaitingSlotCreated;
                 _session.Conveyor.PotRemoved -= OnConveyorPotRemoved;
             }
 
@@ -426,9 +429,9 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private void BuildWaitingSlotViews()
         {
-            for (var slotIndex = 0; slotIndex < _session.WaitingSlots.Capacity; slotIndex++)
+            for (var slotIndex = 0; slotIndex < _session.WaitingSlots.BaseCapacity; slotIndex++)
             {
-                CreateWaitingSlotView(slotIndex, false);
+                CreateWaitingSlotView(slotIndex, WaitingSlotKind.Base);
             }
         }
 
@@ -657,7 +660,7 @@ namespace BlossomFlow.Gameplay.Presentation
                 return;
             }
 
-            CreateWaitingSlotView(slot.Index, true);
+            CreateWaitingSlotView(slot.Index, WaitingSlotKind.Temporary);
             RefreshTemporaryWaitingSlotPositions();
             FitCameraToLevel();
         }
@@ -671,6 +674,17 @@ namespace BlossomFlow.Gameplay.Presentation
             }
 
             RefreshTemporaryWaitingSlotPositions();
+            FitCameraToLevel();
+        }
+
+        private void OnExtraWaitingSlotCreated(LevelSession session, WaitingSlot slot)
+        {
+            if (slot == null)
+            {
+                return;
+            }
+
+            CreateWaitingSlotView(slot.Index, WaitingSlotKind.Booster);
             FitCameraToLevel();
         }
 
@@ -1086,13 +1100,14 @@ namespace BlossomFlow.Gameplay.Presentation
             return view;
         }
 
-        private GameObject CreateWaitingSlotView(int slotIndex, bool isTemporary)
+        private GameObject CreateWaitingSlotView(int slotIndex, WaitingSlotKind kind)
         {
             if (_waitingSlotViews.TryGetValue(slotIndex, out var existingView) && existingView != null)
             {
                 return existingView;
             }
 
+            var isTemporary = kind == WaitingSlotKind.Temporary;
             var view = CreateView(waitingSlotPrefab, waitingSlotRoot, $"WaitingSlot_{slotIndex}");
             view.transform.position = WaitingSlotPosition(slotIndex);
             ApplyVisualSize(view, waitingSlotVisualSize);
@@ -1269,7 +1284,7 @@ namespace BlossomFlow.Gameplay.Presentation
             var conveyorGap = GetConveyorPathGap();
             var waitingMinX = waitingOrigin.x - waitingSlotVisualSize;
             var waitingMaxX = waitingOrigin.x + waitingSlotVisualSize;
-            var waitingMinY = waitingOrigin.y - Mathf.Max(0, _session.WaitingSlots.Capacity - 1) * _runtimePotSpacing - waitingSlotVisualSize;
+            var waitingMinY = waitingOrigin.y - Mathf.Max(0, _session.WaitingSlots.BaseCapacity - 1) * _runtimePotSpacing - waitingSlotVisualSize;
 
             if (HasTemporaryWaitingSlots())
             {
@@ -1514,7 +1529,7 @@ namespace BlossomFlow.Gameplay.Presentation
         {
             if (!conveyorPot.TryGetCurrentScan(out var scan))
             {
-                return new Vector3(waitingOrigin.x, waitingOrigin.y - _session.WaitingSlots.Capacity * _runtimePotSpacing, 0f);
+                return new Vector3(waitingOrigin.x, waitingOrigin.y - _session.WaitingSlots.BaseCapacity * _runtimePotSpacing, 0f);
             }
 
             return ConveyorScanPosition(scan, _session.FlowerGrid.Width, _session.FlowerGrid.Height, _runtimeCellSize);
@@ -1529,7 +1544,13 @@ namespace BlossomFlow.Gameplay.Presentation
 
         private bool IsTemporaryWaitingSlot(int slotIndex)
         {
-            return _session != null && slotIndex >= _session.WaitingSlots.Capacity;
+            if (_session == null)
+            {
+                return false;
+            }
+
+            var slot = _session.WaitingSlots.Slots.FirstOrDefault(candidate => candidate.Index == slotIndex);
+            return slot != null && slot.Kind == WaitingSlotKind.Temporary;
         }
 
         private bool HasTemporaryWaitingSlots()
@@ -1542,7 +1563,7 @@ namespace BlossomFlow.Gameplay.Presentation
             var slots = _session.WaitingSlots.Slots;
             for (var i = 0; i < slots.Count; i++)
             {
-                if (slots[i].IsTemporary)
+                if (slots[i].Kind == WaitingSlotKind.Temporary)
                 {
                     return true;
                 }
@@ -1562,7 +1583,7 @@ namespace BlossomFlow.Gameplay.Presentation
             var slots = _session.WaitingSlots.Slots;
             for (var i = 0; i < slots.Count; i++)
             {
-                if (slots[i].IsTemporary)
+                if (slots[i].Kind == WaitingSlotKind.Temporary)
                 {
                     temporarySlotCount++;
                 }
@@ -1583,7 +1604,7 @@ namespace BlossomFlow.Gameplay.Presentation
             for (var i = 0; i < slots.Count; i++)
             {
                 var slot = slots[i];
-                if (slot.IsTemporary && slot.Index < slotIndex)
+                if (slot.Kind == WaitingSlotKind.Temporary && slot.Index < slotIndex)
                 {
                     layoutIndex++;
                 }
@@ -1603,7 +1624,7 @@ namespace BlossomFlow.Gameplay.Presentation
             for (var i = 0; i < slots.Count; i++)
             {
                 var slot = slots[i];
-                if (!slot.IsTemporary)
+                if (slot.Kind != WaitingSlotKind.Temporary)
                 {
                     continue;
                 }
